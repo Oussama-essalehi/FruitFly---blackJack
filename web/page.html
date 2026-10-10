@@ -1,0 +1,524 @@
+<title>FlyJack</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a casino scene where the fly plays (always dark, lit by the table lamp), then the
+   fly's choice beside a microscope view of its brain (always dark, like a fluorescence image),
+   then the learning record underneath on plain paper. */
+:root {
+  --bg: #eef2ee; --surface: #f9fbf9; --ink: #15201a; --ink-2: #47564d; --ink-3: #6f7e74; --line: #d2dbd4;
+  --accent: #17694a; --accent-ink: #ffffff; --accent-line: #17694a;
+  --felt: #1f6349; --felt-edge: #174b38; --felt-ink: #eef6f0; --felt-ink-2: #b9d3c4; --felt-line: #3a7c62;
+  --scope: #0a0e0c; --scope-ink: #c9d4cd; --scope-ink-2: #8a988f; --scope-line: #25302a;
+  --card: #fbfaf5; --card-ink: #1c1c1c; --card-red: #c2332d; --card-back: #2d4f7a;
+  --seq-lo: #e3eae5; --seq-hi: #17694a; --seq-lo-ink: #47564d; --seq-hi-ink: #ffffff; --flag: #b3471a;
+  --act: #199e70; --pos: #3987e5; --neg: #d95926;   /* brain panel: activity, approach/reward, avoid/punishment */
+  --display: "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1512; --surface: #161e1a; --ink: #e9f0eb; --ink-2: #b3c0b7; --ink-3: #8a988f; --line: #2a352f;
+    --accent: #3fbf8d; --accent-ink: #08130e; --accent-line: #3fbf8d;
+    --felt: #174836; --felt-edge: #0f3326; --felt-ink: #eef6f0; --felt-ink-2: #a9c6b6; --felt-line: #2c6850;
+    --seq-lo: #1b2520; --seq-hi: #3fbf8d; --seq-lo-ink: #b3c0b7; --seq-hi-ink: #08130e; --flag: #f08a4b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1512; --surface: #161e1a; --ink: #e9f0eb; --ink-2: #b3c0b7; --ink-3: #8a988f; --line: #2a352f;
+  --accent: #3fbf8d; --accent-ink: #08130e; --accent-line: #3fbf8d;
+  --felt: #174836; --felt-edge: #0f3326; --felt-ink: #eef6f0; --felt-ink-2: #a9c6b6; --felt-line: #2c6850;
+  --seq-lo: #1b2520; --seq-hi: #3fbf8d; --seq-lo-ink: #b3c0b7; --seq-hi-ink: #08130e; --flag: #f08a4b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.page { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: flex; flex-direction: column; gap: 28px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.1; }
+h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 1.5rem; font-weight: 700; }
+h3 { font-size: 1.05rem; font-weight: 500; }
+p { margin: 0; }
+.label { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.masthead { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.masthead .lede { max-width: 62ch; color: var(--ink-2); font-size: 1.05rem; }
+
+/* controls */
+.controls { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; }
+button, select { font: inherit; color: inherit; }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 500; }
+.btn:hover { border-color: var(--ink-3); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); min-width: 92px; }
+.btn.quiet { background: transparent; }
+:is(button, select, input, summary, td):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg label { padding: 8px 14px; cursor: pointer; font-weight: 500; border-left: 1px solid var(--line); }
+.seg label:first-of-type { border-left: 0; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg input:checked + label { background: var(--ink); color: var(--bg); }
+.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: -2px; }
+.field { display: inline-flex; align-items: center; gap: 8px; }
+.field select { border: 1px solid var(--line); background: var(--surface); padding: 8px 10px; border-radius: 8px; max-width: 100%; }
+.confirm { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.hint { color: var(--ink-2); max-width: 75ch; }
+
+/* stage: the casino scene across the top, then the fly's choice beside the brain */
+.stage { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 16px; align-items: stretch; }
+.casino { grid-column: 1 / -1; border-radius: 14px; overflow: hidden; background: #0c0507; min-width: 0;
+  box-shadow: 0 22px 44px -28px rgba(0, 0, 0, 0.7); }
+.casino svg { display: block; width: 100%; height: auto; }
+.neon-text { font-family: var(--display); font-weight: 700; font-size: 68px; fill: #ffe1f1; stroke: #ff4fae; stroke-width: 2; }
+.neon-suits { font-family: var(--body); font-size: 44px; fill: #d9f7ff; stroke: #39cfff; stroke-width: 1.5; letter-spacing: 6px; }
+.neon { animation: cj-flicker 9s infinite; }
+.neon-late { animation-delay: -4s; animation-duration: 13s; }
+@keyframes cj-flicker { 0%, 17%, 21%, 63%, 100% { opacity: 1; } 18% { opacity: 0.35; } 20% { opacity: 0.8; } 62% { opacity: 0.55; } }
+.cj-bokeh circle { animation: cj-twinkle 6s ease-in-out infinite alternate; }
+@keyframes cj-twinkle { from { opacity: 0.25; } to { opacity: 1; } }
+.felt-text { font-family: var(--mono); font-size: 12.5px; letter-spacing: 2px; fill: #e8c27a; fill-opacity: 0.5; }
+.wisps { opacity: 0; transition: opacity 0.3s; }
+.wisps.on { opacity: 0.9; }
+.wisps path { fill: none; stroke: #6aa8ff; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 2 11; animation: cj-waft 0.9s linear infinite; }
+@keyframes cj-waft { to { stroke-dashoffset: -26; } }
+.bubble { opacity: 0; transition: opacity 0.2s; }
+.bubble.on { opacity: 1; }
+.bubble-main { font-family: var(--display); font-weight: 700; font-size: 25px; fill: #1c1c1c; }
+.bubble-sub { font-family: var(--mono); font-size: 12.5px; fill: #47564d; }
+.badge { opacity: 0; transition: opacity 0.25s; }
+.badge.on { opacity: 1; }
+.badge rect { fill: #08140e; fill-opacity: 0.78; stroke: #e8c27a; stroke-opacity: 0.5; }
+.badge text { font-family: var(--mono); font-size: 16px; fill: #f3ead2; }
+.c-rank { font-family: var(--display); font-weight: 700; font-size: 19px; }
+.c-pip-s { font-family: var(--body); font-size: 13px; }
+.c-pip { font-family: var(--body); font-size: 34px; }
+.fx-float { font-family: var(--display); font-weight: 700; font-size: 32px; paint-order: stroke; stroke: #0c0507; stroke-width: 4px; }
+
+.felt { background: var(--felt); color: var(--felt-ink); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px;
+  box-shadow: inset 0 0 0 6px var(--felt-edge); min-width: 0; }
+.felt .label { color: var(--felt-ink-2); }
+.seat-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; justify-content: space-between; }
+.seat-head .total { font-family: var(--mono); font-size: 0.95rem; white-space: nowrap; }
+.choice { display: flex; flex-direction: column; gap: 8px; }
+.meter { display: grid; grid-template-columns: 5.5em minmax(0, 1fr) 3.6em; gap: 10px; align-items: center; }
+.meter .name { font-weight: 500; }
+.meter .track { position: relative; height: 12px; background: rgba(0, 0, 0, 0.22); border-radius: 6px; }
+.meter .track::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--felt-ink-2); }
+.meter .fill { position: absolute; top: 0; bottom: 0; background: var(--felt-ink); border-radius: 3px; transition: left 0.18s, width 0.18s; }
+.meter.picked .name::after { content: " \2190"; }
+.meter.picked .fill { background: var(--card); box-shadow: 0 0 0 2px var(--felt), 0 0 0 3px var(--card); }
+.meter .val { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.scale-note { color: var(--felt-ink-2); font-size: 0.82rem; }
+.verdict { border-top: 1px solid var(--felt-line); padding-top: 12px; min-height: 5.2em; display: flex; flex-direction: column; gap: 4px; }
+.verdict .what { font-family: var(--display); font-size: 1.5rem; font-weight: 700; }
+.verdict .why { color: var(--felt-ink-2); }
+.recent { border-top: 1px solid var(--felt-line); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.pips { display: flex; flex-wrap: wrap; gap: 5px; min-height: 26px; }
+.pips span { font-family: var(--mono); font-size: 0.78rem; padding: 3px 7px; border-radius: 999px; background: rgba(0, 0, 0, 0.25); color: var(--felt-ink-2); }
+.pips span.won { background: #f2cf72; color: #2a1d05; }
+.pips span.even { background: rgba(255, 255, 255, 0.16); color: var(--felt-ink); }
+.howto { list-style: none; margin: 0; padding: 12px 0 0; border-top: 1px solid var(--felt-line); display: flex; flex-direction: column; gap: 4px;
+  color: var(--felt-ink-2); font-size: 0.85rem; }
+.howto li { display: flex; align-items: center; gap: 8px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.scope { background: var(--scope); color: var(--scope-ink); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; position: relative; }
+.scope .label { color: var(--scope-ink-2); }
+.scope-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.scope canvas { width: 100%; aspect-ratio: 1.42; display: block; max-width: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.82rem; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.scope .caption { color: var(--scope-ink-2); font-size: 0.82rem; }
+.tip { position: fixed; z-index: 10; pointer-events: none; background: var(--ink); color: var(--bg); padding: 6px 9px; border-radius: 6px; font-size: 0.8rem;
+  max-width: 260px; line-height: 1.35; }
+.tip b { font-family: var(--mono); font-weight: 500; }
+
+/* record */
+.record { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.tile { padding: 12px 16px 12px 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tile + .tile { padding-left: 16px; border-left: 1px solid var(--line); }
+.tile .label { color: var(--ink-3); }
+.tile .value { font-family: var(--display); font-size: 1.7rem; font-weight: 700; line-height: 1.15; }
+.tile .sub { color: var(--ink-2); font-size: 0.85rem; }
+.chart-wrap { position: relative; min-width: 0; }
+.chart-wrap svg { display: block; width: 100%; height: 240px; overflow: visible; }
+.chart-wrap text { font-family: var(--mono); font-size: 11px; fill: var(--ink-2); }
+.sub-note { color: var(--ink-2); max-width: 75ch; }
+details summary { cursor: pointer; color: var(--ink-2); width: fit-content; }
+table.plain { border-collapse: collapse; margin-top: 8px; font-size: 0.88rem; }
+table.plain :is(th, td) { text-align: right; padding: 3px 14px 3px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+table.plain th { font-weight: 500; color: var(--ink-2); }
+table.plain :is(th, td):first-child { text-align: left; }
+
+/* strategy */
+.grids { display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: flex-start; }
+.grid-box { display: flex; flex-direction: column; gap: 8px; min-width: 0; max-width: 100%; overflow-x: auto; }
+table.grid { border-collapse: separate; border-spacing: 2px; font-family: var(--mono); font-size: 0.8rem; }
+table.grid th { font-weight: 400; color: var(--ink-3); padding: 0 4px; text-align: center; }
+table.grid th.row { text-align: right; padding-right: 6px; }
+table.grid td { width: 27px; height: 23px; text-align: center; border-radius: 3px; position: relative; padding: 0;
+  background: color-mix(in oklab, var(--seq-hi) calc(var(--p, 0) * 100%), var(--seq-lo)); color: var(--seq-lo-ink); }
+table.grid td.hi { color: var(--seq-hi-ink); }
+table.grid td.off::after { content: ""; position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; border-radius: 50%; background: var(--flag);
+  box-shadow: 0 0 0 1.5px var(--bg); }
+table.grid td:hover { outline: 2px solid var(--ink); outline-offset: 0; }
+.grid-key { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; color: var(--ink-2); font-size: 0.85rem; }
+.ramp { display: inline-block; width: 110px; height: 10px; border-radius: 3px; background: linear-gradient(90deg, var(--seq-lo), var(--seq-hi)); vertical-align: middle; margin: 0 6px; }
+.flagdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--flag); margin-right: 6px; }
+
+/* notes */
+.notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 40px; border-top: 1px solid var(--line); padding-top: 24px; }
+.notes > div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.notes ul { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 5px; color: var(--ink-2); }
+.notes .wide { grid-column: 1 / -1; }
+.credits { color: var(--ink-3); font-size: 0.85rem; max-width: 90ch; }
+a { color: inherit; text-underline-offset: 2px; }
+section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+@media (max-width: 820px) {
+  .stage { grid-template-columns: minmax(0, 1fr); }
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tile:nth-child(3) { padding-left: 0; border-left: 0; }
+  .tile:nth-child(n + 3) { border-top: 1px solid var(--line); }
+  .notes { grid-template-columns: minmax(0, 1fr); }
+  .page { padding-inline: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .meter .fill { transition: none; } .neon, .cj-bokeh circle, .wisps path { animation: none; } }
+</style>
+
+<div class="page">
+  <header class="masthead">
+    <p class="label" style="color:var(--ink-3)">A fruit fly's learning circuit, wired from the real connectome</p>
+    <h1>FlyJack</h1>
+    <p class="lede">4,406 neurons from the mushroom body of a male fruit fly, connected exactly as they were mapped, sit down at a blackjack table. Wins and losses arrive as dopamine. Watch what the fly works out.</p>
+  </header>
+
+  <section aria-label="Controls">
+    <div class="controls">
+      <button class="btn primary" id="play" type="button">Pause</button>
+      <div class="seg" role="radiogroup" aria-label="Speed">
+        <input type="radio" name="speed" id="speed-watch" value="watch" checked><label for="speed-watch">Watch</label>
+        <input type="radio" name="speed" id="speed-fast" value="fast"><label for="speed-fast">Fast</label>
+        <input type="radio" name="speed" id="speed-turbo" value="turbo"><label for="speed-turbo">Turbo</label>
+      </div>
+      <span class="field"><label for="mode">Brain</label>
+        <select id="mode">
+          <option value="intact">Intact</option>
+          <option value="blocked">Dopamine blocked</option>
+          <option value="swapped">Reward and punishment swapped</option>
+          <option value="scrambled">Dopamine targets scrambled</option>
+          <option value="rewired">Smell wiring scrambled</option>
+        </select>
+      </span>
+      <button class="btn quiet" id="reset" type="button">Start over</button>
+      <span class="confirm" id="reset-confirm" hidden>Erase what this fly has learned?
+        <button class="btn" id="reset-yes" type="button">Erase</button>
+        <button class="btn quiet" id="reset-no" type="button">Keep</button>
+      </span>
+    </div>
+    <p class="hint" id="mode-note"></p>
+  </section>
+
+  <section class="stage" aria-label="The table and the brain">
+    <div class="casino">
+      <svg id="scene" viewBox="0 0 1200 675" role="img" aria-labelledby="scene-title scene-desc">
+        <title id="scene-title">The fly at the blackjack table</title>
+        <desc id="scene-desc"></desc>
+        <defs>
+          <linearGradient id="cj-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c111b"/><stop offset=".6" stop-color="#1b0a11"/><stop offset="1" stop-color="#0c0407"/></linearGradient>
+          <radialGradient id="cj-felt" cx="600" cy="420" r="560" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f8d5e"/><stop offset=".6" stop-color="#1f6a46"/><stop offset="1" stop-color="#103b27"/></radialGradient>
+          <linearGradient id="cj-rail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6e3b20"/><stop offset=".55" stop-color="#4a2512"/><stop offset="1" stop-color="#24110a"/></linearGradient>
+          <linearGradient id="cj-cone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9b0" stop-opacity=".16"/><stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/></linearGradient>
+          <radialGradient id="cj-pool"><stop offset="0" stop-color="#ffe9b0" stop-opacity=".13"/><stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/></radialGradient>
+          <radialGradient id="cj-vignette" cx=".5" cy=".55" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></radialGradient>
+          <radialGradient id="cj-eye" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="#ff6d4f"/><stop offset=".45" stop-color="#d22b21"/><stop offset="1" stop-color="#6c0c0b"/></radialGradient>
+          <pattern id="cj-facets" width="5" height="4.4" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.2" r="1.9" fill="none" stroke="#3a0505" stroke-opacity=".35" stroke-width=".6"/></pattern>
+          <linearGradient id="cj-thorax" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dcae66"/><stop offset="1" stop-color="#8a5b2b"/></linearGradient>
+          <linearGradient id="cj-abdomen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4b76f"/><stop offset="1" stop-color="#9e6a33"/></linearGradient>
+          <pattern id="cj-back" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#7a1d2a"/><rect width="3" height="8" fill="#97303e"/></pattern>
+          <filter id="cj-blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="10"/></filter>
+          <filter id="cj-soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
+          <filter id="cj-neon" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="cj-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#000" flood-opacity=".45"/></filter>
+          <clipPath id="cj-abd-clip"><ellipse cx="62" cy="-78" rx="60" ry="40" transform="rotate(12 62 -78)"/></clipPath>
+          <path id="cj-felt-arc" d="M330 382Q600 452 870 382"/>
+        </defs>
+
+        <!-- the room -->
+        <rect width="1200" height="675" fill="url(#cj-wall)"/>
+        <path d="M50 0V250M150 0V250M250 0V250M350 0V250M450 0V250M550 0V250M650 0V250M750 0V250M850 0V250M950 0V250M1050 0V250M1150 0V250" stroke="#e8c27a" stroke-opacity=".06" stroke-width="2"/>
+        <rect y="250" width="1200" height="425" fill="#0c0507"/>
+        <path d="M0 250H1200" stroke="#e8c27a" stroke-opacity=".2" stroke-width="3"/>
+        <g id="cj-bokeh" class="cj-bokeh" filter="url(#cj-soft)"></g>
+        <g class="neon" filter="url(#cj-neon)">
+          <text x="250" y="150" text-anchor="middle" class="neon-text">FlyJack</text>
+          <path d="M150 172H350" stroke="#ff4fae" stroke-width="3" stroke-linecap="round"/>
+        </g>
+        <g class="neon neon-late" filter="url(#cj-neon)"><text x="965" y="150" text-anchor="middle" class="neon-suits">♠︎ ♥︎ ♦︎ ♣︎</text></g>
+        <line x1="600" y1="0" x2="600" y2="26" stroke="#050304" stroke-width="3"/>
+        <path d="M572 26H628L662 62H538Z" fill="#1f4a35"/>
+        <path d="M538 62H662" stroke="#d6b25e" stroke-width="3"/>
+        <ellipse cx="600" cy="66" rx="56" ry="9" fill="#fff4cf" filter="url(#cj-blur)"/>
+
+        <!-- the dealer, behind the table -->
+        <g id="cj-dealer">
+          <path d="M496 280C498 226 526 196 600 192C674 196 702 226 704 280Z" fill="#efe9dd"/>
+          <path d="M520 280C520 236 540 208 566 198L600 252L634 198C660 208 680 236 680 280Z" fill="#1d1a20"/>
+          <circle cx="600" cy="262" r="2.6" fill="#d6b25e"/><circle cx="600" cy="273" r="2.6" fill="#d6b25e"/>
+          <rect x="587" y="160" width="26" height="36" rx="8" fill="#d9a77f"/>
+          <path d="M600 200L579 189V211ZM600 200L621 189V211Z" fill="#b3202a"/><rect x="595" y="195" width="10" height="10" rx="2" fill="#8e1820"/>
+          <ellipse cx="563" cy="138" rx="7" ry="10" fill="#d9a77f"/><ellipse cx="637" cy="138" rx="7" ry="10" fill="#d9a77f"/>
+          <ellipse cx="600" cy="135" rx="37" ry="42" fill="#e6b68e"/>
+          <path d="M563 132C560 96 586 88 600 88C614 88 640 96 637 132C630 112 570 112 563 132Z" fill="#2b1d16"/>
+          <path d="M556 114Q600 92 644 114L652 123Q600 106 548 123Z" fill="#2aa36a" fill-opacity=".88"/>
+          <path d="M562 112Q600 96 638 112" stroke="#1b6e46" stroke-width="3" fill="none"/>
+          <g id="cj-brows" stroke="#2b1d16" stroke-width="3" stroke-linecap="round" fill="none"><path d="M579 128Q586 124 594 128"/><path d="M606 128Q614 124 621 128"/></g>
+          <g id="cj-eyes">
+            <ellipse cx="586" cy="138" rx="6" ry="5" fill="#fff"/><ellipse cx="614" cy="138" rx="6" ry="5" fill="#fff"/>
+            <circle id="cj-pupil-l" cx="586" cy="139" r="3" fill="#1d1a20"/><circle id="cj-pupil-r" cx="614" cy="139" r="3" fill="#1d1a20"/>
+          </g>
+          <path d="M600 141Q596 152 602 153" stroke="#b9845e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path d="M584 160Q592 152 600 157Q608 152 616 160Q608 158 600 161Q592 158 584 160Z" fill="#2b1d16"/>
+          <path id="cj-mouth" d="M592 167Q600 170 608 167" stroke="#7a3b2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </g>
+
+        <!-- the table -->
+        <path d="M70 264H1130A530 392 0 0 1 70 264Z" fill="#1a0c06" transform="translate(0 20)"/>
+        <path d="M70 264H1130A530 392 0 0 1 70 264Z" fill="url(#cj-rail)"/>
+        <path d="M1126 268A527 389 0 0 1 74 268" fill="none" stroke="#ffdcb4" stroke-opacity=".16" stroke-width="2"/>
+        <path d="M100 272H1100A500 360 0 0 1 100 272Z" fill="url(#cj-felt)"/>
+        <path d="M1100 272A500 360 0 0 1 100 272" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="6"/>
+        <rect x="70" y="260" width="1060" height="12" fill="#3a1d0e"/>
+        <path d="M70 260H1130" stroke="#d6b25e" stroke-opacity=".5" stroke-width="1.5"/>
+        <path d="M150 272A450 315 0 0 0 1050 272" fill="none" stroke="#e8c27a" stroke-opacity=".32" stroke-width="2"/>
+        <text class="felt-text"><textPath href="#cj-felt-arc" startOffset="50%" text-anchor="middle">BLACKJACK PAYS 3 TO 2 · DEALER STANDS ON 17</textPath></text>
+        <ellipse cx="690" cy="552" rx="40" ry="15" fill="none" stroke="#e8c27a" stroke-opacity=".55" stroke-width="2"/>
+        <ellipse cx="690" cy="552" rx="30" ry="10.5" fill="none" stroke="#e8c27a" stroke-opacity=".22" stroke-width="1.5"/>
+        <!-- chip tray, card shoe, discard tray -->
+        <rect x="500" y="274" width="200" height="26" rx="4" fill="#0e0b0c" stroke="#3a2a20"/>
+        <g id="cj-tray"></g>
+        <path d="M826 276H906L918 262H840Z" fill="#3c2418"/>
+        <path d="M826 276H906V302H826Z" fill="#2b1a12"/>
+        <path d="M826 276H906" stroke="#d6b25e" stroke-opacity=".6" stroke-width="1.5"/>
+        <path d="M812 298L838 298L844 280L818 280Z" fill="url(#cj-back)" stroke="#f4f1e8" stroke-width="1.5"/>
+        <rect x="282" y="268" width="76" height="28" rx="3" fill="#fff" fill-opacity=".07" stroke="#fff" stroke-opacity=".25"/>
+        <path d="M288 290H352M288 285H352M288 280H352M290 275H350" stroke="#f4f1e8" stroke-width="3" stroke-opacity=".75"/>
+        <!-- a snack and a drink: fruit flies love both -->
+        <g>
+          <ellipse cx="240" cy="452" rx="48" ry="12" fill="#ece6d8"/>
+          <ellipse cx="240" cy="450" rx="34" ry="7.5" fill="#d9d0bd"/>
+          <path d="M203 440Q240 462 281 432Q285 427 282 425Q244 448 207 434Z" fill="#f2c94c" stroke="#b8892a" stroke-width="1.5"/>
+          <path d="M281 428l6 -5" stroke="#5b3b16" stroke-width="3" stroke-linecap="round"/>
+          <g fill="#6b4a1a"><circle cx="226" cy="446" r="2.2"/><circle cx="244" cy="447" r="1.6"/><circle cx="258" cy="442" r="2.4"/><circle cx="214" cy="441" r="1.4"/></g>
+        </g>
+        <g transform="translate(25 -150)">
+          <ellipse cx="985" cy="492" rx="15" ry="4" fill="#fff" fill-opacity=".18"/>
+          <path d="M985 462V490" stroke="#fff" stroke-opacity=".45" stroke-width="3"/>
+          <path d="M964 432Q966 458 985 461Q1004 458 1006 432Z" fill="#6e0d22"/>
+          <ellipse cx="985" cy="432" rx="21" ry="4" fill="#8e1830"/>
+          <path d="M963 410Q962 458 985 462Q1008 458 1007 410Z" fill="#fff" fill-opacity=".06" stroke="#fff" stroke-opacity=".45" stroke-width="1.5"/>
+          <path d="M970 416Q969 440 976 452" stroke="#fff" stroke-opacity=".3" stroke-width="2" fill="none"/>
+        </g>
+        <g id="cj-gnat" transform="translate(1010 248)"><ellipse rx="3" ry="2" fill="#2a1a0c"/><ellipse cx="1" cy="-3" rx="3.5" ry="1.6" fill="#fff" fill-opacity=".6"/></g>
+        <polygon points="548,66 652,66 790,330 410,330" fill="url(#cj-cone)" pointer-events="none"/>
+        <ellipse cx="600" cy="420" rx="470" ry="230" fill="url(#cj-pool)" pointer-events="none"/>
+
+        <!-- the dealer's arms reach over the felt -->
+        <g id="cj-arms">
+          <path id="cj-arm-l" stroke="#ebe5d8" stroke-width="22" stroke-linecap="round" fill="none"/>
+          <path id="cj-arm-r" stroke="#ebe5d8" stroke-width="22" stroke-linecap="round" fill="none"/>
+          <ellipse id="cj-hand-l" rx="13" ry="9" fill="#e0ad85"/>
+          <ellipse id="cj-hand-r" rx="13" ry="9" fill="#e0ad85"/>
+        </g>
+
+        <g id="cj-cards" filter="url(#cj-shadow)"></g>
+        <g id="cj-chips"></g>
+        <g id="cj-badge-dealer" class="badge"><rect x="-30" y="-15" width="60" height="30" rx="15"/><text y="5.5" text-anchor="middle"></text></g>
+        <g id="cj-badge-fly" class="badge"><rect x="-30" y="-15" width="60" height="30" rx="15"/><text y="5.5" text-anchor="middle"></text></g>
+
+        <!-- what the fly smells: blue smells good, orange smells bad -->
+        <g id="cj-scent" class="wisps">
+          <path d="M612 452C640 400 690 470 762 440"/>
+          <path d="M640 474C670 432 702 492 760 452"/>
+          <path d="M676 446C700 408 722 458 758 430"/>
+        </g>
+
+        <!-- the fly, drawn around its feet, facing the dealer -->
+        <g id="cj-fly" transform="translate(860 566)">
+          <ellipse id="cj-fly-shadow" cy="2" rx="105" ry="11" fill="#000" opacity=".35"/>
+          <g id="cj-fly-body">
+            <g id="cj-fly-buzz" opacity="0" stroke="#fff" stroke-opacity=".4" stroke-width="2" fill="none" stroke-linecap="round">
+              <path d="M40 -158Q80 -176 122 -156"/><path d="M58 -178Q92 -192 130 -174"/>
+            </g>
+            <g stroke="#24180e" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path id="cj-fly-leg-ff" d="M-26 -70L-46 -56L-52 -22L-58 -3"/>
+              <path d="M0 -62L10 -40L4 -14L0 -3"/>
+              <path d="M26 -66L56 -52L70 -20L86 -3"/>
+            </g>
+            <path id="cj-fly-wing-f" d="M2 -122C42 -146 122 -142 160 -116C170 -106 152 -94 122 -96C82 -98 32 -106 2 -116Z" fill="#c8d7eb" fill-opacity=".18" stroke="#fff" stroke-opacity=".3"/>
+            <ellipse cx="62" cy="-78" rx="60" ry="40" transform="rotate(12 62 -78)" fill="url(#cj-abdomen)"/>
+            <g clip-path="url(#cj-abd-clip)" fill="none" stroke="#3b2414" stroke-linecap="round">
+              <path d="M44 -124Q54 -80 40 -34" stroke-width="7" opacity=".7"/>
+              <path d="M68 -122Q78 -78 64 -32" stroke-width="8" opacity=".78"/>
+              <path d="M92 -116Q102 -74 88 -30" stroke-width="9" opacity=".85"/>
+              <ellipse cx="124" cy="-62" rx="22" ry="32" fill="#3b2414" stroke="none"/>
+            </g>
+            <ellipse cx="-10" cy="-92" rx="44" ry="38" fill="url(#cj-thorax)"/>
+            <ellipse cx="26" cy="-112" rx="14" ry="9" fill="#c7964f"/>
+            <path d="M-40 -110Q-10 -126 26 -110" stroke="#8a5b2b" stroke-width="3" stroke-opacity=".4" fill="none"/>
+            <g stroke="#2a1a0c" stroke-width="1.6" stroke-linecap="round" fill="none">
+              <path d="M-30 -126q-4 -10 -12 -14"/><path d="M-8 -130q0 -11 -8 -17"/><path d="M14 -126q6 -10 2 -18"/><path d="M30 -118q10 -6 12 -16"/>
+            </g>
+            <g stroke="#3a2818" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M-6 -60L4 -36L-12 -10L-22 -1"/>
+              <path d="M18 -62L50 -46L62 -16L78 -1"/>
+            </g>
+            <g id="cj-fly-head">
+              <circle id="cj-fly-glow" cx="-62" cy="-104" r="42" fill="#3987e5" opacity="0" filter="url(#cj-blur)"/>
+              <circle cx="-62" cy="-104" r="33" fill="#c99652"/>
+              <ellipse cx="-68" cy="-106" rx="24" ry="28" fill="url(#cj-eye)"/>
+              <ellipse cx="-68" cy="-106" rx="24" ry="28" fill="url(#cj-facets)"/>
+              <ellipse cx="-77" cy="-120" rx="7" ry="4.5" fill="#fff" opacity=".75" transform="rotate(-25 -77 -120)"/>
+              <circle cx="-62" cy="-110" r="2.6" fill="#fff" opacity=".45"/>
+              <g fill="#7a1a10"><circle cx="-50" cy="-135" r="2"/><circle cx="-44" cy="-133" r="2"/><circle cx="-47" cy="-138" r="2"/></g>
+              <path d="M-80 -78Q-90 -66 -86 -58" stroke="#8a5a2a" stroke-width="6" fill="none" stroke-linecap="round"/>
+              <ellipse cx="-86" cy="-56" rx="6" ry="3.5" fill="#a0703a"/>
+              <g id="cj-fly-antenna">
+                <ellipse cx="-88" cy="-124" rx="5" ry="6" fill="#a87436"/>
+                <ellipse cx="-94" cy="-116" rx="6" ry="9" fill="#c08440" transform="rotate(25 -94 -116)"/>
+                <path d="M-92 -122Q-104 -142 -100 -160" stroke="#2a1a0c" stroke-width="1.6" fill="none"/>
+                <path d="M-97 -134l-6 -3M-99 -142l-6 -2M-100 -150l-6 -1M-96 -138l5 -4M-98 -147l5 -3M-99 -155l5 -2" stroke="#2a1a0c" stroke-width="1.1"/>
+              </g>
+            </g>
+            <path id="cj-fly-leg-f" d="M-32 -66L-58 -52L-70 -18L-80 -1" stroke="#3a2818" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <g id="cj-fly-wing-n">
+              <path d="M0 -118C40 -142 120 -138 158 -112C168 -102 150 -90 120 -92C80 -94 30 -102 0 -112Z" fill="#e1eeff" fill-opacity=".3" stroke="#fff" stroke-opacity=".6" stroke-width="1.2"/>
+              <g stroke="#6e5032" stroke-opacity=".55" stroke-width="1.1" fill="none">
+                <path d="M4 -116C60 -132 118 -126 156 -110"/><path d="M8 -113C60 -116 110 -106 142 -96"/><path d="M14 -110C56 -106 96 -100 122 -93"/><path d="M78 -122L84 -106"/><path d="M110 -116L114 -100"/>
+              </g>
+            </g>
+          </g>
+        </g>
+
+        <g id="cj-fx"></g>
+        <g id="cj-bubble" class="bubble">
+          <circle cx="814" cy="434" r="4" fill="#fbfaf5"/>
+          <circle cx="830" cy="415" r="7" fill="#fbfaf5"/>
+          <ellipse cx="898" cy="372" rx="76" ry="37" fill="#fbfaf5"/>
+          <text id="cj-bubble-main" x="898" y="370" text-anchor="middle" class="bubble-main"></text>
+          <text id="cj-bubble-sub" x="898" y="393" text-anchor="middle" class="bubble-sub"></text>
+        </g>
+        <rect width="1200" height="675" fill="url(#cj-vignette)" pointer-events="none"/>
+      </svg>
+    </div>
+
+    <div class="felt">
+      <div class="choice">
+        <div class="seat-head"><span class="label">How each choice smells to the fly</span><span class="total" id="odds"></span></div>
+        <div class="meter" id="meter-hit"><span class="name">Hit</span><span class="track"><span class="fill"></span></span><span class="val">&nbsp;</span></div>
+        <div class="meter" id="meter-stand"><span class="name">Stand</span><span class="track"><span class="fill"></span></span><span class="val">&nbsp;</span></div>
+        <p class="scale-note">Left of the line smells bad, right smells good. The number is the result the fly expects, in bets.</p>
+      </div>
+      <div class="verdict">
+        <span class="what" id="verdict">&nbsp;</span>
+        <span class="why" id="dopamine-note">&nbsp;</span>
+      </div>
+      <div class="recent">
+        <span class="label">Last hands</span>
+        <div class="pips" id="recent"></div>
+      </div>
+      <ul class="howto">
+        <li><i class="dot" style="background:#6aa8ff"></i>blue scent: that choice smells good</li>
+        <li><i class="dot" style="background:#ff8a50"></i>orange scent: it smells bad</li>
+        <li>taps the felt to hit, waves a leg to stand</li>
+      </ul>
+    </div>
+
+    <div class="scope">
+      <div class="scope-head"><span class="label">The brain, seen from above</span><span class="label" id="scope-state">&nbsp;</span></div>
+      <canvas id="brain" aria-label="Positions and activity of the fly's neurons"></canvas>
+      <div class="legend">
+        <span><i class="dot" style="background:#199e70"></i>active smell and Kenyon cells</span>
+        <span><i class="dot" style="background:#3987e5"></i>approach outputs, reward dopamine</span>
+        <span><i class="dot" style="background:#d95926"></i>avoid outputs, punishment dopamine</span>
+      </div>
+      <p class="caption">Each dot is one real neuron at its measured cell-body position. Front of the head is at the top; the two dense clouds at the back are the Kenyon cells. Point at a dot to see which neuron it is.</p>
+    </div>
+  </section>
+
+  <section class="record" aria-label="Learning record">
+    <h2>Is it learning?</h2>
+    <div class="tiles">
+      <div class="tile"><span class="label">Hands played</span><span class="value" id="t-hands">0</span><span class="sub" id="t-rate">&nbsp;</span></div>
+      <div class="tile"><span class="label">Skill now</span><span class="value" id="t-skill">&nbsp;</span><span class="sub">average result per hand, as a share of the bet</span></div>
+      <div class="tile"><span class="label">Plays like an expert</span><span class="value" id="t-agree">&nbsp;</span><span class="sub">of 260 situations</span></div>
+      <div class="tile"><span class="label">Winnings so far</span><span class="value" id="t-bank">0</span><span class="sub">bets</span></div>
+    </div>
+    <h3>Skill over time: average result per hand, as a share of the bet</h3>
+    <div class="chart-wrap" id="chart-wrap"><svg id="chart" role="img" aria-label="The fly's skill as it plays more hands"></svg></div>
+    <p class="sub-note">Skill is exact, not a lucky or unlucky streak: the fly's current habits are scored with the maths of the game. Blackjack favours the house, so even perfect play loses 2.7% of each bet on average.</p>
+    <details><summary>Show the numbers</summary><table class="plain" id="chart-table"></table></details>
+  </section>
+
+  <section aria-label="Strategy">
+    <h2>What the fly does with each hand</h2>
+    <div class="grids">
+      <div class="grid-box"><h3>Hard totals</h3><table class="grid" id="grid-hard"></table></div>
+      <div class="grid-box"><h3>Soft totals (an ace counted as 11)</h3><table class="grid" id="grid-soft"></table></div>
+    </div>
+    <div class="grid-key">
+      <span>always stands<i class="ramp"></i>always hits</span>
+      <span>H = usually hits, S = usually stands</span>
+      <span><i class="flagdot"></i>an expert would do the opposite</span>
+    </div>
+    <p class="sub-note">Rows are the fly's total, columns the dealer's face-up card. An expert hits low totals, stands on high ones, and stands earlier when the dealer shows a weak card (2 to 6), which makes a staircase.</p>
+  </section>
+
+  <section class="notes" aria-label="What is real and what is not">
+    <div>
+      <h2>What is real</h2>
+      <ul>
+        <li>The wiring. 236 projection neurons, 3,741 Kenyon cells, 97 output neurons and 332 dopamine neurons, with 78,937 connections between them, taken from the MaleCNS v1.0 connectome. Every connection's strength is its measured synapse count.</li>
+        <li>Which outputs mean approach and which mean avoid. It follows each output neuron's chemical transmitter, using the rule found in fly experiments: glutamate outputs drive avoidance, the others approach.</li>
+        <li>Where dopamine lands. 69% of the reward neurons' synapses fall on avoid outputs and 91% of the punishment neurons' synapses fall on approach outputs. That measured pattern is what makes a win pull the fly towards a choice and a loss push it away.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>What I made up</h2>
+      <ul>
+        <li>The cards. Flies smell, they do not read. Each situation plus each choice is turned into a made-up smell: a pattern across the fly's 57 strongest smell channels.</li>
+        <li>The neurons are simplified to activity levels, with no spikes. Only the most strongly driven 5% of Kenyon cells stay active, standing in for the neuron that keeps them quiet in a real fly.</li>
+        <li>The learning rule follows the textbook picture of this circuit (dopamine weakens the synapses that were just active), but its exact form and numbers are my choices.</li>
+        <li>No real fly was involved, and this is not a claim that flies can play cards.</li>
+      </ul>
+    </div>
+    <div class="wide">
+      <h2>Does the wiring matter?</h2>
+      <p class="sub-note">Each row is three flies trained for 200,000 hands. You can rerun any of them with the Brain menu above.</p>
+      <div style="overflow-x:auto">
+      <table class="plain">
+        <tr><th>Brain</th><th>Before training</th><th>After training</th><th>Plays like an expert</th></tr>
+        <tr><td>Intact</td><td>−25.8%</td><td>−4.3%</td><td>91%</td></tr>
+        <tr><td>Dopamine blocked</td><td>−25.8%</td><td>−25.8%</td><td>42%</td></tr>
+        <tr><td>Reward and punishment swapped</td><td>−25.8%</td><td>−20.6%</td><td>38%</td></tr>
+        <tr><td>Dopamine targets scrambled</td><td>−25.8%</td><td>−16.6%</td><td>51%</td></tr>
+        <tr><td>Smell wiring scrambled</td><td>−34.3%</td><td>−4.2%</td><td>90%</td></tr>
+        <tr><td>Expert play, for reference</td><td></td><td>−2.7%</td><td>100%</td></tr>
+        <tr><td>Flipping a coin, for reference</td><td></td><td>−29.9%</td><td></td></tr>
+      </table>
+      </div>
+      <p class="sub-note">Learning depends on dopamine reaching the right outputs. It does not depend on exactly which smell channel reaches which Kenyon cell: scrambling that wiring changes nothing, which fits what biologists found in real flies, where those connections look close to random.</p>
+    </div>
+    <p class="credits wide">Connectome: MaleCNS v1.0, FlyEM at HHMI Janelia with the University of Cambridge, the MRC Laboratory of Molecular Biology and Google Research (Berg et al.), licensed CC BY 4.0, read from the preprocessed matrices at github.com/YijieYin/connectome_data_prep. Rules: hit or stand only, blackjack pays 3 to 2, dealer stands on 17, continuously shuffled shoe.</p>
+  </section>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script type="application/json" id="circuit-data">/*CIRCUIT*/</script>
+<script>/*BLACKJACK*/</script>
+<script>/*FLYBRAIN*/</script>
+<script>/*CASINO*/</script>
+<script>/*APP*/</script>
