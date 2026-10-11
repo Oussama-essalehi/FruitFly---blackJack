@@ -60,6 +60,7 @@ button, select { font: inherit; color: inherit; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg input:checked + label { background: var(--ink); color: var(--bg); }
 .seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: -2px; }
+.seg input:disabled + label { opacity: 0.45; cursor: not-allowed; }
 .field { display: inline-flex; align-items: center; gap: 8px; }
 .field select { border: 1px solid var(--line); background: var(--surface); padding: 8px 10px; border-radius: 8px; max-width: 100%; }
 .confirm { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -178,6 +179,76 @@ table.grid td:hover { outline: 2px solid var(--ink); outline-offset: 0; }
 a { color: inherit; text-underline-offset: 2px; }
 section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
+/* games: blackjack and poker share the page */
+.shared-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.games { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.seg.big label { padding: 10px 22px; font-family: var(--display); font-weight: 700; font-size: 1.1rem; }
+.game { display: flex; flex-direction: column; gap: 28px; }
+.scope-slot { display: contents; }
+
+/* poker table */
+.neon-word { font-family: var(--display); font-weight: 700; font-size: 54px; fill: #d9f7ff; stroke: #39cfff; stroke-width: 1.5; letter-spacing: 2px; }
+.plate rect { fill: #08140e; fill-opacity: 0.82; stroke: #e8c27a; stroke-opacity: 0.45; stroke-width: 1.5; }
+.plate.acting rect { stroke: #ffd46b; stroke-opacity: 1; stroke-width: 3; }
+.plate.folded { opacity: 0.55; }
+.plate-name { font-family: var(--body); font-weight: 600; font-size: 14px; fill: #f3ead2; }
+.plate-stack { font-family: var(--mono); font-size: 13px; fill: #e8c27a; }
+.bet-label { font-family: var(--mono); font-size: 14px; fill: #f3ead2; paint-order: stroke; stroke: #0c0507; stroke-width: 3px; }
+.pot-pill { fill: #08140e; fill-opacity: 0.8; stroke: #e8c27a; stroke-opacity: 0.5; }
+.pot-label { font-family: var(--mono); font-size: 14px; fill: #f3ead2; }
+.hand-name { font-family: var(--display); font-weight: 700; font-size: 17px; fill: #ffd46b; paint-order: stroke; stroke: #0c0507; stroke-width: 4px; }
+.fx-say { font-family: var(--display); font-weight: 700; font-size: 20px; paint-order: stroke; stroke: #0c0507; stroke-width: 4px; }
+.dealer-btn { font-family: var(--display); font-weight: 700; font-size: 11px; }
+.avatar-letter { font-family: var(--display); font-weight: 700; font-size: 30px; }
+.seat-open { cursor: pointer; }
+.seat-open:focus { outline: none; }
+.seat-open:hover circle, .seat-open:focus-visible circle { fill-opacity: 0.16; stroke-opacity: 1; }
+.seat-plus { font-family: var(--display); font-weight: 500; font-size: 36px; }
+.bubble-row { font-family: var(--body); font-weight: 600; font-size: 15px; fill: #1c1c1c; }
+.bubble-val { font-family: var(--mono); font-size: 14px; }
+
+/* a person's turn */
+.actionbar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; padding: 14px 16px; border-radius: 14px;
+  background: var(--surface); border: 2px solid var(--accent); min-width: 0; }
+.ab-who { display: flex; flex-direction: column; }
+.ab-who .label { color: var(--ink-3); }
+.ab-name { font-family: var(--display); font-weight: 700; font-size: 1.4rem; line-height: 1.1; }
+.ab-cards { display: flex; gap: 6px; }
+.mcard { width: 44px; height: 62px; border-radius: 6px; background: #fbfaf5; color: #1c1c1c; border: 1px solid rgba(0, 0, 0, 0.18); display: grid; place-items: center;
+  font-family: var(--display); font-weight: 700; font-size: 1.1rem; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }
+.mcard.red { color: #c2332d; }
+.ab-hand { color: var(--ink-2); flex: 1 1 200px; min-width: 0; }
+.ab-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.ab-buttons .btn { min-width: 96px; }
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; color: var(--felt-ink-2); min-height: 9.5em; }
+.log li:last-child { color: var(--felt-ink); }
+
+/* seats */
+.seats { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.seatcard { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;
+  align-items: flex-start; min-width: 0; }
+.seatcard.empty { border-style: dashed; }
+.seatcard.human { border-color: var(--accent); }
+.seatcard .label { color: var(--ink-3); }
+.seatcard .who { font-family: var(--display); font-size: 1.15rem; }
+.seatcard .sub { color: var(--ink-2); font-size: 0.85rem; }
+.seatcard .num { color: var(--ink-2); font-size: 0.85rem; font-family: var(--mono); }
+.seatcard .note { color: var(--flag); font-size: 0.85rem; }
+.join { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; }
+.join input, .join select { flex: 1 1 110px; min-width: 0; font: inherit; color: inherit; border: 1px solid var(--line); background: var(--bg); padding: 7px 10px; border-radius: 8px; }
+.muted { color: var(--ink-3); font-size: 0.85em; }
+table.grid.pk-grid td { width: 30px; }
+table.grid.pk-grid th { font-size: 0.72rem; }
+table.grid.pk-grid th.grp { color: var(--ink-2); border-bottom: 1px solid var(--line); }
+table.grid.pk-grid td[data-pr="0"] { border-left: 4px solid var(--bg); }
+.a-fold { background: var(--seq-lo); color: var(--seq-lo-ink); }
+.a-call { background: color-mix(in oklab, var(--seq-hi) 45%, var(--seq-lo)); color: var(--ink); }
+.a-raise { background: var(--seq-hi); color: var(--seq-hi-ink); }
+table.grid.pk-grid td.a-fold { background: var(--seq-lo); }
+table.grid.pk-grid td.a-call { background: color-mix(in oklab, var(--seq-hi) 45%, var(--seq-lo)); }
+table.grid.pk-grid td.a-raise { background: var(--seq-hi); }
+.key-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; margin-right: 6px; border: 1px solid var(--line); }
+
 @media (max-width: 820px) {
   .stage { grid-template-columns: minmax(0, 1fr); }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -190,11 +261,46 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 </style>
 
 <div class="page">
+  <svg class="shared-defs" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="cj-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c111b"/><stop offset=".6" stop-color="#1b0a11"/><stop offset="1" stop-color="#0c0407"/></linearGradient>
+      <radialGradient id="cj-felt" cx="600" cy="420" r="560" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f8d5e"/><stop offset=".6" stop-color="#1f6a46"/><stop offset="1" stop-color="#103b27"/></radialGradient>
+      <linearGradient id="cj-rail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6e3b20"/><stop offset=".55" stop-color="#4a2512"/><stop offset="1" stop-color="#24110a"/></linearGradient>
+      <linearGradient id="cj-cone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9b0" stop-opacity=".16"/><stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/></linearGradient>
+      <radialGradient id="cj-pool"><stop offset="0" stop-color="#ffe9b0" stop-opacity=".13"/><stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/></radialGradient>
+      <radialGradient id="cj-vignette" cx=".5" cy=".55" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></radialGradient>
+      <radialGradient id="cj-eye" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="#ff6d4f"/><stop offset=".45" stop-color="#d22b21"/><stop offset="1" stop-color="#6c0c0b"/></radialGradient>
+      <pattern id="cj-facets" width="5" height="4.4" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.2" r="1.9" fill="none" stroke="#3a0505" stroke-opacity=".35" stroke-width=".6"/></pattern>
+      <linearGradient id="cj-thorax" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dcae66"/><stop offset="1" stop-color="#8a5b2b"/></linearGradient>
+      <linearGradient id="cj-abdomen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4b76f"/><stop offset="1" stop-color="#9e6a33"/></linearGradient>
+      <pattern id="cj-back" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#7a1d2a"/><rect width="3" height="8" fill="#97303e"/></pattern>
+      <filter id="cj-blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="10"/></filter>
+      <filter id="cj-soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
+      <filter id="cj-neon" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="cj-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#000" flood-opacity=".45"/></filter>
+      <clipPath id="cj-abd-clip"><ellipse cx="62" cy="-78" rx="60" ry="40" transform="rotate(12 62 -78)"/></clipPath>
+      <!-- the poker flies wear the looks of classic lab strains -->
+      <radialGradient id="cj-eye-white" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#ece6da"/><stop offset="1" stop-color="#b9b0a0"/></radialGradient>
+      <linearGradient id="cj-thorax-yellow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6dc86"/><stop offset="1" stop-color="#c99a3a"/></linearGradient>
+      <linearGradient id="cj-abdomen-yellow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8e294"/><stop offset="1" stop-color="#cfa244"/></linearGradient>
+      <linearGradient id="cj-thorax-ebony" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5c4636"/><stop offset="1" stop-color="#22160f"/></linearGradient>
+      <linearGradient id="cj-abdomen-ebony" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#604a3a"/><stop offset="1" stop-color="#261911"/></linearGradient>
+    </defs>
+  </svg>
   <header class="masthead">
     <p class="label" style="color:var(--ink-3)">A fruit fly's learning circuit, wired from the real connectome</p>
     <h1>FlyJack</h1>
-    <p class="lede">4,406 neurons from the mushroom body of a male fruit fly, connected exactly as they were mapped, sit down at a blackjack table. Wins and losses arrive as dopamine. Watch what the fly works out.</p>
+    <p class="lede">4,406 neurons from the mushroom body of a male fruit fly, connected exactly as they were mapped, sit down in a casino. Wins and losses arrive as dopamine. Watch what the fly works out at blackjack, or deal five flies into a poker game and take the sixth seat yourself.</p>
   </header>
+
+  <nav class="games" aria-label="Choose a game">
+    <div class="seg big" role="radiogroup" aria-label="Game">
+      <input type="radio" name="game" id="game-bj" value="blackjack" checked><label for="game-bj">Blackjack</label>
+      <input type="radio" name="game" id="game-pk" value="poker"><label for="game-pk">Poker</label>
+    </div>
+  </nav>
+
+  <div class="game" id="game-blackjack">
 
   <section aria-label="Controls">
     <div class="controls">
@@ -227,25 +333,7 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
       <svg id="scene" viewBox="0 0 1200 675" role="img" aria-labelledby="scene-title scene-desc">
         <title id="scene-title">The fly at the blackjack table</title>
         <desc id="scene-desc"></desc>
-        <defs>
-          <linearGradient id="cj-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c111b"/><stop offset=".6" stop-color="#1b0a11"/><stop offset="1" stop-color="#0c0407"/></linearGradient>
-          <radialGradient id="cj-felt" cx="600" cy="420" r="560" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f8d5e"/><stop offset=".6" stop-color="#1f6a46"/><stop offset="1" stop-color="#103b27"/></radialGradient>
-          <linearGradient id="cj-rail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6e3b20"/><stop offset=".55" stop-color="#4a2512"/><stop offset="1" stop-color="#24110a"/></linearGradient>
-          <linearGradient id="cj-cone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9b0" stop-opacity=".16"/><stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/></linearGradient>
-          <radialGradient id="cj-pool"><stop offset="0" stop-color="#ffe9b0" stop-opacity=".13"/><stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/></radialGradient>
-          <radialGradient id="cj-vignette" cx=".5" cy=".55" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></radialGradient>
-          <radialGradient id="cj-eye" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="#ff6d4f"/><stop offset=".45" stop-color="#d22b21"/><stop offset="1" stop-color="#6c0c0b"/></radialGradient>
-          <pattern id="cj-facets" width="5" height="4.4" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.2" r="1.9" fill="none" stroke="#3a0505" stroke-opacity=".35" stroke-width=".6"/></pattern>
-          <linearGradient id="cj-thorax" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dcae66"/><stop offset="1" stop-color="#8a5b2b"/></linearGradient>
-          <linearGradient id="cj-abdomen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4b76f"/><stop offset="1" stop-color="#9e6a33"/></linearGradient>
-          <pattern id="cj-back" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#7a1d2a"/><rect width="3" height="8" fill="#97303e"/></pattern>
-          <filter id="cj-blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="10"/></filter>
-          <filter id="cj-soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
-          <filter id="cj-neon" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-          <filter id="cj-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#000" flood-opacity=".45"/></filter>
-          <clipPath id="cj-abd-clip"><ellipse cx="62" cy="-78" rx="60" ry="40" transform="rotate(12 62 -78)"/></clipPath>
-          <path id="cj-felt-arc" d="M330 382Q600 452 870 382"/>
-        </defs>
+        <defs><path id="cj-felt-arc" d="M330 382Q600 452 870 382"/></defs>
 
         <!-- the room -->
         <rect width="1200" height="675" fill="url(#cj-wall)"/>
@@ -275,14 +363,14 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
           <path d="M563 132C560 96 586 88 600 88C614 88 640 96 637 132C630 112 570 112 563 132Z" fill="#2b1d16"/>
           <path d="M556 114Q600 92 644 114L652 123Q600 106 548 123Z" fill="#2aa36a" fill-opacity=".88"/>
           <path d="M562 112Q600 96 638 112" stroke="#1b6e46" stroke-width="3" fill="none"/>
-          <g id="cj-brows" stroke="#2b1d16" stroke-width="3" stroke-linecap="round" fill="none"><path d="M579 128Q586 124 594 128"/><path d="M606 128Q614 124 621 128"/></g>
-          <g id="cj-eyes">
+          <g id="cj-brows" data-part="brows" stroke="#2b1d16" stroke-width="3" stroke-linecap="round" fill="none"><path d="M579 128Q586 124 594 128"/><path d="M606 128Q614 124 621 128"/></g>
+          <g id="cj-eyes" data-part="eyes">
             <ellipse cx="586" cy="138" rx="6" ry="5" fill="#fff"/><ellipse cx="614" cy="138" rx="6" ry="5" fill="#fff"/>
-            <circle id="cj-pupil-l" cx="586" cy="139" r="3" fill="#1d1a20"/><circle id="cj-pupil-r" cx="614" cy="139" r="3" fill="#1d1a20"/>
+            <circle id="cj-pupil-l" data-part="pupil-l" cx="586" cy="139" r="3" fill="#1d1a20"/><circle id="cj-pupil-r" data-part="pupil-r" cx="614" cy="139" r="3" fill="#1d1a20"/>
           </g>
           <path d="M600 141Q596 152 602 153" stroke="#b9845e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
           <path d="M584 160Q592 152 600 157Q608 152 616 160Q608 158 600 161Q592 158 584 160Z" fill="#2b1d16"/>
-          <path id="cj-mouth" d="M592 167Q600 170 608 167" stroke="#7a3b2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path id="cj-mouth" data-part="mouth" d="M592 167Q600 170 608 167" stroke="#7a3b2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
         </g>
 
         <!-- the table -->
@@ -328,10 +416,10 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
         <!-- the dealer's arms reach over the felt -->
         <g id="cj-arms">
-          <path id="cj-arm-l" stroke="#ebe5d8" stroke-width="22" stroke-linecap="round" fill="none"/>
-          <path id="cj-arm-r" stroke="#ebe5d8" stroke-width="22" stroke-linecap="round" fill="none"/>
-          <ellipse id="cj-hand-l" rx="13" ry="9" fill="#e0ad85"/>
-          <ellipse id="cj-hand-r" rx="13" ry="9" fill="#e0ad85"/>
+          <path id="cj-arm-l" data-part="arm-l" stroke="#ebe5d8" stroke-width="22" stroke-linecap="round" fill="none"/>
+          <path id="cj-arm-r" data-part="arm-r" stroke="#ebe5d8" stroke-width="22" stroke-linecap="round" fill="none"/>
+          <ellipse id="cj-hand-l" data-part="hand-l" rx="13" ry="9" fill="#e0ad85"/>
+          <ellipse id="cj-hand-r" data-part="hand-r" rx="13" ry="9" fill="#e0ad85"/>
         </g>
 
         <g id="cj-cards" filter="url(#cj-shadow)"></g>
@@ -348,26 +436,26 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
         <!-- the fly, drawn around its feet, facing the dealer -->
         <g id="cj-fly" transform="translate(860 566)">
-          <ellipse id="cj-fly-shadow" cy="2" rx="105" ry="11" fill="#000" opacity=".35"/>
-          <g id="cj-fly-body">
-            <g id="cj-fly-buzz" opacity="0" stroke="#fff" stroke-opacity=".4" stroke-width="2" fill="none" stroke-linecap="round">
+          <ellipse id="cj-fly-shadow" data-part="shadow" cy="2" rx="105" ry="11" fill="#000" opacity=".35"/>
+          <g id="cj-fly-body" data-part="body">
+            <g id="cj-fly-buzz" data-part="buzz" opacity="0" stroke="#fff" stroke-opacity=".4" stroke-width="2" fill="none" stroke-linecap="round">
               <path d="M40 -158Q80 -176 122 -156"/><path d="M58 -178Q92 -192 130 -174"/>
             </g>
             <g stroke="#24180e" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path id="cj-fly-leg-ff" d="M-26 -70L-46 -56L-52 -22L-58 -3"/>
+              <path id="cj-fly-leg-ff" data-part="leg-ff" d="M-26 -70L-46 -56L-52 -22L-58 -3"/>
               <path d="M0 -62L10 -40L4 -14L0 -3"/>
               <path d="M26 -66L56 -52L70 -20L86 -3"/>
             </g>
-            <path id="cj-fly-wing-f" d="M2 -122C42 -146 122 -142 160 -116C170 -106 152 -94 122 -96C82 -98 32 -106 2 -116Z" fill="#c8d7eb" fill-opacity=".18" stroke="#fff" stroke-opacity=".3"/>
-            <ellipse cx="62" cy="-78" rx="60" ry="40" transform="rotate(12 62 -78)" fill="url(#cj-abdomen)"/>
+            <path id="cj-fly-wing-f" data-part="wing-f" d="M2 -122C42 -146 122 -142 160 -116C170 -106 152 -94 122 -96C82 -98 32 -106 2 -116Z" fill="#c8d7eb" fill-opacity=".18" stroke="#fff" stroke-opacity=".3"/>
+            <ellipse data-part="abdomen" cx="62" cy="-78" rx="60" ry="40" transform="rotate(12 62 -78)" fill="url(#cj-abdomen)"/>
             <g clip-path="url(#cj-abd-clip)" fill="none" stroke="#3b2414" stroke-linecap="round">
               <path d="M44 -124Q54 -80 40 -34" stroke-width="7" opacity=".7"/>
               <path d="M68 -122Q78 -78 64 -32" stroke-width="8" opacity=".78"/>
               <path d="M92 -116Q102 -74 88 -30" stroke-width="9" opacity=".85"/>
               <ellipse cx="124" cy="-62" rx="22" ry="32" fill="#3b2414" stroke="none"/>
             </g>
-            <ellipse cx="-10" cy="-92" rx="44" ry="38" fill="url(#cj-thorax)"/>
-            <ellipse cx="26" cy="-112" rx="14" ry="9" fill="#c7964f"/>
+            <ellipse data-part="thorax" cx="-10" cy="-92" rx="44" ry="38" fill="url(#cj-thorax)"/>
+            <ellipse data-part="scutellum" cx="26" cy="-112" rx="14" ry="9" fill="#c7964f"/>
             <path d="M-40 -110Q-10 -126 26 -110" stroke="#8a5b2b" stroke-width="3" stroke-opacity=".4" fill="none"/>
             <g stroke="#2a1a0c" stroke-width="1.6" stroke-linecap="round" fill="none">
               <path d="M-30 -126q-4 -10 -12 -14"/><path d="M-8 -130q0 -11 -8 -17"/><path d="M14 -126q6 -10 2 -18"/><path d="M30 -118q10 -6 12 -16"/>
@@ -376,25 +464,25 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
               <path d="M-6 -60L4 -36L-12 -10L-22 -1"/>
               <path d="M18 -62L50 -46L62 -16L78 -1"/>
             </g>
-            <g id="cj-fly-head">
-              <circle id="cj-fly-glow" cx="-62" cy="-104" r="42" fill="#3987e5" opacity="0" filter="url(#cj-blur)"/>
-              <circle cx="-62" cy="-104" r="33" fill="#c99652"/>
-              <ellipse cx="-68" cy="-106" rx="24" ry="28" fill="url(#cj-eye)"/>
+            <g id="cj-fly-head" data-part="head">
+              <circle id="cj-fly-glow" data-part="glow" cx="-62" cy="-104" r="42" fill="#3987e5" opacity="0" filter="url(#cj-blur)"/>
+              <circle data-part="headshell" cx="-62" cy="-104" r="33" fill="#c99652"/>
+              <ellipse data-part="eye" cx="-68" cy="-106" rx="24" ry="28" fill="url(#cj-eye)"/>
               <ellipse cx="-68" cy="-106" rx="24" ry="28" fill="url(#cj-facets)"/>
               <ellipse cx="-77" cy="-120" rx="7" ry="4.5" fill="#fff" opacity=".75" transform="rotate(-25 -77 -120)"/>
               <circle cx="-62" cy="-110" r="2.6" fill="#fff" opacity=".45"/>
               <g fill="#7a1a10"><circle cx="-50" cy="-135" r="2"/><circle cx="-44" cy="-133" r="2"/><circle cx="-47" cy="-138" r="2"/></g>
               <path d="M-80 -78Q-90 -66 -86 -58" stroke="#8a5a2a" stroke-width="6" fill="none" stroke-linecap="round"/>
               <ellipse cx="-86" cy="-56" rx="6" ry="3.5" fill="#a0703a"/>
-              <g id="cj-fly-antenna">
+              <g id="cj-fly-antenna" data-part="antenna">
                 <ellipse cx="-88" cy="-124" rx="5" ry="6" fill="#a87436"/>
                 <ellipse cx="-94" cy="-116" rx="6" ry="9" fill="#c08440" transform="rotate(25 -94 -116)"/>
                 <path d="M-92 -122Q-104 -142 -100 -160" stroke="#2a1a0c" stroke-width="1.6" fill="none"/>
                 <path d="M-97 -134l-6 -3M-99 -142l-6 -2M-100 -150l-6 -1M-96 -138l5 -4M-98 -147l5 -3M-99 -155l5 -2" stroke="#2a1a0c" stroke-width="1.1"/>
               </g>
             </g>
-            <path id="cj-fly-leg-f" d="M-32 -66L-58 -52L-70 -18L-80 -1" stroke="#3a2818" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <g id="cj-fly-wing-n">
+            <path id="cj-fly-leg-f" data-part="leg-f" d="M-32 -66L-58 -52L-70 -18L-80 -1" stroke="#3a2818" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <g id="cj-fly-wing-n" data-part="wing-n">
               <path d="M0 -118C40 -142 120 -138 158 -112C168 -102 150 -90 120 -92C80 -94 30 -102 0 -112Z" fill="#e1eeff" fill-opacity=".3" stroke="#fff" stroke-opacity=".6" stroke-width="1.2"/>
               <g stroke="#6e5032" stroke-opacity=".55" stroke-width="1.1" fill="none">
                 <path d="M4 -116C60 -132 118 -126 156 -110"/><path d="M8 -113C60 -116 110 -106 142 -96"/><path d="M14 -110C56 -106 96 -100 122 -93"/><path d="M78 -122L84 -106"/><path d="M110 -116L114 -100"/>
@@ -437,6 +525,7 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
       </ul>
     </div>
 
+    <div class="scope-slot" id="bj-scope-slot">
     <div class="scope">
       <div class="scope-head"><span class="label">The brain, seen from above</span><span class="label" id="scope-state">&nbsp;</span></div>
       <canvas id="brain" aria-label="Positions and activity of the fly's neurons"></canvas>
@@ -446,6 +535,7 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
         <span><i class="dot" style="background:#d95926"></i>avoid outputs, punishment dopamine</span>
       </div>
       <p class="caption">Each dot is one real neuron at its measured cell-body position. Front of the head is at the top; the two dense clouds at the back are the Kenyon cells. Point at a dot to see which neuron it is.</p>
+    </div>
     </div>
   </section>
 
@@ -512,8 +602,165 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
       </div>
       <p class="sub-note">Learning depends on dopamine reaching the right outputs. It does not depend on exactly which smell channel reaches which Kenyon cell: scrambling that wiring changes nothing, which fits what biologists found in real flies, where those connections look close to random.</p>
     </div>
-    <p class="credits wide">Connectome: MaleCNS v1.0, FlyEM at HHMI Janelia with the University of Cambridge, the MRC Laboratory of Molecular Biology and Google Research (Berg et al.), licensed CC BY 4.0, read from the preprocessed matrices at github.com/YijieYin/connectome_data_prep. Rules: hit or stand only, blackjack pays 3 to 2, dealer stands on 17, continuously shuffled shoe.</p>
   </section>
+  </div>
+
+  <div class="game" id="game-poker" hidden>
+  <section aria-label="Poker controls">
+    <div class="controls">
+      <button class="btn primary" id="pk-play" type="button">Pause</button>
+      <div class="seg" role="radiogroup" aria-label="Poker speed">
+        <input type="radio" name="pk-speed" id="pk-speed-watch" value="watch" checked><label for="pk-speed-watch">Watch</label>
+        <input type="radio" name="pk-speed" id="pk-speed-fast" value="fast"><label for="pk-speed-fast">Fast</label>
+        <input type="radio" name="pk-speed" id="pk-speed-turbo" value="turbo"><label for="pk-speed-turbo">Turbo</label>
+      </div>
+      <button class="btn" id="pk-join-open" type="button">Take a seat</button>
+      <button class="btn quiet" id="pk-reset" type="button">Start over</button>
+      <span class="confirm" id="pk-reset-confirm" hidden>Erase what all five flies have learned?
+        <button class="btn" id="pk-reset-yes" type="button">Erase</button>
+        <button class="btn quiet" id="pk-reset-no" type="button">Keep</button>
+      </span>
+    </div>
+    <p class="hint" id="pk-note"></p>
+  </section>
+
+  <section class="stage" aria-label="The poker table and the brain">
+    <div class="casino">
+      <svg id="pk-scene" viewBox="0 0 1200 675" role="img" aria-labelledby="pk-title">
+        <title id="pk-title">Five flies and an open seat at a poker table</title>
+        <!-- the room, as at the blackjack table -->
+        <rect width="1200" height="675" fill="url(#cj-wall)"/>
+        <path d="M50 0V250M150 0V250M250 0V250M350 0V250M450 0V250M550 0V250M650 0V250M750 0V250M850 0V250M950 0V250M1050 0V250M1150 0V250" stroke="#e8c27a" stroke-opacity=".06" stroke-width="2"/>
+        <rect y="250" width="1200" height="425" fill="#0c0507"/>
+        <path d="M0 250H1200" stroke="#e8c27a" stroke-opacity=".2" stroke-width="3"/>
+        <g id="pk-bokeh" class="cj-bokeh" filter="url(#cj-soft)"></g>
+        <g class="neon" filter="url(#cj-neon)">
+          <text x="215" y="140" text-anchor="middle" class="neon-text">FlyJack</text>
+          <path d="M115 162H315" stroke="#ff4fae" stroke-width="3" stroke-linecap="round"/>
+        </g>
+        <g class="neon neon-late" filter="url(#cj-neon)"><text x="985" y="140" text-anchor="middle" class="neon-word">HOLD'EM</text></g>
+        <line x1="600" y1="0" x2="600" y2="26" stroke="#050304" stroke-width="3"/>
+        <path d="M572 26H628L662 62H538Z" fill="#1f4a35"/>
+        <path d="M538 62H662" stroke="#d6b25e" stroke-width="3"/>
+        <ellipse cx="600" cy="66" rx="56" ry="9" fill="#fff4cf" filter="url(#cj-blur)"/>
+        <g id="pk-dealer"></g>
+
+        <!-- the oval table -->
+        <ellipse cx="600" cy="472" rx="505" ry="212" fill="#1a0c06"/>
+        <ellipse cx="600" cy="452" rx="505" ry="212" fill="url(#cj-rail)"/>
+        <ellipse cx="600" cy="452" rx="501" ry="208" fill="none" stroke="#ffdcb4" stroke-opacity=".14" stroke-width="2"/>
+        <ellipse cx="600" cy="452" rx="470" ry="185" fill="url(#cj-felt)"/>
+        <ellipse cx="600" cy="452" rx="470" ry="185" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="6"/>
+        <ellipse cx="600" cy="452" rx="405" ry="152" fill="none" stroke="#e8c27a" stroke-opacity=".3" stroke-width="2"/>
+        <g fill="none" stroke="#e8c27a" stroke-opacity=".2" stroke-width="1.5">
+          <rect x="430" y="385" width="60" height="86" rx="6"/><rect x="500" y="385" width="60" height="86" rx="6"/><rect x="570" y="385" width="60" height="86" rx="6"/>
+          <rect x="640" y="385" width="60" height="86" rx="6"/><rect x="710" y="385" width="60" height="86" rx="6"/>
+        </g>
+        <text x="600" y="497" text-anchor="middle" class="felt-text">LIMIT HOLD'EM · 2 / 4</text>
+        <polygon points="548,66 652,66 790,330 410,330" fill="url(#cj-cone)" pointer-events="none"/>
+        <ellipse cx="600" cy="440" rx="470" ry="230" fill="url(#cj-pool)" pointer-events="none"/>
+        <g id="pk-arms"></g>
+
+        <g id="pk-places"></g>
+        <g id="pk-flies"></g>
+        <g id="pk-cards" filter="url(#cj-shadow)"></g>
+        <g id="pk-chips"></g>
+        <g id="pk-labels"></g>
+        <g id="pk-scent" class="wisps"></g>
+        <g id="pk-fx"></g>
+        <g id="pk-bubble" class="bubble">
+          <circle id="pk-bubble-dot1" r="7" fill="#fbfaf5"/>
+          <circle id="pk-bubble-dot2" r="4" fill="#fbfaf5"/>
+          <ellipse rx="86" ry="40" fill="#fbfaf5"/>
+          <g id="pk-bubble-rows"></g>
+        </g>
+        <rect width="1200" height="675" fill="url(#cj-vignette)" pointer-events="none"/>
+      </svg>
+    </div>
+
+    <div class="actionbar" id="pk-actionbar" hidden>
+      <div class="ab-who"><span class="label" id="pk-ab-label">Your turn</span><span class="ab-name" id="pk-ab-name"></span></div>
+      <div class="ab-cards" id="pk-ab-cards"></div>
+      <div class="ab-hand" id="pk-ab-hand"></div>
+      <div class="ab-buttons">
+        <button class="btn primary" id="pk-reveal" type="button">Show my cards</button>
+        <button class="btn" id="pk-fold" type="button">Fold</button>
+        <button class="btn" id="pk-call" type="button">Check</button>
+        <button class="btn primary" id="pk-raise" type="button">Bet 2</button>
+      </div>
+    </div>
+
+    <div class="felt">
+      <div class="choice">
+        <div class="seat-head"><span class="label" id="pk-choice-label">How each choice smells to the fly</span><span class="total" id="pk-odds"></span></div>
+        <div class="meter" id="pk-meter-fold"><span class="name">Fold</span><span class="track"><span class="fill"></span></span><span class="val">&nbsp;</span></div>
+        <div class="meter" id="pk-meter-call"><span class="name">Call</span><span class="track"><span class="fill"></span></span><span class="val">&nbsp;</span></div>
+        <div class="meter" id="pk-meter-raise"><span class="name">Raise</span><span class="track"><span class="fill"></span></span><span class="val">&nbsp;</span></div>
+        <p class="scale-note">Left of the line smells bad, right smells good. The number is the result the fly expects, where 12 chips count as one bet.</p>
+      </div>
+      <div class="verdict">
+        <span class="what" id="pk-verdict">&nbsp;</span>
+        <span class="why" id="pk-why">&nbsp;</span>
+      </div>
+      <div class="recent">
+        <span class="label">This hand</span>
+        <ol class="log" id="pk-log"></ol>
+      </div>
+    </div>
+    <div class="scope-slot" id="pk-scope-slot"></div>
+  </section>
+
+  <section aria-label="Seats">
+    <h2>Who's at the table</h2>
+    <p class="sub-note">Anyone at this screen can sit in an open seat, or ask a fly to leave and take its place. With two or more people, the table asks you to pass the screen before it shows anyone's cards. People can use the buttons or the keys F, C and R.</p>
+    <div class="seats" id="pk-seats"></div>
+  </section>
+
+  <section class="record" aria-label="Poker learning record">
+    <h2>Are they learning?</h2>
+    <div class="tiles">
+      <div class="tile"><span class="label">Hands played</span><span class="value" id="pk-t-hands">0</span><span class="sub" id="pk-t-rate">&nbsp;</span></div>
+      <div class="tile"><span class="label">Best fly lately</span><span class="value" id="pk-t-best">&nbsp;</span><span class="sub" id="pk-t-best-sub">&nbsp;</span></div>
+      <div class="tile"><span class="label">People's winnings</span><span class="value" id="pk-t-you">&nbsp;</span><span class="sub" id="pk-t-you-sub">&nbsp;</span></div>
+      <div class="tile"><span class="label">Biggest pot</span><span class="value" id="pk-t-pot">&nbsp;</span><span class="sub" id="pk-t-pot-sub">&nbsp;</span></div>
+    </div>
+    <div style="overflow-x:auto"><table class="plain" id="pk-board"></table></div>
+    <p class="sub-note">A fly that is learning raises more with strong cards and folds more of its weak ones when someone bets. Both columns are read straight from each fly's current synapses, not from lucky or unlucky hands. Chips won "lately" covers each fly's last 500 hands.</p>
+  </section>
+
+  <section aria-label="Poker strategy">
+    <h2>What a fly does with each hand</h2>
+    <div class="controls"><span class="field"><label for="pk-pick">Fly</label><select id="pk-pick"></select></span></div>
+    <div class="grid-box"><table class="grid pk-grid" id="pk-grid"></table></div>
+    <div class="grid-key">
+      <span><i class="key-swatch a-fold"></i>F = usually folds</span>
+      <span><i class="key-swatch a-call"></i>C = calls, K = checks</span>
+      <span><i class="key-swatch a-raise"></i>R = bets or raises</span>
+    </div>
+    <p class="sub-note">Rows are how good the fly's cards are compared with an average hand against the players still in. Columns are the street, and whether the fly can check for free, faces one bet, or faces a raise. A sensible player raises at the top, folds at the bottom when it costs something, and gets more careful when raised.</p>
+  </section>
+
+  <section class="notes" aria-label="What is real and what is not, at the poker table">
+    <div>
+      <h2>What is real</h2>
+      <ul>
+        <li>Each fly's brain. All five run the same mushroom body circuit as the blackjack fly, with the same measured wiring and dopamine. Each fly has its own copy and learns only from its own wins and losses, so they drift apart.</li>
+        <li>The learning. As in blackjack, every choice a fly made in a hand is paired with the chips it won or lost, delivered as reward or punishment dopamine.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>What I made up</h2>
+      <ul>
+        <li>The strength smell. A fly cannot read cards or count outs. The page deals out the rest of the hand a few hundred times to see how often the fly's cards would win, and gives the fly that as part of the smell, sorted into ten steps from hopeless to a monster. What the fly learns is what to do about each smell.</li>
+        <li>The looks. Canton-S, white, yellow, ebony and Curly are real lab strains, but here they are only costumes: all five flies have the same wiring.</li>
+        <li>Limit rules keep it to three choices. Stacks are topped up to 100 when they drop below 50, and winnings above 250 are banked, so nobody goes all in and there are no side pots. The "Overall" column counts every chip.</li>
+        <li>How loud the cards are in the smell, and how often a fly tries something other than its favourite choice, are my settings. Without enough trying, a fly that loses a few early calls stops calling for good.</li>
+      </ul>
+    </div>
+  </section>
+  </div>
+
+  <p class="credits">Connectome: MaleCNS v1.0, FlyEM at HHMI Janelia with the University of Cambridge, the MRC Laboratory of Molecular Biology and Google Research (Berg et al.), licensed CC BY 4.0, read from the preprocessed matrices at github.com/YijieYin/connectome_data_prep. Blackjack: hit or stand only, blackjack pays 3 to 2, dealer stands on 17, continuously shuffled shoe. Poker: Limit Texas Hold'em, blinds 1 and 2, bets of 2 then 4, three raises at most.</p>
 </div>
 <div class="tip" id="tip" hidden></div>
 
@@ -688,7 +935,8 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
  *   - how many synapses the reward (PAM) and punishment (PPL1) dopamine neurons make on each MBON
  *
  * WHAT IS ENGINEERED (my choices, a fly has no sense for playing cards)
- *   - how a blackjack situation is turned into a "smell" (which glomeruli light up)
+ *   - how a game situation is turned into a "smell" (which glomeruli light up): blackjack's code
+ *     is below, poker's is in src/poker.js; any game can bring its own through options.code
  *   - the neuron model: firing rates instead of spikes, and a "keep the top few percent" rule
  *     standing in for the APL neuron that keeps Kenyon cell activity sparse
  *   - the learning rule's exact form and its numbers (learning rate, choice noise)
@@ -722,7 +970,8 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     maxEfficacy: 2.0,      // a synapse can grow to this many times its measured strength
     valenceGain: 3.0,      // one bet won or lost = 1/valenceGain of the MBON population's balance
     wiring: 'real',        // 'real' | 'shuffled-pn-kc' | 'shuffled-kc-mbon'
-    dopamine: 'real'       // 'real' | 'blocked' | 'swapped' | 'shuffled'
+    dopamine: 'real',      // 'real' | 'blocked' | 'swapped' | 'shuffled'
+    code: null             // how situations become smells; null = blackjack (see BLACKJACK below)
   };
 
   function mulberry32(a) {
@@ -749,8 +998,8 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
   /* Deal the glomeruli (already sorted strongest first) into feature groups so that every
    * group gets a fair mix of strong and weak ones. */
-  function assignGlomeruli(nGlom, sizes) {
-    var names = ['total', 'dealer', 'soft', 'hit', 'stand'], groups = {}, left = {}, sum = 0, n;
+  function assignGlomeruli(nGlom, sizes, names) {
+    var groups = {}, left = {}, sum = 0, n;
     for (n = 0; n < names.length; n++) { groups[names[n]] = []; left[names[n]] = sizes[names[n]]; sum += sizes[names[n]]; }
     if (sum !== nGlom) throw new Error('group sizes must add up to ' + nGlom + ' glomeruli, got ' + sum);
     for (var g = 0; g < nGlom; g++) {
@@ -764,8 +1013,31 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     return groups;
   }
 
+  /* A smell code: how many smells there are, how many choices each situation offers, which
+   * feature groups share out the glomeruli, and which glomeruli a smell lights up. */
+  var BLACKJACK = {
+    name: 'blackjack', nOdors: N_ODORS, nActions: 2,
+    groupNames: ['total', 'dealer', 'soft', 'hit', 'stand'],
+    pattern: function (brain, odor, out) {
+      var o = brain.options, g = brain.groups, gain = o.groupGain;
+      var action = odor % 2, st = (odor - action) / 2;
+      var dealer = st % N_DEALER, soft = ((st - dealer) / N_DEALER) % 2, total = (st - dealer - soft * N_DEALER) / (2 * N_DEALER);
+      out.fill(0);
+      bump(out, g.total, total / (N_TOTAL - 1), o.totalWidth, gain.total);
+      bump(out, g.dealer, dealer / (N_DEALER - 1), o.dealerWidth, gain.dealer);
+      var i;
+      if (soft) for (i = 0; i < g.soft.length; i++) out[g.soft[i]] = gain.soft;
+      var act = action === 0 ? g.hit : g.stand;
+      for (i = 0; i < act.length; i++) out[act[i]] = gain.action;
+      return out;
+    }
+  };
+
   function Brain(circuit, options) {
+    var code = (options && options.code) || BLACKJACK;
     var o = this.options = merge(DEFAULTS, options || {});
+    this.code = code;
+    var N_ODORS = this.nOdors = code.nOdors;
     var rng = this.rng = mulberry32(o.seed);
     var wiringRng = mulberry32(o.seed * 7919 + 13);
     this.circuit = circuit;
@@ -806,23 +1078,34 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     }
 
     // ---- card -> smell code
-    this.groups = assignGlomeruli(nG, o.groupSizes);
+    this.groups = assignGlomeruli(nG, code === BLACKJACK ? o.groupSizes : code.groupSizes, code.groupNames);
     this.side = Uint8Array.from(circuit.kc.side.map(function (s) { return s === 'L' ? 0 : 1; }));
 
-    // ---- precompute the Kenyon cell pattern of every smell
-    this.odorStart = new Int32Array(N_ODORS + 1);
-    var idx = [], val = [], glom = new Float32Array(nG), drive = new Float32Array(nK);
-    for (var od = 0; od < N_ODORS; od++) {
-      this.glomerulusPattern(od, glom);
-      drive.fill(0);
-      for (e = 0; e < pnKc.length; e += 3) drive[pnKc[e + 1]] += pnKc[e + 2] * glom[circuit.pn.glom[pnKc[e]]];
-      var active = sparsify(drive, this.side, o.sparsity), norm = 0;
-      for (i = 0; i < active.length; i++) norm += active[i][1] * active[i][1];
-      norm = Math.sqrt(norm) || 1;
-      for (i = 0; i < active.length; i++) { idx.push(active[i][0]); val.push(active[i][1] / norm); }
-      this.odorStart[od + 1] = idx.length;
+    // ---- precompute the Kenyon cell pattern of every smell (shared by flies wired alike)
+    var od, cache = null, key = code.name + '|' + o.sparsity + '|' +
+      JSON.stringify(code === BLACKJACK ? [o.groupSizes, o.groupGain, o.totalWidth, o.dealerWidth] : code.groupSizes);
+    if (o.wiring === 'real') {
+      if (!circuit.__odorCache) Object.defineProperty(circuit, '__odorCache', { value: {} });
+      cache = circuit.__odorCache;
     }
-    this.odorKc = Int32Array.from(idx); this.odorX = Float32Array.from(val);
+    if (cache && cache[key]) {
+      this.odorStart = cache[key].start; this.odorKc = cache[key].kc; this.odorX = cache[key].x;
+    } else {
+      this.odorStart = new Int32Array(N_ODORS + 1);
+      var idx = [], val = [], glom = new Float32Array(nG), drive = new Float32Array(nK);
+      for (od = 0; od < N_ODORS; od++) {
+        this.glomerulusPattern(od, glom);
+        drive.fill(0);
+        for (e = 0; e < pnKc.length; e += 3) drive[pnKc[e + 1]] += pnKc[e + 2] * glom[circuit.pn.glom[pnKc[e]]];
+        var active = sparsify(drive, this.side, o.sparsity), norm = 0;
+        for (i = 0; i < active.length; i++) norm += active[i][1] * active[i][1];
+        norm = Math.sqrt(norm) || 1;
+        for (i = 0; i < active.length; i++) { idx.push(active[i][0]); val.push(active[i][1] / norm); }
+        this.odorStart[od + 1] = idx.length;
+      }
+      this.odorKc = Int32Array.from(idx); this.odorX = Float32Array.from(val);
+      if (cache) cache[key] = { start: this.odorStart, kc: this.odorKc, x: this.odorX };
+    }
 
     // ---- balance approach against avoid for the untrained fly (average over all smells)
     this.mbon = new Float32Array(nM);
@@ -883,20 +1166,8 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     return out;
   }
 
-  /* The engineered part: which glomeruli a (hand, action) pair lights up, 0..1 each. */
-  Brain.prototype.glomerulusPattern = function (odor, out) {
-    var o = this.options, g = this.groups, gain = o.groupGain;
-    var action = odor % 2, st = (odor - action) / 2;
-    var dealer = st % N_DEALER, soft = ((st - dealer) / N_DEALER) % 2, total = (st - dealer - soft * N_DEALER) / (2 * N_DEALER);
-    out.fill(0);
-    bump(out, g.total, total / (N_TOTAL - 1), o.totalWidth, gain.total);
-    bump(out, g.dealer, dealer / (N_DEALER - 1), o.dealerWidth, gain.dealer);
-    var i;
-    if (soft) for (i = 0; i < g.soft.length; i++) out[g.soft[i]] = gain.soft;
-    var act = action === 0 ? g.hit : g.stand;
-    for (i = 0; i < act.length; i++) out[act[i]] = gain.action;
-    return out;
-  };
+  /* The engineered part: which glomeruli a (situation, choice) pair lights up, 0..1 each. */
+  Brain.prototype.glomerulusPattern = function (odor, out) { return this.code.pattern(this, odor, out); };
   /* A value between 0 and 1 becomes a bump of activity along a row of glomeruli, so that
    * neighbouring values (15 and 16, say) smell similar. */
   function bump(out, glomeruli, position, width, gain) {
@@ -938,6 +1209,23 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     var p = 1 / (1 + Math.exp(-(vHit - vStand) / this.options.temperature));
     var hit = this.rng() < p;
     return { hit: hit, pHit: p, vHit: vHit, vStand: vStand, odor: s * 2 + (hit ? 0 : 1) };
+  };
+
+  /* Any game: offered the choices `actions` (indices below code.nActions) in situation `state`,
+   * the fly smells each one and usually goes for the one that smells best. */
+  Brain.prototype.choose = function (state, actions) {
+    var p = this.preferences(state, actions), r = this.rng(), pick = actions[actions.length - 1];
+    for (var i = 0; i < actions.length; i++) { r -= p[actions[i]]; if (r < 0) { pick = actions[i]; break; } }
+    return { action: pick, values: p.values, p: p, odor: state * this.code.nActions + pick };
+  };
+  /* How likely each choice is right now; p.values holds how good each one smells. */
+  Brain.prototype.preferences = function (state, actions) {
+    var A = this.code.nActions, T = this.options.temperature, p = {}, v = {}, best = -Infinity, sum = 0, i;
+    for (i = 0; i < actions.length; i++) { v[actions[i]] = this.respond(state * A + actions[i]); best = Math.max(best, v[actions[i]]); }
+    for (i = 0; i < actions.length; i++) sum += (p[actions[i]] = Math.exp((v[actions[i]] - best) / T));
+    for (i = 0; i < actions.length; i++) p[actions[i]] /= sum;
+    Object.defineProperty(p, 'values', { value: v });
+    return p;
   };
 
   /* Dopamine-gated learning for one chosen smell. reward is in bets (-1, 0, 1). Returns the
@@ -1014,23 +1302,257 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     return true;
   };
 
-  var api = { Brain: Brain, DEFAULTS: DEFAULTS, N_STATES: N_STATES, N_ODORS: N_ODORS, stateIndex: stateIndex, mulberry32: mulberry32 };
+  var api = { Brain: Brain, DEFAULTS: DEFAULTS, BLACKJACK: BLACKJACK, N_STATES: N_STATES, N_ODORS: N_ODORS, stateIndex: stateIndex, mulberry32: mulberry32, bump: bump };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.FlyBrain = api;
 })(typeof self !== 'undefined' ? self : this);
 </script>
-<script>/* FlyJack - the casino scene. The room, the table, the dealer and the fly are drawn in
-   web/page.html; this file deals the cards, moves the chips and makes the fly act out what its
-   brain decided: it sniffs each choice, taps the felt to hit, waves a leg to stand. */
+<script>/* FlyJack - Limit Texas Hold'em rules, hand ranking, and how a poker situation becomes a smell.
+ *
+ * Rules: six seats, blinds 1 and 2, bets of 2 before the turn and 4 from the turn on, at most
+ * one bet and three raises per round. Stacks are topped up to 100 whenever they fall below 50
+ * (and winnings above 250 are banked, back to 100), and a hand can never cost more than 48, so
+ * nobody is ever all-in and there are no side pots.
+ *
+ * A decision state is (strength, street, pressure):
+ *   strength 0..9  how often the hand would win against the players still in, scaled so that a
+ *                  fair share is in the middle
+ *                  (estimated by dealing the rest out many times; the fly gets this as a smell,
+ *                  it does not work it out itself)
+ *   street   0..3  before the flop, flop, turn, river
+ *   pressure 0..2  nothing to call, one bet to call, a raise to call
+ * The choices are 0 fold, 1 check or call, 2 bet or raise.
+ */
+(function (root) {
+  'use strict';
+
+  var SB = 1, BB = 2, SMALL_BET = 2, BIG_BET = 4, CAP = 4, START_STACK = 100, TOP_UP_BELOW = 50, BANK_ABOVE = 250;
+  var N_STRENGTH = 10, N_STREET = 4, N_PRESSURE = 3, N_STATES = N_STRENGTH * N_STREET * N_PRESSURE;
+  var FOLD = 0, CALL = 1, RAISE = 2;
+  // engineered: how loud hand strength is in the smell, and how adventurous the poker flies are
+  var STRENGTH_WIDTH = 1.3, STRENGTH_GAIN = 1.6, BRAIN_OPTIONS = { temperature: 0.08 };
+  var FACES = { 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K', 14: 'A' };
+  var PLURAL = { 2: 'twos', 3: 'threes', 4: 'fours', 5: 'fives', 6: 'sixes', 7: 'sevens', 8: 'eights', 9: 'nines', 10: 'tens', 11: 'jacks', 12: 'queens', 13: 'kings', 14: 'aces' };
+  var SUITS = ['s', 'h', 'd', 'c'];
+  var CATEGORY = ['High card', 'Pair', 'Two pair', 'Three of a kind', 'Straight', 'Flush', 'Full house', 'Four of a kind', 'Straight flush'];
+
+  function card(id) { var r = 2 + (id % 13), s = (id / 13) | 0; return { id: id, r: r, s: s, face: FACES[r], suit: SUITS[s] }; }
+  var DECK = [];
+  for (var i = 0; i < 52; i++) DECK.push(card(i));
+
+  /* ---------- ranking seven cards ---------- */
+  function straightHigh(mask) {
+    if (mask & (1 << 14)) mask |= 2;                 // an ace also plays low
+    for (var hi = 14; hi >= 5; hi--) if (((mask >> (hi - 4)) & 31) === 31) return hi;
+    return 0;
+  }
+  function topRanks(mask, n, out) {
+    for (var r = 14; r >= 2 && out.length < n; r--) if (mask & (1 << r)) out.push(r);
+    return out;
+  }
+  function code(cat, ks) {
+    var v = cat;
+    for (var i = 0; i < 5; i++) v = v * 16 + (ks[i] || 0);
+    return v;
+  }
+  /* A number that is higher for the better hand (best five of the cards given). */
+  function score(cards) {
+    var counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], suitMask = [0, 0, 0, 0], suitN = [0, 0, 0, 0], mask = 0, i, r;
+    for (i = 0; i < cards.length; i++) {
+      var c = cards[i]; counts[c.r]++; suitMask[c.s] |= 1 << c.r; suitN[c.s]++; mask |= 1 << c.r;
+    }
+    var flush = -1;
+    for (i = 0; i < 4; i++) if (suitN[i] >= 5) flush = i;
+    if (flush >= 0) { var sf = straightHigh(suitMask[flush]); if (sf) return code(8, [sf]); }
+    var quad = 0, trips = [], pairs = [];
+    for (r = 14; r >= 2; r--) {
+      if (counts[r] === 4) quad = r; else if (counts[r] === 3) trips.push(r); else if (counts[r] === 2) pairs.push(r);
+    }
+    if (quad) return code(7, [quad, topRanks(mask & ~(1 << quad), 1, [])[0]]);
+    if (trips.length && (trips.length > 1 || pairs.length)) return code(6, [trips[0], Math.max(trips[1] || 0, pairs[0] || 0)]);
+    if (flush >= 0) return code(5, topRanks(suitMask[flush], 5, []));
+    var st = straightHigh(mask);
+    if (st) return code(4, [st]);
+    if (trips.length) return code(3, [trips[0]].concat(topRanks(mask & ~(1 << trips[0]), 2, [])));
+    if (pairs.length >= 2) return code(2, [pairs[0], pairs[1], topRanks(mask & ~(1 << pairs[0]) & ~(1 << pairs[1]), 1, [])[0]]);
+    if (pairs.length) return code(1, [pairs[0]].concat(topRanks(mask & ~(1 << pairs[0]), 3, [])));
+    return code(0, topRanks(mask, 5, []));
+  }
+  function describe(sc) {
+    var ks = [], v = sc;
+    for (var i = 0; i < 5; i++) { ks.unshift(v % 16); v = Math.floor(v / 16); }
+    var cat = v;
+    if (cat === 1) return 'Pair of ' + PLURAL[ks[0]];
+    if (cat === 2) return PLURAL[ks[0]].replace(/^./, function (c) { return c.toUpperCase(); }) + ' and ' + PLURAL[ks[1]];
+    if (cat === 3) return 'Three ' + PLURAL[ks[0]];
+    if (cat === 6) return PLURAL[ks[0]].replace(/^./, function (c) { return c.toUpperCase(); }) + ' full of ' + PLURAL[ks[1]];
+    if (cat === 8 && ks[0] === 14) return 'Royal flush';
+    return CATEGORY[cat];
+  }
+
+  /* ---------- how strong is a hand? deal the rest out many times ---------- */
+  function equity(hole, board, nOpp, sims, rng) {
+    if (nOpp < 1) return 1;
+    var used = {}, rest = [], i, k;
+    for (i = 0; i < hole.length; i++) used[hole[i].id] = 1;
+    for (i = 0; i < board.length; i++) used[board[i].id] = 1;
+    for (i = 0; i < 52; i++) if (!used[i]) rest.push(DECK[i]);
+    var need = 2 * nOpp + 5 - board.length, won = 0, mine = hole.concat(board), full = board.slice();
+    for (var s = 0; s < sims; s++) {
+      for (k = 0; k < need; k++) {                    // partial shuffle: the first `need` cards are the draw
+        var j = k + Math.floor(rng() * (rest.length - k)), t = rest[k]; rest[k] = rest[j]; rest[j] = t;
+      }
+      full.length = board.length;
+      for (k = 2 * nOpp; k < need; k++) full.push(rest[k]);
+      var me = score(hole.concat(full)), best = 0, ties = 0;
+      for (k = 0; k < nOpp; k++) {
+        var o = score([rest[2 * k], rest[2 * k + 1]].concat(full));
+        if (o > best) { best = o; ties = 0; } else if (o === best) ties++;
+      }
+      if (me > best) won += 1; else if (me === best) won += 1 / (ties + 2);
+    }
+    return won / sims;
+  }
+  var preflopCache = {};
+  function preflopEquity(hole, nOpp, rng) {
+    var a = Math.max(hole[0].r, hole[1].r), b = Math.min(hole[0].r, hole[1].r);
+    var key = a + '-' + b + (a !== b && hole[0].s === hole[1].s ? 's' : 'o') + nOpp;
+    if (preflopCache[key] === undefined) preflopCache[key] = equity(hole, [], nOpp, 400, rng);
+    return preflopCache[key];
+  }
+  /* Chance of winning, rescaled so that a fair share (1 in nIn) sits in the middle whatever the
+     number of players, then cut into ten steps: 0 never wins, 9 nearly always does. */
+  function strengthOf(eq, nIn) {
+    var u = nIn > 2 ? Math.pow(eq, Math.log(0.5) / Math.log(1 / nIn)) : eq;
+    return Math.min(9, Math.floor(u * 10));
+  }
+  var STRENGTH_NAMES = ['hopeless', 'very weak', 'weak', 'below par', 'average', 'decent', 'good', 'strong', 'very strong', 'a monster'];
+
+  /* ---------- one hand ---------- */
+  /* players: [{seat, stack}] in seat order; button: index into players. */
+  function Hand(players, button, rng) {
+    var n = this.n = players.length, i;
+    this.rng = rng;
+    this.p = players.map(function (q) { return { seat: q.seat, stack: q.stack, start: q.stack, hole: [], bet: 0, total: 0, folded: false, acted: false }; });
+    var deck = DECK.slice();
+    for (i = deck.length - 1; i > 0; i--) { var j = Math.floor(rng() * (i + 1)), t = deck[i]; deck[i] = deck[j]; deck[j] = t; }
+    this.deck = deck; this.board = []; this.street = 0; this.button = button; this.log = [];
+    this.done = false; this.showdown = false; this.winners = [];
+    this.sb = n === 2 ? button : (button + 1) % n; this.bb = (this.sb + 1) % n;
+    this._pay(this.sb, SB); this._pay(this.bb, BB);
+    for (var round = 0; round < 2; round++) for (i = 0; i < n; i++) this.p[(this.sb + i) % n].hole.push(deck.pop());
+    this.level = BB; this.raises = 1; this.unit = SMALL_BET;
+    this.toAct = (this.bb + 1) % n;
+  }
+  Hand.prototype._pay = function (i, amount) { var q = this.p[i]; q.stack -= amount; q.bet += amount; q.total += amount; };
+  Hand.prototype.pot = function () { var s = 0; for (var i = 0; i < this.n; i++) s += this.p[i].total; return s; };
+  Hand.prototype.inHand = function () { var c = 0; for (var i = 0; i < this.n; i++) if (!this.p[i].folded) c++; return c; };
+  /* What the player to act may do. */
+  Hand.prototype.options = function () {
+    var q = this.p[this.toAct], toCall = this.level - q.bet, canRaise = this.raises < CAP;
+    var actions = toCall > 0 ? [FOLD, CALL] : [CALL];
+    if (canRaise) actions.push(RAISE);
+    return { toCall: toCall, canRaise: canRaise, raiseTo: this.level + this.unit, actions: actions, bet: q.bet };
+  };
+  /* action: 0 fold, 1 check/call, 2 bet/raise. Returns what happened, for showing. */
+  Hand.prototype.act = function (action) {
+    var i = this.toAct, q = this.p[i], o = this.options(), ev = { i: i, seat: q.seat, street: this.street };
+    if (action === FOLD && o.toCall === 0) action = CALL;           // folding for free makes no sense: check
+    if (action === RAISE && !o.canRaise) action = CALL;
+    if (action === FOLD) { q.folded = true; ev.type = 'fold'; ev.paid = 0; }
+    else if (action === CALL) { this._pay(i, o.toCall); ev.type = o.toCall ? 'call' : 'check'; ev.paid = o.toCall; }
+    else {
+      var pay = o.raiseTo - q.bet;
+      ev.type = this.level === 0 ? 'bet' : 'raise'; ev.paid = pay;
+      this._pay(i, pay); this.level = o.raiseTo; this.raises++;
+      for (var k = 0; k < this.n; k++) if (k !== i) this.p[k].acted = false;
+    }
+    q.acted = true; ev.level = this.level; ev.bet = q.bet; ev.pot = this.pot();
+    this.log.push(ev);
+    if (this.inHand() === 1) { this._finish(false); return ev; }
+    this.toAct = -1;
+    for (var s = 1; s <= this.n; s++) {
+      var c = (i + s) % this.n, p = this.p[c];
+      if (!p.folded && (!p.acted || p.bet < this.level)) { this.toAct = c; break; }
+    }
+    return ev;
+  };
+  /* The betting round is over (toAct === -1): deal the next street or show down. */
+  Hand.prototype.advance = function () {
+    for (var i = 0; i < this.n; i++) { this.p[i].bet = 0; this.p[i].acted = false; }
+    this.street++;
+    if (this.street === 4) { this._finish(true); return []; }
+    var dealt = [];
+    this.deck.pop();                                    // burn a card
+    for (var k = 0; k < (this.street === 1 ? 3 : 1); k++) dealt.push(this.deck.pop());
+    this.board = this.board.concat(dealt);
+    this.level = 0; this.raises = 0; this.unit = this.street >= 2 ? BIG_BET : SMALL_BET;
+    for (var s = 1; s <= this.n; s++) { var c = (this.button + s) % this.n; if (!this.p[c].folded) { this.toAct = c; break; } }
+    return dealt;
+  };
+  Hand.prototype._finish = function (showdown) {
+    var pot = this.pot(), live = [], i;
+    for (i = 0; i < this.n; i++) if (!this.p[i].folded) live.push(i);
+    this.showdown = showdown && live.length > 1; this.done = true; this.toAct = -1;
+    var best = -1, win = [];
+    for (i = 0; i < live.length; i++) {
+      var q = this.p[live[i]];
+      q.score = this.showdown ? score(q.hole.concat(this.board)) : 0;
+      q.handName = this.showdown ? describe(q.score) : '';
+      if (q.score > best) { best = q.score; win = [live[i]]; } else if (q.score === best) win.push(live[i]);
+    }
+    var share = Math.floor(pot / win.length), odd = pot - share * win.length;
+    win.sort(function (a, b) { return ((a - this.button + this.n) % this.n) - ((b - this.button + this.n) % this.n); }.bind(this));
+    this.winners = win.map(function (w, k) { return { i: w, amount: share + (k < odd ? 1 : 0) }; });
+    for (i = 0; i < this.winners.length; i++) this.p[this.winners[i].i].stack += this.winners[i].amount;
+    for (i = 0; i < this.n; i++) this.p[i].net = this.p[i].stack - this.p[i].start;
+  };
+
+  /* ---------- the smell code ---------- */
+  /* The situation of player i, as the fly smells it. */
+  function situation(hand, i, sims) {
+    var q = hand.p[i], nIn = hand.inHand(), o = hand.options();
+    var eq = hand.street === 0 ? preflopEquity(q.hole, nIn - 1, hand.rng) : equity(q.hole, hand.board, nIn - 1, sims || 120, hand.rng);
+    var strength = strengthOf(eq, nIn), street = Math.min(3, hand.street);
+    var pressure = o.toCall === 0 ? 0 : o.toCall <= hand.unit && hand.raises <= 1 ? 1 : 2;
+    return { equity: eq, strength: strength, street: street, pressure: pressure, state: stateIndex(strength, street, pressure), options: o };
+  }
+  function stateIndex(strength, street, pressure) { return (strength * N_STREET + street) * N_PRESSURE + pressure; }
+
+  var SMELLS = {
+    name: 'poker-limit-holdem', nOdors: N_STATES * 3, nActions: 3,
+    groupNames: ['strength', 'street', 'pressure', 'fold', 'call', 'raise'],
+    groupSizes: { strength: 27, street: 8, pressure: 6, fold: 5, call: 6, raise: 5 },
+    pattern: function (brain, odor, out) {
+      var bump = root.FlyBrain.bump, g = brain.groups;
+      var action = odor % 3, st = (odor - action) / 3, pressure = st % N_PRESSURE, rest = (st - pressure) / N_PRESSURE;
+      var street = rest % N_STREET, strength = (rest - street) / N_STREET, i;
+      out.fill(0);
+      bump(out, g.strength, strength / (N_STRENGTH - 1), STRENGTH_WIDTH, STRENGTH_GAIN);   // the cards matter most
+      bump(out, g.street, street / (N_STREET - 1), 0.8, 0.7);
+      bump(out, g.pressure, pressure / (N_PRESSURE - 1), 0.7, 0.8);
+      var act = action === FOLD ? g.fold : action === CALL ? g.call : g.raise;
+      for (i = 0; i < act.length; i++) out[act[i]] = 0.6;
+      return out;
+    }
+  };
+
+  var api = {
+    SB: SB, BB: BB, SMALL_BET: SMALL_BET, BIG_BET: BIG_BET, CAP: CAP, START_STACK: START_STACK, TOP_UP_BELOW: TOP_UP_BELOW, BANK_ABOVE: BANK_ABOVE,
+    FOLD: FOLD, CALL: CALL, RAISE: RAISE, N_STRENGTH: N_STRENGTH, N_STREET: N_STREET, N_PRESSURE: N_PRESSURE, N_STATES: N_STATES,
+    STRENGTH_NAMES: STRENGTH_NAMES, DECK: DECK, score: score, describe: describe, equity: equity, preflopEquity: preflopEquity,
+    strengthOf: strengthOf, Hand: Hand, situation: situation, stateIndex: stateIndex, SMELLS: SMELLS, BRAIN_OPTIONS: BRAIN_OPTIONS
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Poker = api;
+})(typeof self !== 'undefined' ? self : this);
+</script>
+<script>/* FlyJack - what both casino tables share: moving pieces, cards and chips, the dealer, and the
+   fly puppet that acts out its brain's choices. The drawings themselves live in web/page.html;
+   puppets find their parts there by data-part, so the same drawing can be cloned for many flies. */
 (function (root) {
   'use strict';
   var NS = 'http://www.w3.org/2000/svg';
-  // places on the table, in scene units (the scene is 1200 x 675)
-  var SHOE = { x: 826, y: 288 }, DISCARD = { x: 320, y: 282 }, TRAY = { x: 600, y: 287 }, BET = { x: 690, y: 548 },
-    POCKET = { x: 818, y: 556 }, FLY_HEAD = { x: 796, y: 462 }, FOOT = { x: 780, y: 565 };
-  var SHOULDER_L = { x: 532, y: 222 }, SHOULDER_R = { x: 668, y: 222 }, REST_L = { x: 490, y: 298 }, REST_R = { x: 742, y: 300 };
   var PIPS = { s: '♠︎', h: '♥︎', d: '♦︎', c: '♣︎' };
-  var CHIPS = { red: ['#c0392b', '#7d1f17'], blue: ['#2c5aa0', '#1a3866'] };
-  var SMELL_GOOD = '#6aa8ff', SMELL_BAD = '#ff8a50';
+  var CHIPS = { red: ['#c0392b', '#7d1f17'], blue: ['#2c5aa0', '#1a3866'], green: ['#1f7a4a', '#11482b'], black: ['#26262b', '#0e0e10'] };
   var MOUTH = { neutral: 'M592 167Q600 170 608 167', smile: 'M589 164Q600 176 611 164', surprised: 'M596 168a4 4.5 0 1 0 8 0a4 4.5 0 1 0 -8 0' };
 
   function make(tag, attrs, parent) {
@@ -1039,12 +1561,19 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     if (parent) parent.appendChild(e);
     return e;
   }
+  function text(parent, str, x, y, cls, fill, anchor) {
+    var t = make('text', { x: x, y: y, 'class': cls, 'text-anchor': anchor || 'start' }, parent);
+    if (fill) t.setAttribute('fill', fill);
+    t.textContent = str;
+    return t;
+  }
   function r2(v) { return Math.round(v * 100) / 100; }
   function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
   function easeOut(p) { return 1 - Math.pow(1 - p, 3); }
   function easeIn(p) { return p * p * p; }
   function easeInOut(p) { return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; }
-  function rot(el, a, cx, cy) { el.setAttribute('transform', 'rotate(' + r2(a) + ' ' + cx + ' ' + cy + ')'); }
+  function rot(el, a, cx, cy) { if (el) el.setAttribute('transform', 'rotate(' + r2(a) + ' ' + cx + ' ' + cy + ')'); }
+  function now() { return performance.now(); }
 
   /* Anything that moves: a group drawn around (0, 0), placed at x, y, turned by r, sized by s.
      fx squeezes it sideways (a card flip) and lift raises it (a card's arc through the air). */
@@ -1057,109 +1586,279 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
   function Point(p) { this.x = p.x; this.y = p.y; }
   Point.prototype.draw = function () {};
 
+  /* Timing: every move is a tween, every pause a timer. When instant() is true (reduced motion,
+     or a hand laid out at once) moves land immediately and timers fire straight away. */
+  function Timeline(instant) { this.instant = instant; this.tweens = []; this.timers = []; }
+  Timeline.prototype.move = function (sp, to, ms, delay, o) {
+    o = o || {};
+    if (this.instant()) {
+      for (var k in to) sp[k] = to[k];
+      sp.lift = 0; sp.draw();
+      if (o.done) o.done();
+      return;
+    }
+    this.tweens.push({ sp: sp, to: to, ms: ms, at: now() + (delay || 0), arc: o.arc || 0, ease: o.ease || easeOut, done: o.done, from: null });
+  };
+  Timeline.prototype.later = function (ms, fn) { if (this.instant()) fn(); else this.timers.push({ at: now() + ms, fn: fn }); };
+  Timeline.prototype.clear = function () { this.tweens = []; this.timers = []; };
+  Timeline.prototype.run = function (t) {
+    var list = this.timers, i, k;
+    this.timers = [];
+    for (i = 0; i < list.length; i++) { if (t >= list[i].at) list[i].fn(); else this.timers.push(list[i]); }
+    list = this.tweens; this.tweens = [];
+    for (i = 0; i < list.length; i++) {
+      var tw = list[i];
+      if (t < tw.at) { this.tweens.push(tw); continue; }
+      if (!tw.from) { tw.from = {}; for (k in tw.to) tw.from[k] = tw.sp[k]; }
+      var p = tw.ms ? clamp01((t - tw.at) / tw.ms) : 1, e = tw.ease(p);
+      for (k in tw.to) tw.sp[k] = tw.from[k] + (tw.to[k] - tw.from[k]) * e;
+      if (tw.arc) tw.sp.lift = Math.sin(Math.PI * p) * tw.arc;
+      tw.sp.draw();
+      if (p < 1) this.tweens.push(tw); else if (tw.done) tw.done();
+    }
+  };
+
+  /* ---------- cards and chips ---------- */
+  function cardSprite(parent, card) {
+    var g = make('g', {}, parent), sp = new Sprite(g), col = card.suit === 'h' || card.suit === 'd' ? '#c2332d' : '#1c1c1c';
+    sp.card = card;
+    sp.back = make('g', {}, g);
+    make('rect', { x: -32, y: -45, width: 64, height: 90, rx: 6, fill: '#f4f1e8' }, sp.back);
+    make('rect', { x: -28, y: -41, width: 56, height: 82, rx: 4, fill: 'url(#cj-back)' }, sp.back);
+    make('ellipse', { rx: 12, ry: 17, fill: 'none', stroke: '#f4f1e8', 'stroke-opacity': 0.6, 'stroke-width': 1.5 }, sp.back);
+    sp.face = make('g', {}, g);
+    make('rect', { x: -32, y: -45, width: 64, height: 90, rx: 6, fill: '#fbfaf5', stroke: '#000', 'stroke-opacity': 0.18 }, sp.face);
+    text(sp.face, card.face, -26, -24, 'c-rank', col);
+    text(sp.face, PIPS[card.suit], -26, -8, 'c-pip-s', col);
+    text(sp.face, PIPS[card.suit], 3, 28, 'c-pip', col, 'middle');
+    text(sp.face, card.face, 0, 0, 'c-rank', col).setAttribute('transform', 'translate(26 24) rotate(180)');
+    setFace(sp, false);
+    return sp;
+  }
+  function setFace(sp, up) {
+    sp.up = up;
+    sp.face.setAttribute('display', up ? 'inline' : 'none');
+    sp.back.setAttribute('display', up ? 'none' : 'inline');
+  }
+  function flip(tl, sp, up) {
+    if (tl.instant()) { setFace(sp, up); return; }
+    var s = sp.s;
+    tl.move(sp, { fx: 0 }, 110, 0, { ease: easeIn, done: function () { setFace(sp, up); tl.move(sp, { fx: 1 }, 120, 0); } });
+    return s;
+  }
+  function chipSprite(parent, color) {
+    var g = make('g', {}, parent), c = CHIPS[color] || CHIPS.red;
+    chipShape(g, c, 0);
+    return new Sprite(g);
+  }
+  function chipShape(g, c, y) {
+    make('ellipse', { cy: y + 5, rx: 17, ry: 6.5, fill: c[1] }, g);
+    make('rect', { x: -17, y: y, width: 34, height: 5, fill: c[1] }, g);
+    make('ellipse', { cy: y, rx: 17, ry: 6.5, fill: c[0] }, g);
+    make('ellipse', { cy: y, rx: 17, ry: 6.5, fill: 'none', stroke: '#fbfaf5', 'stroke-width': 2.6, 'stroke-dasharray': '4 6.7' }, g);
+    make('ellipse', { cy: y, rx: 10, ry: 3.8, fill: 'none', stroke: '#fbfaf5', 'stroke-opacity': 0.55 }, g);
+  }
+  /* A stack of chips worth `amount`, as a sprite: one chip per two units, at most `max`. */
+  function stackSprite(parent, amount, max) {
+    var g = make('g', {}, parent), n = Math.max(1, Math.min(max || 8, Math.ceil(amount / 2))), colors = ['red', 'blue', 'green', 'black'];
+    for (var i = 0; i < n; i++) chipShape(g, CHIPS[colors[Math.floor(i / 2) % 4]], -i * 4.5);
+    return new Sprite(g);
+  }
+
+  /* ---------- the room ---------- */
+  function decorateRoom(bokeh, seed) {
+    var rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    var colors = ['#ffcf7a', '#ff8fb0', '#ffe0a8', '#9fd8ff'];
+    for (var i = 0; i < 20; i++) {
+      var c = make('circle', { cx: r2(rnd() * 1200), cy: r2(20 + rnd() * 220), r: r2(5 + rnd() * 20), fill: colors[i % 4], 'fill-opacity': r2(0.08 + rnd() * 0.16) }, bokeh);
+      c.style.animationDuration = r2(4 + rnd() * 6) + 's'; c.style.animationDelay = -r2(rnd() * 8) + 's';
+    }
+  }
+  function decorateTray(tray, x0, y0) {
+    var tc = ['#c0392b', '#1f7a4a', '#1b1b1f', '#2c5aa0', '#6a2c8a', '#e8e2d4', '#c0392b', '#1f7a4a'];
+    for (var i = 0; i < 8; i++) {
+      var x = x0 + i * 24;
+      make('rect', { x: x, y: y0, width: 20, height: 18, rx: 3, fill: tc[i] }, tray);
+      make('path', { d: 'M' + (x + 4) + ' ' + (y0 + 1) + 'V' + (y0 + 17) + 'M' + (x + 10) + ' ' + (y0 + 1) + 'V' + (y0 + 17) + 'M' + (x + 16) + ' ' + (y0 + 1) + 'V' + (y0 + 17), stroke: '#fff', 'stroke-opacity': 0.35, 'stroke-width': 1.5, 'stroke-dasharray': '3 3' }, tray);
+    }
+  }
+  /* A copy of a drawing with its ids removed, so it can appear many times. */
+  function cloneDrawing(el) {
+    var c = el.cloneNode(true);
+    c.removeAttribute('id');
+    Array.prototype.forEach.call(c.querySelectorAll('[id]'), function (n) { n.removeAttribute('id'); });
+    return c;
+  }
+
+  /* ---------- the dealer ---------- */
+  /* parts: the dealer's drawing and arms (found by data-part); o: {shoulderL, shoulderR, restL, restR, eyeY} */
+  function Dealer(body, arms, tl, o) {
+    var q = function (el, n) { return el.querySelector('[data-part="' + n + '"]'); };
+    this.tl = tl; this.o = o;
+    this.p = { armL: q(arms, 'arm-l'), armR: q(arms, 'arm-r'), handL: q(arms, 'hand-l'), handR: q(arms, 'hand-r'),
+      pupilL: q(body, 'pupil-l'), pupilR: q(body, 'pupil-r'), eyes: q(body, 'eyes'), brows: q(body, 'brows'), mouth: q(body, 'mouth') };
+    this.handL = new Point(o.restL); this.handR = new Point(o.restR);
+    this.lookAt = null; this.lookUntil = 0; this.moodName = 'neutral'; this.moodUntil = 0;
+  }
+  Dealer.prototype.flick = function (from) {
+    var h = this.handR, tl = this.tl, rest = this.o.restR;
+    tl.move(h, { x: from.x + 4, y: from.y + 6 }, 90, 0, { done: function () { tl.move(h, { x: rest.x, y: rest.y }, 160, 0); } });
+  };
+  Dealer.prototype.reach = function (left, target, delay) {
+    var h = left ? this.handL : this.handR, back = left ? this.o.restL : this.o.restR, tl = this.tl;
+    tl.move(h, { x: target.x, y: target.y + 8 }, 200, delay, { done: function () { tl.move(h, { x: back.x, y: back.y }, 300, 120); } });
+  };
+  Dealer.prototype.look = function (p, ms) { this.lookAt = p; this.lookUntil = now() + ms; };
+  Dealer.prototype.mood = function (m, ms) { this.moodName = m; this.moodUntil = now() + ms; };
+  Dealer.prototype.reset = function () { this.handL = new Point(this.o.restL); this.handR = new Point(this.o.restR); };
+  function drawArm(path, el, s, h, side) {
+    var mx = (s.x + h.x) / 2 + side * 14, my = (s.y + h.y) / 2 + 16;
+    path.setAttribute('d', 'M' + s.x + ' ' + s.y + 'Q' + r2(mx) + ' ' + r2(my) + ' ' + r2(h.x) + ' ' + r2(h.y));
+    el.setAttribute('cx', r2(h.x)); el.setAttribute('cy', r2(h.y));
+  }
+  Dealer.prototype.pose = function (t, idleLook, reduce) {
+    var p = this.p, o = this.o;
+    drawArm(p.armL, p.handL, o.shoulderL, this.handL, -1);
+    drawArm(p.armR, p.handR, o.shoulderR, this.handR, 1);
+    var target = t < this.lookUntil && this.lookAt ? this.lookAt : idleLook;
+    [[p.pupilL, 586], [p.pupilR, 614]].forEach(function (e) {
+      var dx = target.x - e[1], dy = target.y - 139, d = Math.sqrt(dx * dx + dy * dy) || 1;
+      e[0].setAttribute('cx', r2(e[1] + 2.4 * dx / d)); e[0].setAttribute('cy', r2(139 + 1.6 * dy / d));
+    });
+    var blink = !reduce && t % 4300 < 120;
+    p.eyes.setAttribute('transform', blink ? 'translate(0 138) scale(1 0.12) translate(0 -138)' : '');
+    var m = t < this.moodUntil ? this.moodName : 'neutral';
+    p.mouth.setAttribute('d', MOUTH[m]);
+    p.brows.setAttribute('transform', m === 'surprised' ? 'translate(0 -4)' : m === 'smile' ? 'translate(0 1)' : '');
+  };
+
+  /* ---------- the fly puppet ---------- */
+  /* g: a fly drawing (see #cj-fly in page.html). o: {reduce, wingRest (degrees, Curly wings turn up)} */
+  function Fly(g, o) {
+    o = o || {};
+    var q = function (n) { return g.querySelector('[data-part="' + n + '"]'); };
+    this.g = g; this.reduce = !!o.reduce; this.wingRest = o.wingRest || 0;
+    this.p = { body: q('body'), head: q('head'), ant: q('antenna'), wingN: q('wing-n'), wingF: q('wing-f'), legF: q('leg-f'), legFF: q('leg-ff'),
+      shadow: q('shadow'), buzz: q('buzz'), glow: q('glow') };
+    this.state = 'idle'; this.since = -1e6; this.glowA = 0; this.glowAt = 0; this.glowFade = 0;
+  }
+  Fly.prototype.act = function (state) { this.state = state; this.since = now(); };
+  Fly.prototype.glow = function (color, a, fade) { this.p.glow.setAttribute('fill', color); this.glowA = a; this.glowAt = now(); this.glowFade = fade; };
+  /* States: idle (grooms now and then), sniff, tap (hit or check), wave (stand), push (chips in),
+     fold, win, blackjack (a flying somersault), lose, bust, push-even (a shrug), and hover when busy. */
+  Fly.prototype.pose = function (t, busy) {
+    var reduce = this.reduce, tt = reduce ? 0 : t, e = reduce ? 1e6 : t - this.since, st = busy ? 'hover' : this.state, p, k;
+    var x = 0, y = Math.sin(tt / 700) * 1.2, lean = 0, spin = 0, head = 0, ant = Math.sin(tt / 1300) * 3, wing = 0, legF = 0, legFF = 0, buzz = false;
+    if (st === 'idle') {
+      k = (e - 2600) % 8000;
+      if (e > 2600 && k < 1800) {          // grooming: rub the front legs together, over the eyes
+        p = Math.sin(Math.PI * k / 1800);
+        legF = 88 * p + 10 * p * Math.sin(tt / 55); legFF = 80 * p + 10 * p * Math.sin(tt / 55 + 2); head = -5 * p; lean = -2 * p;
+      }
+      k = e % 5200; if (k < 260) wing = -12 * Math.sin(Math.PI * k / 260);
+      k = tt % 3100; if (k < 160) ant += 10 * Math.sin(Math.PI * k / 160);
+    } else if (st === 'sniff') {
+      p = clamp01(e / 260); lean = -5 * p; head = -6 * p; ant = -8 + 7 * Math.sin(tt / 38);
+    } else if (st === 'tap') {
+      lean = -3; head = -4; legF = 40 * Math.abs(Math.sin(Math.PI * Math.min(e, 760) / 380));
+    } else if (st === 'wave') {
+      p = clamp01(e / 220) * clamp01((1250 - e) / 250);
+      legF = p * (72 + 22 * Math.sin((e - 220) / 95)); head = 3 * Math.sin(e / 140) * p;
+    } else if (st === 'push') {
+      p = clamp01(e / 200) * clamp01((900 - e) / 250); legF = 52 * p; legFF = 30 * p; lean = -5 * p; head = -3 * p;
+    } else if (st === 'fold') {
+      p = clamp01(e / 350); head = -9 * p; ant = -20 * p; lean = 2 * p; wing = -10 * Math.sin(Math.PI * clamp01(e / 300));
+    } else if (st === 'win') {
+      p = e / 430;
+      if (p < 2) { y -= 42 * Math.abs(Math.sin(Math.PI * p)); buzz = true; }
+      else wing = -14 * clamp01(1 - (e - 860) / 1000);
+      ant = 6;
+    } else if (st === 'blackjack') {
+      k = e / 1900;
+      if (k < 1) { y -= 120 * Math.sin(Math.PI * k); x = -60 * Math.sin(2 * Math.PI * k); spin = -360 * easeInOut(clamp01((k - 0.25) / 0.5)); buzz = true; }
+      ant = 6;
+    } else if (st === 'lose' || st === 'bust') {
+      p = clamp01(e / 500);
+      if (st === 'bust' && e < 500) x = Math.sin(e / 22) * 5 * (1 - e / 500);
+      head = -10 * p; ant = -26 * p; wing = 7 * p; y += 3 * p; lean = -2 * p;
+    } else if (st === 'shrug') {
+      p = Math.sin(Math.PI * clamp01(e / 700)); wing = -10 * p; legF = 26 * p; y -= 4 * p;
+    } else if (st === 'hover') {             // Fast and Turbo: too busy to land
+      y = -36 + Math.sin(tt / 170 + this.wingRest) * 5; x = Math.sin(tt / 530) * 6; lean = -4 + Math.sin(tt / 410) * 3; ant = Math.sin(tt / 90) * 5; buzz = true;
+    }
+    if (buzz) wing = -36 + 28 * Math.sin(t * 0.83 + this.since);
+    else wing += this.wingRest;
+    var P = this.p;
+    P.body.setAttribute('transform', 'translate(' + r2(x) + ' ' + r2(y) + ') rotate(' + r2(lean + spin) + ' 0 -70)');
+    rot(P.head, head, -40, -100); rot(P.ant, ant, -88, -124);
+    rot(P.wingN, wing, 2, -118); rot(P.wingF, wing * 1.1 - 6, 2, -121);
+    rot(P.legF, legF, -32, -66); rot(P.legFF, legFF, -26, -70);
+    P.wingN.setAttribute('opacity', buzz ? 0.6 : 1);
+    P.buzz.setAttribute('opacity', buzz ? 0.8 : 0);
+    var h = Math.max(0, -y);
+    P.shadow.setAttribute('transform', 'translate(' + r2(x) + ' 0) scale(' + r2(Math.max(0.4, 1 - h / 260)) + ' 1)');
+    P.shadow.setAttribute('opacity', r2(0.35 * Math.max(0.3, 1 - h / 200)));
+    var gl = this.glowFade ? this.glowA * clamp01(1 - (t - this.glowAt) / this.glowFade) : this.glowA;
+    P.glow.setAttribute('opacity', r2(gl));
+  };
+
+  /* Puffs of smell from (x0, y0) to (x1, y1), as three wavy paths. */
+  function scentPaths(g, x0, y0, x1, y1) {
+    while (g.firstChild) g.removeChild(g.firstChild);
+    for (var i = 0; i < 3; i++) {
+      var ox = (i - 1) * 16, oy = (i - 1) * 10, mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+      make('path', { d: 'M' + r2(x0 + ox) + ' ' + r2(y0 + oy) + 'C' + r2(mx - 20 + ox) + ' ' + r2(my - 40) + ' ' + r2(mx + 20) + ' ' + r2(my + 30 + oy) + ' ' + r2(x1) + ' ' + r2(y1 + oy / 2) }, g);
+    }
+  }
+
+  root.SceneKit = {
+    NS: NS, PIPS: PIPS, make: make, text: text, r2: r2, clamp01: clamp01, easeOut: easeOut, easeIn: easeIn, easeInOut: easeInOut, now: now,
+    Sprite: Sprite, Point: Point, Timeline: Timeline, cardSprite: cardSprite, setFace: setFace, flip: flip, chipSprite: chipSprite,
+    stackSprite: stackSprite, decorateRoom: decorateRoom, decorateTray: decorateTray, cloneDrawing: cloneDrawing, Dealer: Dealer, Fly: Fly,
+    scentPaths: scentPaths
+  };
+})(self);
+</script>
+<script>/* FlyJack - the blackjack table. The room, the table, the dealer and the fly are drawn in
+   web/page.html, the moving pieces come from web/scenekit.js; this file deals the cards, moves
+   the chips and makes the fly act out what its brain decided: it sniffs each choice, taps the
+   felt to hit, waves a leg to stand. */
+(function (root) {
+  'use strict';
+  var K = root.SceneKit, make = K.make, text = K.text, r2 = K.r2, easeIn = K.easeIn, Sprite = K.Sprite;
+  // places on the table, in scene units (the scene is 1200 x 675)
+  var SHOE = { x: 826, y: 288 }, DISCARD = { x: 320, y: 282 }, TRAY = { x: 600, y: 287 }, BET = { x: 690, y: 548 },
+    POCKET = { x: 818, y: 556 }, FLY_HEAD = { x: 796, y: 462 }, FOOT = { x: 780, y: 565 };
+  var DEALER = { shoulderL: { x: 532, y: 222 }, shoulderR: { x: 668, y: 222 }, restL: { x: 490, y: 298 }, restR: { x: 742, y: 300 } };
+  var SMELL_GOOD = '#6aa8ff', SMELL_BAD = '#ff8a50';
+
   function Casino(svg, options) {
     var reduce = !!(options && options.reduceMotion), BJ = root.Blackjack;
     var $ = function (id) { return document.getElementById(id); };
     var layer = { cards: $('cj-cards'), chips: $('cj-chips'), fx: $('cj-fx') };
-    var part = {
-      body: $('cj-fly-body'), head: $('cj-fly-head'), ant: $('cj-fly-antenna'), wingN: $('cj-fly-wing-n'), wingF: $('cj-fly-wing-f'),
-      legF: $('cj-fly-leg-f'), legFF: $('cj-fly-leg-ff'), shadow: $('cj-fly-shadow'), buzz: $('cj-fly-buzz'), glow: $('cj-fly-glow'),
-      armL: $('cj-arm-l'), armR: $('cj-arm-r'), handL: $('cj-hand-l'), handR: $('cj-hand-r'), pupilL: $('cj-pupil-l'), pupilR: $('cj-pupil-r'),
-      eyes: $('cj-eyes'), brows: $('cj-brows'), mouth: $('cj-mouth'), gnat: $('cj-gnat'), scent: $('cj-scent'), bubble: $('cj-bubble')
-    };
+    var bubble = $('cj-bubble'), scentG = $('cj-scent'), gnat = $('cj-gnat');
+    var snap = false, tl = new K.Timeline(function () { return snap || reduce; });
+    var move = tl.move.bind(tl), later = tl.later.bind(tl);
+    var fly = new K.Fly($('cj-fly'), { reduce: reduce });
+    var dealer = new K.Dealer($('cj-dealer'), $('cj-arms'), tl, DEALER);
     var table = { hand: null, fly: [], dealer: [], bet: [], open: false };
-    var fly = { state: 'idle', since: -1e6 }, glow = { a: 0, at: 0, fade: 0 };
-    var dealer = { handL: new Point(REST_L), handR: new Point(REST_R), look: null, lookUntil: 0, mood: 'neutral', moodUntil: 0 };
-    var tweens = [], timers = [], snap = false;
 
-    /* ---------- timing: every move is a tween, every pause a timer ---------- */
-    function now() { return performance.now(); }
-    function instant() { return snap || reduce; }
-    function move(sp, to, ms, delay, o) {
-      o = o || {};
-      if (instant()) {
-        for (var k in to) sp[k] = to[k];
-        sp.lift = 0; sp.draw();
-        if (o.done) o.done();
-        return;
-      }
-      tweens.push({ sp: sp, to: to, ms: ms, at: now() + (delay || 0), arc: o.arc || 0, ease: o.ease || easeOut, done: o.done, from: null });
-    }
-    function later(ms, fn) { if (instant()) fn(); else timers.push({ at: now() + ms, fn: fn }); }
-    function run(t) {
-      var list = timers, i, k;
-      timers = [];
-      for (i = 0; i < list.length; i++) { if (t >= list[i].at) list[i].fn(); else timers.push(list[i]); }
-      list = tweens; tweens = [];
-      for (i = 0; i < list.length; i++) {
-        var tw = list[i];
-        if (t < tw.at) { tweens.push(tw); continue; }
-        if (!tw.from) { tw.from = {}; for (k in tw.to) tw.from[k] = tw.sp[k]; }
-        var p = tw.ms ? clamp01((t - tw.at) / tw.ms) : 1, e = tw.ease(p);
-        for (k in tw.to) tw.sp[k] = tw.from[k] + (tw.to[k] - tw.from[k]) * e;
-        if (tw.arc) tw.sp.lift = Math.sin(Math.PI * p) * tw.arc;
-        tw.sp.draw();
-        if (p < 1) tweens.push(tw); else if (tw.done) tw.done();
-      }
-    }
-
-    /* ---------- the room ---------- */
-    (function decorate() {
-      var seed = 7, rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-      var bokeh = $('cj-bokeh'), colors = ['#ffcf7a', '#ff8fb0', '#ffe0a8', '#9fd8ff'], i;
-      for (i = 0; i < 20; i++) {
-        var c = make('circle', { cx: r2(rnd() * 1200), cy: r2(20 + rnd() * 220), r: r2(5 + rnd() * 20), fill: colors[i % 4], 'fill-opacity': r2(0.08 + rnd() * 0.16) }, bokeh);
-        c.style.animationDuration = r2(4 + rnd() * 6) + 's'; c.style.animationDelay = -r2(rnd() * 8) + 's';
-      }
-      var tray = $('cj-tray'), tc = ['#c0392b', '#1f7a4a', '#1b1b1f', '#2c5aa0', '#6a2c8a', '#e8e2d4', '#c0392b', '#1f7a4a'];
-      for (i = 0; i < 8; i++) {
-        var x = 506 + i * 24;
-        make('rect', { x: x, y: 278, width: 20, height: 18, rx: 3, fill: tc[i] }, tray);
-        make('path', { d: 'M' + (x + 4) + ' 279V295M' + (x + 10) + ' 279V295M' + (x + 16) + ' 279V295', stroke: '#fff', 'stroke-opacity': 0.35, 'stroke-width': 1.5, 'stroke-dasharray': '3 3' }, tray);
-      }
-    })();
+    K.decorateRoom($('cj-bokeh'), 7);
+    K.decorateTray($('cj-tray'), 506, 278);
 
     /* ---------- cards ---------- */
-    function text(parent, str, x, y, cls, fill, anchor) {
-      var t = make('text', { x: x, y: y, 'class': cls, fill: fill, 'text-anchor': anchor || 'start' }, parent);
-      t.textContent = str;
-      return t;
-    }
-    function cardSprite(card) {
-      var g = make('g', {}, layer.cards), sp = new Sprite(g), col = card.suit === 'h' || card.suit === 'd' ? '#c2332d' : '#1c1c1c';
-      sp.back = make('g', {}, g);
-      make('rect', { x: -32, y: -45, width: 64, height: 90, rx: 6, fill: '#f4f1e8' }, sp.back);
-      make('rect', { x: -28, y: -41, width: 56, height: 82, rx: 4, fill: 'url(#cj-back)' }, sp.back);
-      make('ellipse', { rx: 12, ry: 17, fill: 'none', stroke: '#f4f1e8', 'stroke-opacity': 0.6, 'stroke-width': 1.5 }, sp.back);
-      sp.face = make('g', {}, g);
-      make('rect', { x: -32, y: -45, width: 64, height: 90, rx: 6, fill: '#fbfaf5', stroke: '#000', 'stroke-opacity': 0.18 }, sp.face);
-      text(sp.face, card.face, -26, -24, 'c-rank', col);
-      text(sp.face, PIPS[card.suit], -26, -8, 'c-pip-s', col);
-      text(sp.face, PIPS[card.suit], 3, 28, 'c-pip', col, 'middle');
-      text(sp.face, card.face, 0, 0, 'c-rank', col).setAttribute('transform', 'translate(26 24) rotate(180)');
-      return sp;
-    }
-    function setFace(sp, up) {
-      sp.up = up;
-      sp.face.setAttribute('display', up ? 'inline' : 'none');
-      sp.back.setAttribute('display', up ? 'none' : 'inline');
-    }
-    function flip(sp, up) {
-      if (instant()) { setFace(sp, up); return; }
-      move(sp, { fx: 0 }, 110, 0, { ease: easeIn, done: function () { setFace(sp, up); move(sp, { fx: 1 }, 120, 0); } });
-    }
     function slot(seat, i, n) {
       if (seat === 'fly') { var gap = n > 5 ? 104 / (n - 1) : 26; return { x: 588 + i * gap, y: 470 - i * 3, r: -6 + i * 3 }; }
       var g2 = n > 6 ? 222 / (n - 1) : 44;
       return { x: 558 + i * g2, y: 350, r: i % 2 ? 1.5 : -1.5 };
     }
     function dealCard(seat, card, up, delay) {
-      var list = table[seat], sp = cardSprite(card), n = list.length + 1, to = slot(seat, n - 1, n);
-      list.push(sp); setFace(sp, false);
+      var list = table[seat], sp = K.cardSprite(layer.cards, card), n = list.length + 1, to = slot(seat, n - 1, n);
+      list.push(sp);
       sp.x = SHOE.x; sp.y = SHOE.y; sp.r = -24; sp.s = 0.85; sp.o = 0; sp.draw();
-      later(delay, function () { sp.o = 1; sp.draw(); flick(); lookAt(to, 500); });
+      later(delay, function () { sp.o = 1; sp.draw(); dealer.flick(SHOE); dealer.look(to, 500); });
       move(sp, { x: to.x, y: to.y, r: to.r, s: 1 }, 380, delay, { arc: 40 });
-      if (up) later(delay + 170, function () { flip(sp, true); });
+      if (up) later(delay + 170, function () { K.flip(tl, sp, true); });
       for (var j = 0; j < list.length - 1; j++) move(list[j], slot(seat, j, n), 260, delay);   // make room when the hand gets long
     }
     function isOpen(hand) { return !!(hand.holeShown || (hand.done && hand.result !== 'bust')); }
@@ -1186,18 +1885,9 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     function hideBadges() { badge('cj-badge-fly', ''); badge('cj-badge-dealer', ''); }
 
     /* ---------- chips ---------- */
-    function chipSprite(color) {
-      var g = make('g', {}, layer.chips), c = CHIPS[color];
-      make('ellipse', { cy: 5, rx: 17, ry: 6.5, fill: c[1] }, g);
-      make('rect', { x: -17, y: 0, width: 34, height: 5, fill: c[1] }, g);
-      make('ellipse', { rx: 17, ry: 6.5, fill: c[0] }, g);
-      make('ellipse', { rx: 17, ry: 6.5, fill: 'none', stroke: '#fbfaf5', 'stroke-width': 2.6, 'stroke-dasharray': '4 6.7' }, g);
-      make('ellipse', { rx: 10, ry: 3.8, fill: 'none', stroke: '#fbfaf5', 'stroke-opacity': 0.55 }, g);
-      return new Sprite(g);
-    }
     function chipTo(sp, k, delay) { move(sp, { x: BET.x, y: BET.y - k * 5, o: 1 }, 380, delay, { arc: 28 }); }
     function placeBet(delay) {
-      var sp = chipSprite('red');
+      var sp = K.chipSprite(layer.chips, 'red');
       sp.x = POCKET.x; sp.y = POCKET.y; sp.o = 0; sp.draw();
       table.bet.push(sp); chipTo(sp, 0, delay);
     }
@@ -1208,15 +1898,15 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
     /* ---------- effects ---------- */
     function floatText(str, color, x, y, delay) {
-      var g = make('g', {}, layer.fx), sp = new Sprite(g), pos = { y: y - 56 };
+      var g = make('g', {}, layer.fx), sp = new Sprite(g);
       text(g, str, 0, 0, 'fx-float', color, 'middle');
       sp.x = x; sp.y = y; sp.o = 0; sp.draw();
       later(delay, function () { sp.o = 1; sp.draw(); });
-      move(sp, pos, 1400, delay);
+      move(sp, { y: y - 56 }, 1400, delay);
       move(sp, { o: 0 }, 1400, delay, { ease: easeIn, done: function () { sp.remove(); } });
     }
     function sparkle(n, cx, cy, spread, colors, delay) {
-      if (instant()) return;
+      if (tl.instant()) return;
       for (var i = 0; i < n; i++) {
         var g = make('g', {}, layer.fx), sp = new Sprite(g), a = Math.PI * 2 * i / n + Math.random() * 0.5, d = spread * (0.6 + Math.random() * 0.6);
         make('path', { d: 'M0 -8L2 -2L8 0L2 2L0 8L-2 2L-8 0L-2 -2Z', fill: colors[i % colors.length] }, g);
@@ -1227,7 +1917,7 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
       }
     }
     function ripple(delay) {
-      if (instant()) return;
+      if (tl.instant()) return;
       var g = make('g', {}, layer.fx), sp = new Sprite(g);
       make('ellipse', { rx: 10, ry: 3.5, fill: 'none', stroke: '#fff', 'stroke-width': 2 }, g);
       sp.x = FOOT.x; sp.y = FOOT.y; sp.s = 0.4; sp.o = 0; sp.draw();
@@ -1235,97 +1925,14 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
       move(sp, { s: 2.6, o: 0 }, 480, delay, { done: sp.remove.bind(sp) });
     }
     function think(main, sub, subColor) {
-      part.bubble.classList.toggle('on', !!main);
+      bubble.classList.toggle('on', !!main);
       if (!main) return;
       $('cj-bubble-main').textContent = main;
       var s = $('cj-bubble-sub'); s.textContent = sub || ''; s.style.fill = subColor || '';
     }
     function scent(color) {
-      part.scent.classList.toggle('on', !!color);
-      if (color) Array.prototype.forEach.call(part.scent.children, function (p) { p.style.stroke = color; });
-    }
-    function setGlow(color, a, fade) { part.glow.setAttribute('fill', color); glow.a = a; glow.at = now(); glow.fade = fade; }
-
-    /* ---------- the dealer ---------- */
-    function flick() {
-      var h = dealer.handR;
-      move(h, { x: SHOE.x + 4, y: SHOE.y + 6 }, 90, 0, { done: function () { move(h, { x: REST_R.x, y: REST_R.y }, 160, 0); } });
-    }
-    function reach(handPt, target, delay, back) {
-      move(handPt, { x: target.x, y: target.y + 8 }, 200, delay, { done: function () { move(handPt, { x: back.x, y: back.y }, 300, 120); } });
-    }
-    function lookAt(p, ms) { dealer.look = p; dealer.lookUntil = now() + ms; }
-    function mood(m, ms) { dealer.mood = m; dealer.moodUntil = now() + ms; }
-    function drawArm(path, el, s, h, side) {
-      var mx = (s.x + h.x) / 2 + side * 14, my = (s.y + h.y) / 2 + 16;
-      path.setAttribute('d', 'M' + s.x + ' ' + s.y + 'Q' + r2(mx) + ' ' + r2(my) + ' ' + r2(h.x) + ' ' + r2(h.y));
-      el.setAttribute('cx', r2(h.x)); el.setAttribute('cy', r2(h.y));
-    }
-    function poseDealer(t) {
-      drawArm(part.armL, part.handL, SHOULDER_L, dealer.handL, -1);
-      drawArm(part.armR, part.handR, SHOULDER_R, dealer.handR, 1);
-      var target = t < dealer.lookUntil && dealer.look ? dealer.look : FLY_HEAD;
-      [[part.pupilL, 586], [part.pupilR, 614]].forEach(function (e) {
-        var dx = target.x - e[1], dy = target.y - 139, d = Math.sqrt(dx * dx + dy * dy) || 1;
-        e[0].setAttribute('cx', r2(e[1] + 2.4 * dx / d)); e[0].setAttribute('cy', r2(139 + 1.6 * dy / d));
-      });
-      var blink = !reduce && t % 4300 < 120;
-      part.eyes.setAttribute('transform', blink ? 'translate(0 138) scale(1 0.12) translate(0 -138)' : '');
-      var m = t < dealer.moodUntil ? dealer.mood : 'neutral';
-      part.mouth.setAttribute('d', MOUTH[m]);
-      part.brows.setAttribute('transform', m === 'surprised' ? 'translate(0 -4)' : m === 'smile' ? 'translate(0 1)' : '');
-    }
-
-    /* ---------- the fly ---------- */
-    function act(state) { fly.state = state; fly.since = now(); }
-    function poseFly(t, busy) {
-      var e = reduce ? 1e6 : t - fly.since, st = busy ? 'hover' : fly.state, p, k;
-      var x = 0, y = Math.sin(t / 700) * 1.2, lean = 0, spin = 0, head = 0, ant = Math.sin(t / 1300) * 3, wing = 0, legF = 0, legFF = 0, buzz = false;
-      if (st === 'idle') {
-        k = (e - 2600) % 8000;
-        if (e > 2600 && k < 1800) {          // grooming: rub the front legs together, over the eyes
-          p = Math.sin(Math.PI * k / 1800);
-          legF = 88 * p + 10 * p * Math.sin(t / 55); legFF = 80 * p + 10 * p * Math.sin(t / 55 + 2); head = -5 * p; lean = -2 * p;
-        }
-        k = e % 5200; if (k < 260) wing = -12 * Math.sin(Math.PI * k / 260);
-        k = t % 3100; if (k < 160) ant += 10 * Math.sin(Math.PI * k / 160);
-      } else if (st === 'sniff') {
-        p = clamp01(e / 260); lean = -5 * p; head = -6 * p; ant = -8 + 7 * Math.sin(t / 38);
-      } else if (st === 'tap') {
-        lean = -3; head = -4; legF = 40 * Math.abs(Math.sin(Math.PI * Math.min(e, 760) / 380));
-      } else if (st === 'wave') {
-        p = clamp01(e / 220) * clamp01((1250 - e) / 250);
-        legF = p * (72 + 22 * Math.sin((e - 220) / 95)); head = 3 * Math.sin(e / 140) * p;
-      } else if (st === 'win') {
-        p = e / 430;
-        if (p < 2) { y -= 42 * Math.abs(Math.sin(Math.PI * p)); buzz = true; }
-        else wing = -14 * clamp01(1 - (e - 860) / 1000);
-        ant = 6;
-      } else if (st === 'blackjack') {
-        k = e / 1900;
-        if (k < 1) { y -= 120 * Math.sin(Math.PI * k); x = -60 * Math.sin(2 * Math.PI * k); spin = -360 * easeInOut(clamp01((k - 0.25) / 0.5)); buzz = true; }
-        ant = 6;
-      } else if (st === 'lose' || st === 'bust') {
-        p = clamp01(e / 500);
-        if (st === 'bust' && e < 500) x = Math.sin(e / 22) * 5 * (1 - e / 500);
-        head = -10 * p; ant = -26 * p; wing = 7 * p; y += 3 * p; lean = -2 * p;
-      } else if (st === 'push') {
-        p = Math.sin(Math.PI * clamp01(e / 700)); wing = -10 * p; legF = 26 * p; y -= 4 * p;
-      } else if (st === 'hover') {             // Fast and Turbo: too busy to land
-        y = -36 + Math.sin(t / 170) * 5; x = Math.sin(t / 530) * 6; lean = -4 + Math.sin(t / 410) * 3; ant = Math.sin(t / 90) * 5; buzz = true;
-      }
-      if (buzz) wing = -36 + 28 * Math.sin(t * 0.83);
-      part.body.setAttribute('transform', 'translate(' + r2(x) + ' ' + r2(y) + ') rotate(' + r2(lean + spin) + ' 0 -70)');
-      rot(part.head, head, -40, -100); rot(part.ant, ant, -88, -124);
-      rot(part.wingN, wing, 2, -118); rot(part.wingF, wing * 1.1 - 6, 2, -121);
-      rot(part.legF, legF, -32, -66); rot(part.legFF, legFF, -26, -70);
-      part.wingN.setAttribute('opacity', buzz ? 0.6 : 1);
-      part.buzz.setAttribute('opacity', buzz ? 0.8 : 0);
-      var h = Math.max(0, -y);
-      part.shadow.setAttribute('transform', 'translate(' + r2(x) + ' 0) scale(' + r2(Math.max(0.4, 1 - h / 260)) + ' 1)');
-      part.shadow.setAttribute('opacity', r2(0.35 * Math.max(0.3, 1 - h / 200)));
-      var g = glow.fade ? glow.a * clamp01(1 - (t - glow.at) / glow.fade) : glow.a;
-      part.glow.setAttribute('opacity', r2(g));
+      scentG.classList.toggle('on', !!color);
+      if (color) Array.prototype.forEach.call(scentG.children, function (p) { p.style.stroke = color; });
     }
 
     /* ---------- what the page asks for ---------- */
@@ -1334,23 +1941,23 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
       table.fly = []; table.dealer = []; table.hand = null; table.open = false;
       chipsAway(TRAY, 0);
       if (!old.length) return 0;
-      if (instant()) { old.forEach(function (sp) { sp.remove(); }); return 0; }
-      reach(dealer.handL, { x: 610, y: 400 }, 0, REST_L);
+      if (tl.instant()) { old.forEach(function (sp) { sp.remove(); }); return 0; }
+      dealer.reach(true, { x: 610, y: 400 }, 0);
       old.forEach(function (sp, i) {
         move(sp, { x: DISCARD.x + (i % 3) * 3, y: DISCARD.y - 4, r: 0, s: 0.45, o: 0 }, 430, 120 + i * 45, { arc: 18, done: function () { sp.remove(); } });
       });
       return 520 + old.length * 45;
     }
     function clearAll() {
-      tweens = []; timers = [];
+      tl.clear();
       [layer.cards, layer.chips, layer.fx].forEach(function (l) { while (l.firstChild) l.removeChild(l.firstChild); });
       table = { hand: null, fly: [], dealer: [], bet: [], open: false };
-      dealer.handL = new Point(REST_L); dealer.handR = new Point(REST_R);
+      dealer.reset();
     }
 
     /* A fresh hand: clear the old cards, bet, deal fly, dealer, fly, dealer (face down). */
     function deal(hand) {
-      think(null); scent(null); act('idle');
+      think(null); scent(null); fly.act('idle');
       var t = sweep();
       hideBadges();
       table.hand = hand;
@@ -1371,8 +1978,8 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
       if (t) { t += 120; later(t, function () { flyBadge(hand); }); }
       if (isOpen(hand) && !table.open) {
         var hole = table.dealer[1];
-        t += 250; reach(dealer.handL, hole, t, REST_L); lookAt(hole, 900);
-        later(t + 170, function () { table.open = true; flip(hole, true); });
+        t += 250; dealer.reach(true, hole, t); dealer.look(hole, 900);
+        later(t + 170, function () { table.open = true; K.flip(tl, hole, true); });
         t += 520; later(t, function () { dealerBadge(hand, 2); });
         for (i = 2; i < hand.dealer.length; i++) {
           dealCard('dealer', hand.dealer[i], true, t); t += 560;
@@ -1382,38 +1989,38 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
       return t + 120;
     }
     function sniff(hit, v) {
-      act('sniff');
+      fly.act('sniff');
       var good = v >= 0;
       think(hit ? 'Hit?' : 'Stand?', 'smells ' + (good ? 'good ' : 'bad ') + (v < 0 ? '−' : '+') + Math.abs(v).toFixed(2), good ? '#2c6fd0' : '#c4501c');
       scent(good ? SMELL_GOOD : SMELL_BAD);
-      setGlow('#7df0c4', 0.45, 0);
+      fly.glow('#7df0c4', 0.45, 0);
     }
     function choose(hit) {
-      scent(null); setGlow('#7df0c4', 0, 0);
-      act(hit ? 'tap' : 'wave');
+      scent(null); fly.glow('#7df0c4', 0, 0);
+      fly.act(hit ? 'tap' : 'wave');
       think(hit ? 'Hit!' : 'Stand.', hit ? 'taps the felt' : 'waves it off', '#47564d');
       if (hit) { ripple(380); ripple(760); }
-      lookAt(FOOT, 900);
+      dealer.look(FOOT, 900);
       return hit ? 900 : 1150;
     }
     function settle(hand) {
       var r = hand.reward, res = hand.result;
       think(null); scent(null);
-      act(res === 'blackjack' ? 'blackjack' : r > 0 ? 'win' : res === 'bust' ? 'bust' : r < 0 ? 'lose' : 'push');
-      mood(r > 0 ? 'surprised' : r < 0 ? 'smile' : 'neutral', 1900);
+      fly.act(res === 'blackjack' ? 'blackjack' : r > 0 ? 'win' : res === 'bust' ? 'bust' : r < 0 ? 'lose' : 'shrug');
+      dealer.mood(r > 0 ? 'surprised' : r < 0 ? 'smile' : 'neutral', 1900);
       floatText(r > 0 ? '+' + r : r < 0 ? '−' + -r : 'push', r > 0 ? '#ffd46b' : r < 0 ? '#ff8a6b' : '#e8e2d4', BET.x, BET.y - 34, 120);
       if (r > 0) {
         var pay = r === 1.5 ? ['red', 'blue'] : ['red'], n = table.bet.length;
         pay.forEach(function (c, k) {
-          var sp = chipSprite(c);
+          var sp = K.chipSprite(layer.chips, c);
           sp.x = TRAY.x; sp.y = TRAY.y; sp.o = 0; sp.draw();
           table.bet.push(sp); chipTo(sp, n + k, 150 + k * 160);
         });
-        lookAt(BET, 900); reach(dealer.handL, TRAY, 60, REST_L);
+        dealer.look(BET, 900); dealer.reach(true, TRAY, 60);
         chipsAway(POCKET, 1050);
         sparkle(res === 'blackjack' ? 26 : 12, FLY_HEAD.x + 40, FLY_HEAD.y - 30, res === 'blackjack' ? 140 : 80, ['#ffd46b', '#fff3c4', '#ff9fd0'], 200);
       } else if (r < 0) {
-        reach(dealer.handL, BET, 300, REST_L); chipsAway(TRAY, 420);
+        dealer.reach(true, BET, 300); chipsAway(TRAY, 420);
       } else {
         chipsAway(POCKET, 700);
       }
@@ -1421,7 +2028,7 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     }
     function dopamine(surprise) {
       if (surprise === null || surprise === undefined || Math.abs(surprise) <= 0.05) return;
-      setGlow(surprise > 0 ? '#4d9bff' : '#ff6a2e', Math.min(0.95, Math.abs(surprise) * 1.5 + 0.35), 1700);
+      fly.glow(surprise > 0 ? '#4d9bff' : '#ff6a2e', Math.min(0.95, Math.abs(surprise) * 1.5 + 0.35), 1700);
     }
     /* A finished hand laid out at once (Fast and Turbo, or with reduced motion). */
     function show(hand) {
@@ -1434,13 +2041,13 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
       think(null); scent(null);
       snap = false;
     }
-    function clear() { think(null); scent(null); act('idle'); sweep(); hideBadges(); }
+    function clear() { think(null); scent(null); fly.act('idle'); sweep(); hideBadges(); }
 
     function tick(t, busy) {
-      run(t);
-      poseFly(reduce ? 0 : t, busy);
-      poseDealer(t);
-      if (!reduce) part.gnat.setAttribute('transform', 'translate(' + r2(1010 + 30 * Math.cos(t / 520)) + ' ' + r2(246 + 12 * Math.sin(t / 260) + 3 * Math.sin(t / 70)) + ')');
+      tl.run(t);
+      fly.pose(t, busy);
+      dealer.pose(t, FLY_HEAD, reduce);
+      if (!reduce) gnat.setAttribute('transform', 'translate(' + r2(1010 + 30 * Math.cos(t / 520)) + ' ' + r2(246 + 12 * Math.sin(t / 260) + 3 * Math.sin(t / 70)) + ')');
     }
 
     // phones: frame the middle of the room so the cards stay readable
@@ -1675,7 +2282,7 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(base, 0, 0);
     ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
-    var i, c, a, on = view.odor >= 0;
+    var i, c, a, on = view.odor >= 0, vb = view.brain || S.brain;
     // dopamine neurons: reward (PAM) glows when things went better than expected, punishment (PPL1) when worse
     var reward = view.dopamine > 0 ? fade * Math.min(1, view.dopamine * 1.5 + 0.25) : 0;
     var punish = view.dopamine < 0 ? fade * Math.min(1, -view.dopamine * 1.5 + 0.25) : 0;
@@ -1687,18 +2294,19 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     for (i = 0; i < view.kc.length; i++) { c = byGroup.kc[view.kc[i][0]]; a = Math.min(1, view.kc[i][1] * 9); dot(c, 1.3 + 1.5 * a, COLORS.actHi, 0.45 + 0.55 * a); }
     // output neurons: size and brightness relative to their response before any learning
     for (i = 0; i < byGroup.mbon.length; i++) {
-      c = byGroup.mbon[i]; a = on ? Math.min(2, view.mbon[c.i] / (S.brain.mbonBaseline[c.i] || 1)) : 0;
-      dot(c, 2.6 + 2.2 * a, S.brain.valence[c.i] > 0 ? COLORS.pos : COLORS.neg, 0.3 + 0.35 * a);
+      c = byGroup.mbon[i]; a = on ? Math.min(2, view.mbon[c.i] / (vb.mbonBaseline[c.i] || 1)) : 0;
+      dot(c, 2.6 + 2.2 * a, vb.valence[c.i] > 0 ? COLORS.pos : COLORS.neg, 0.3 + 0.35 * a);
       ctx.globalAlpha = 0.9; ctx.lineWidth = 1; ctx.strokeStyle = '#0a0e0c'; ctx.stroke();
     }
     ctx.globalAlpha = 1;
     $('scope-state').textContent = fade > 0 ? (view.dopamine > 0 ? 'reward dopamine' : 'punishment dopamine') : (view.label || ' ');
   }
-  function showOdor(odor, label) {
+  function showOdor(odor, label, brain) {      // brain: another fly's (the poker table), else this one's
+    var b = view.brain = brain || S.brain;
     view.odor = odor; view.label = label;
-    S.brain.glomerulusPattern(odor, view.glom);
-    view.kc = S.brain.activeKenyonCells(odor);
-    S.brain.respond(odor); view.mbon.set(S.brain.mbon);
+    b.glomerulusPattern(odor, view.glom);
+    view.kc = b.activeKenyonCells(odor);
+    b.respond(odor); view.mbon.set(b.mbon);
     view.changed = true;
   }
   function flashDopamine(surprise) {
@@ -1864,10 +2472,10 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
   }
 
   /* ---------- main loop ---------- */
-  var due = 0, prev = 0;
+  var due = 0, prev = 0, suspended = false;   // suspended: the poker tab is showing
   function frame(now) {
     var dt = Math.min(100, now - (prev || now)); prev = now;
-    if (playing) {
+    if (playing && !suspended) {
       if (speed === 'watch') {
         if (!watch.step) { watch.step = stepDeal; watch.at = now; }
         if (now >= watch.at) { var next = watch.step(); watch.step = next[0]; watch.at = now + next[1]; refresh(true); }
@@ -1879,8 +2487,7 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
         while (performance.now() - t0 < 12) for (var i = 0; i < 40; i++) quickHand();
       }
     }
-    refresh(false);
-    scene.tick(now, playing && speed !== 'watch');
+    if (!suspended) { refresh(false); scene.tick(now, playing && speed !== 'watch'); }
     drawBrain(now);
     requestAnimationFrame(frame);
   }
@@ -1922,6 +2529,968 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     showHand(h); showChoice(d || null); if (d) showOdor(d.odor, 'last choice');
   }
   requestAnimationFrame(frame);
-  self.FlyJack = { sessions: sessions, current: function () { return S; } };
+  /* The poker tab borrows the brain view and pauses this table while it shows. */
+  var scopeEl = document.querySelector('.scope');
+  self.FlyJack = {
+    sessions: sessions, current: function () { return S; }, circuit: circuit,
+    suspend: function (on) {
+      if (on === suspended) return;
+      suspended = on; prev = 0;
+      if (on) { save(); return; }
+      view.brain = null; view.odor = -1; view.dopamine = 0; view.label = ' '; view.changed = true;
+      S.rateT = 0; refresh(true);
+    },
+    scope: {
+      mount: function (slot) { if (scopeEl.parentNode !== slot) slot.appendChild(scopeEl); view.changed = true; },
+      show: function (brain, odor, label) { showOdor(odor, label, brain); },
+      dopamine: function (surprise) {
+        if (surprise === null || surprise === undefined || Math.abs(surprise) <= 0.05) return;
+        view.dopamine = surprise; view.dopamineAt = performance.now(); view.changed = true;
+      }
+    }
+  };
+})();
+</script>
+<script>/* FlyJack - the poker table. Six seats around an oval table in the same casino room, the same
+   dealer, and a copy of the blackjack fly for every fly seat, each wearing the look of a classic
+   lab strain. The flies act out their choices: sniff, tap the felt to check, push chips in to
+   call or raise, droop and slide their cards away to fold, hop when they take the pot. */
+(function (root) {
+  'use strict';
+  var K = root.SceneKit, make = K.make, text = K.text, r2 = K.r2, easeIn = K.easeIn, Sprite = K.Sprite;
+  var DECK = { x: 600, y: 286 }, MUCK = { x: 600, y: 300 }, POT = { x: 600, y: 338 }, FLY_SCALE = 0.62;
+  var DEALER = { shoulderL: { x: 532, y: 222 }, shoulderR: { x: 668, y: 222 }, restL: { x: 522, y: 280 }, restR: { x: 678, y: 280 } };
+  // every seat: where the fly stands, its hole cards, its bet, its name plate and its thought bubble
+  var SEATS = [
+    { fly: { x: 968, y: 400 }, flip: false, cards: { x: 866, y: 420 }, bet: { x: 806, y: 392 }, plate: { x: 990, y: 432 }, bubble: { x: 905, y: 262 } },
+    { fly: { x: 968, y: 548 }, flip: false, cards: { x: 866, y: 528 }, bet: { x: 793, y: 498 }, plate: { x: 990, y: 580 }, bubble: { x: 820, y: 448 } },
+    { fly: { x: 738, y: 610 }, flip: false, cards: { x: 655, y: 592 }, bet: { x: 650, y: 528 }, plate: { x: 778, y: 642 }, bubble: { x: 676, y: 474 } },
+    { fly: { x: 462, y: 610 }, flip: true, cards: { x: 545, y: 592 }, bet: { x: 550, y: 528 }, plate: { x: 422, y: 642 }, bubble: { x: 524, y: 474 } },
+    { fly: { x: 232, y: 548 }, flip: true, cards: { x: 334, y: 528 }, bet: { x: 407, y: 498 }, plate: { x: 210, y: 580 }, bubble: { x: 380, y: 448 } },
+    { fly: { x: 232, y: 400 }, flip: true, cards: { x: 334, y: 420 }, bet: { x: 394, y: 392 }, plate: { x: 210, y: 432 }, bubble: { x: 295, y: 262 } }
+  ];
+  var LOOKS = {
+    'Canton-S': {},
+    'white': { eye: 'url(#cj-eye-white)' },
+    'yellow': { thorax: 'url(#cj-thorax-yellow)', abdomen: 'url(#cj-abdomen-yellow)', headshell: '#e6c26a', scutellum: '#e9c873' },
+    'ebony': { thorax: 'url(#cj-thorax-ebony)', abdomen: 'url(#cj-abdomen-ebony)', headshell: '#5e4535', scutellum: '#4a3427' },
+    'Curly': { wingRest: -24 }
+  };
+  var SMELL_GOOD = '#6aa8ff', SMELL_BAD = '#ff8a50', AVATAR = ['#e0864a', '#5b8def', '#c45bb0', '#3fa77a', '#d6b25e', '#e05a5a'];
+
+  function head(seat) { return { x: seat.fly.x + (seat.flip ? 41 : -41), y: seat.fly.y - 64 }; }
+
+  function PokerScene(svg, options) {
+    var reduce = !!(options && options.reduceMotion);
+    var $ = function (id) { return document.getElementById(id); };
+    var layer = { places: $('pk-places'), flies: $('pk-flies'), cards: $('pk-cards'), chips: $('pk-chips'), labels: $('pk-labels'), fx: $('pk-fx') };
+    var bubble = $('pk-bubble'), scentG = $('pk-scent');
+    var snap = false, tl = new K.Timeline(function () { return snap || reduce; });
+    var move = tl.move.bind(tl), later = tl.later.bind(tl);
+    var dealerBody = K.cloneDrawing($('cj-dealer')), dealerArms = K.cloneDrawing($('cj-arms'));
+    $('pk-dealer').appendChild(dealerBody); $('pk-arms').appendChild(dealerArms);
+    var dealer = new K.Dealer(dealerBody, dealerArms, tl, DEALER);
+    var seats = [], holes = [], bets = [], board = [], pot = null, potLabel = null, button = null, onSeatClick = null;
+    K.decorateRoom($('pk-bokeh'), 11);
+
+    /* ---------- who sits where ---------- */
+    function setSeats(list) {
+      while (layer.places.firstChild) layer.places.removeChild(layer.places.firstChild);
+      while (layer.flies.firstChild) layer.flies.removeChild(layer.flies.firstChild);
+      seats = list.map(function (s, i) {
+        var at = SEATS[i], out = { kind: s.kind, name: s.name, fly: null };
+        if (s.kind === 'fly') {
+          var g = K.cloneDrawing($('cj-fly')), look = LOOKS[s.look] || {};
+          ['eye', 'thorax', 'abdomen', 'headshell', 'scutellum'].forEach(function (p) {
+            var el = g.querySelector('[data-part="' + p + '"]');
+            if (el && look[p]) el.setAttribute('fill', look[p]);
+          });
+          g.setAttribute('transform', 'translate(' + at.fly.x + ' ' + at.fly.y + ') scale(' + (at.flip ? -FLY_SCALE : FLY_SCALE) + ' ' + FLY_SCALE + ')');
+          layer.flies.appendChild(g);
+          out.g = g; out.fly = new K.Fly(g, { reduce: reduce, wingRest: look.wingRest || 0 });
+        } else if (s.kind === 'human') {
+          var a = make('g', { 'class': 'avatar', transform: 'translate(' + at.fly.x + ' ' + (at.fly.y - 50) + ')' }, layer.places);
+          make('ellipse', { cy: 52, rx: 40, ry: 9, fill: '#000', opacity: 0.3 }, a);
+          make('circle', { r: 33, fill: AVATAR[i % AVATAR.length], stroke: '#fbfaf5', 'stroke-width': 3 }, a);
+          text(a, (s.name || '?').charAt(0).toUpperCase(), 0, 10, 'avatar-letter', '#fff', 'middle');
+          out.g = a;
+        } else {
+          var e = make('g', { 'class': 'seat-open', transform: 'translate(' + at.fly.x + ' ' + (at.fly.y - 50) + ')', tabindex: 0, role: 'button', 'aria-label': 'Open seat ' + (i + 1) + ': join the game' }, layer.places);
+          make('circle', { r: 33, fill: '#fff', 'fill-opacity': 0.04, stroke: '#e8c27a', 'stroke-opacity': 0.7, 'stroke-width': 2, 'stroke-dasharray': '6 6' }, e);
+          text(e, '+', 0, 12, 'seat-plus', '#e8c27a', 'middle');
+          var go = function () { if (onSeatClick) onSeatClick(i); };
+          e.addEventListener('click', go);
+          e.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); } });
+          out.g = e;
+        }
+        out.plate = make('g', { 'class': 'plate', transform: 'translate(' + at.plate.x + ' ' + at.plate.y + ')' }, layer.places);
+        make('rect', { x: -66, y: -21, width: 132, height: 42, rx: 10 }, out.plate);
+        out.nameEl = text(out.plate, s.kind === 'empty' ? 'Open seat' : s.name, 0, -4, 'plate-name', null, 'middle');
+        out.stackEl = text(out.plate, s.kind === 'empty' ? 'click to join' : String(s.stack), 0, 13, 'plate-stack', null, 'middle');
+        return out;
+      });
+    }
+    function plate(i, o) {
+      var s = seats[i];
+      if (!s) return;
+      if (o.stack !== undefined) s.stackEl.textContent = o.stack;
+      if (o.acting !== undefined) s.plate.classList.toggle('acting', o.acting);
+      if (o.folded !== undefined) { s.plate.classList.toggle('folded', o.folded); if (s.g) s.g.style.opacity = o.folded ? 0.5 : ''; }
+    }
+
+    /* ---------- cards ---------- */
+    function holeSlot(i, k) { var c = SEATS[i].cards; return { x: c.x + (k ? 13 : -13), y: c.y + (k ? 2 : 0), r: k ? 7 : -7, s: FLY_SCALE }; }
+    function boardSlot(k) { return { x: 460 + k * 70, y: 428, r: 0, s: 0.95 }; }
+    function deal1(card, to, up, delay) {
+      var sp = K.cardSprite(layer.cards, card);
+      sp.x = DECK.x; sp.y = DECK.y; sp.r = -20; sp.s = 0.5; sp.o = 0; sp.draw();
+      later(delay, function () { sp.o = 1; sp.draw(); dealer.flick(DECK); dealer.look(to, 400); });
+      move(sp, { x: to.x, y: to.y, r: to.r, s: to.s }, 340, delay, { arc: 30 });
+      if (up) later(delay + 170, function () { K.flip(tl, sp, true); });
+      return sp;
+    }
+    function reveal(i, up) { (holes[i] || []).forEach(function (sp) { if (sp.up !== up) K.flip(tl, sp, up); }); }
+
+    /* ---------- chips ---------- */
+    function betLabel(i, amount) {
+      var b = bets[i];
+      if (b.label) b.label.remove();
+      b.label = null;
+      if (!amount) return;
+      var at = SEATS[i].bet, g = make('g', {}, layer.labels), sp = new Sprite(g);
+      text(g, String(amount), 0, 0, 'bet-label', null, 'middle');
+      sp.x = at.x; sp.y = at.y + 26; sp.draw(); b.label = sp;
+    }
+    function setBet(i, amount, delay) {
+      var b = bets[i] || (bets[i] = { sp: null, label: null, amount: 0 }), at = SEATS[i].bet, from = SEATS[i].plate;
+      var chip = K.chipSprite(layer.chips, 'red');
+      chip.x = from.x; chip.y = from.y - 20; chip.o = 0; chip.draw();
+      later(delay, function () { chip.o = 1; chip.draw(); });
+      move(chip, { x: at.x, y: at.y }, 360, delay, { arc: 26, done: function () {
+        chip.remove();
+        if (b.sp) b.sp.remove();
+        b.sp = K.stackSprite(layer.chips, amount, 6); b.sp.x = at.x; b.sp.y = at.y; b.sp.draw();
+        b.amount = amount; betLabel(i, amount);
+      } });
+    }
+    function drawPot(amount) {
+      if (pot) pot.remove();
+      if (potLabel) potLabel.remove();
+      pot = potLabel = null;
+      if (!amount) return;
+      pot = K.stackSprite(layer.chips, amount, 12); pot.x = POT.x; pot.y = POT.y; pot.draw();
+      var g = make('g', {}, layer.labels); potLabel = new Sprite(g);
+      make('rect', { x: -44, y: -14, width: 88, height: 28, rx: 14, 'class': 'pot-pill' }, g);
+      text(g, 'Pot ' + amount, 0, 5, 'pot-label', null, 'middle');
+      potLabel.x = POT.x + 92; potLabel.y = POT.y - 4; potLabel.draw();
+    }
+    function placeButton(i, delay) {
+      var at = SEATS[i].bet, to = { x: at.x + (SEATS[i].flip ? -34 : 34), y: at.y + 22 };
+      if (!button) {
+        var g = make('g', {}, layer.chips);
+        make('ellipse', { cy: 3, rx: 14, ry: 6, fill: '#bdb6a6' }, g);
+        make('ellipse', { rx: 14, ry: 6, fill: '#fbfaf5' }, g);
+        text(g, 'D', 0, 4, 'dealer-btn', '#1c1c1c', 'middle');
+        button = new Sprite(g); button.x = to.x; button.y = to.y; button.draw();
+      }
+      move(button, to, 400, delay, { arc: 14 });
+    }
+
+    /* ---------- effects ---------- */
+    function floatText(str, color, x, y, delay, cls) {
+      var g = make('g', {}, layer.fx), sp = new Sprite(g);
+      text(g, str, 0, 0, cls || 'fx-say', color, 'middle');
+      sp.x = x; sp.y = y; sp.o = 0; sp.draw();
+      later(delay, function () { sp.o = 1; sp.draw(); });
+      move(sp, { y: y - 34 }, 1300, delay);
+      move(sp, { o: 0 }, 1300, delay, { ease: easeIn, done: function () { sp.remove(); } });
+    }
+    function sparkle(n, cx, cy, spread, delay) {
+      if (tl.instant()) return;
+      var colors = ['#ffd46b', '#fff3c4', '#ff9fd0'];
+      for (var i = 0; i < n; i++) {
+        var g = make('g', {}, layer.fx), sp = new Sprite(g), a = Math.PI * 2 * i / n + Math.random() * 0.5, d = spread * (0.6 + Math.random() * 0.6);
+        make('path', { d: 'M0 -8L2 -2L8 0L2 2L0 8L-2 2L-8 0L-2 -2Z', fill: colors[i % 3] }, g);
+        sp.x = cx; sp.y = cy; sp.s = 0.3; sp.o = 0; sp.draw();
+        (function (sp, dl) { later(dl, function () { sp.o = 1; sp.draw(); }); })(sp, delay + i * 18);
+        move(sp, { x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d * 0.7, s: 0.5 + Math.random() * 0.6, r: 140 }, 650, delay + i * 18);
+        move(sp, { o: 0 }, 900, delay + i * 18, { ease: easeIn, done: sp.remove.bind(sp) });
+      }
+    }
+    function ripple(i, delay) {
+      if (tl.instant()) return;
+      var at = SEATS[i], g = make('g', {}, layer.fx), sp = new Sprite(g);
+      make('ellipse', { rx: 8, ry: 3, fill: 'none', stroke: '#fff', 'stroke-width': 2 }, g);
+      sp.x = at.fly.x + (at.flip ? 50 : -50); sp.y = at.fly.y; sp.s = 0.4; sp.o = 0; sp.draw();
+      later(delay, function () { sp.o = 0.9; sp.draw(); });
+      move(sp, { s: 2.4, o: 0 }, 480, delay, { done: sp.remove.bind(sp) });
+    }
+    /* The thought bubble over seat i: a title, or up to three smell lines [{label, v}]. */
+    function think(i, main, lines) {
+      bubble.classList.toggle('on', i !== null && i !== undefined);
+      if (i === null || i === undefined) return;
+      var at = SEATS[i].bubble, h = head(SEATS[i]);
+      bubble.setAttribute('transform', 'translate(' + at.x + ' ' + at.y + ')');
+      var dx = h.x - at.x, dy = h.y - at.y;
+      $('pk-bubble-dot1').setAttribute('cx', r2(dx * 0.55)); $('pk-bubble-dot1').setAttribute('cy', r2(dy * 0.55));
+      $('pk-bubble-dot2').setAttribute('cx', r2(dx * 0.8)); $('pk-bubble-dot2').setAttribute('cy', r2(dy * 0.8));
+      var rows = $('pk-bubble-rows');
+      while (rows.firstChild) rows.removeChild(rows.firstChild);
+      if (main) { text(rows, main, 0, 8, 'bubble-main', null, 'middle'); return; }
+      (lines || []).forEach(function (l, k) {
+        var y = (k - (lines.length - 1) / 2) * 19 + 5;
+        text(rows, l.label, -8, y, 'bubble-row', null, 'end');
+        text(rows, (l.v < 0 ? '−' : '+') + Math.abs(l.v).toFixed(2), 2, y, 'bubble-val', l.v >= 0 ? '#2c6fd0' : '#c4501c', 'start');
+      });
+    }
+    function scent(i, color) {
+      scentG.classList.toggle('on', !!color);
+      if (!color) return;
+      var c = SEATS[i].cards, h = head(SEATS[i]);
+      K.scentPaths(scentG, c.x, c.y - 10, h.x + (SEATS[i].flip ? 6 : -6), h.y - 6);
+      Array.prototype.forEach.call(scentG.children, function (p) { p.style.stroke = color; });
+    }
+    function puppet(i) { return seats[i] && seats[i].fly; }
+
+    /* ---------- what the game asks for ---------- */
+    function clearAll() {
+      tl.clear();
+      [layer.cards, layer.chips, layer.labels, layer.fx].forEach(function (l) { while (l.firstChild) l.removeChild(l.firstChild); });
+      holes = []; bets = []; board = []; pot = potLabel = button = null;
+      dealer.reset();
+      think(null); scent(null);
+    }
+    function sweep() {
+      var old = [];
+      holes.forEach(function (h) { if (h) old = old.concat(h); });
+      old = old.concat(board);
+      holes = []; board = [];
+      bets.forEach(function (b, i) { if (b) { if (b.sp) b.sp.remove(); betLabel(i, 0); } });
+      bets = []; drawPot(0);
+      think(null); scent(null);
+      seats.forEach(function (s, i) { plate(i, { folded: false, acting: false }); if (s.fly) s.fly.act('idle'); });
+      if (!old.length) return 0;
+      if (tl.instant()) { old.forEach(function (sp) { sp.remove(); }); return 0; }
+      dealer.reach(true, { x: 600, y: 400 }, 0);
+      old.forEach(function (sp, k) { move(sp, { x: MUCK.x, y: MUCK.y, r: 0, s: 0.4, o: 0 }, 380, 80 + k * 25, { arc: 16, done: sp.remove.bind(sp) }); });
+      return 480 + old.length * 25;
+    }
+
+    /* A new hand: the button moves, the blinds go in, two cards each, starting left of the button. */
+    function deal(hand, faceUp) {
+      var t = sweep(), n = hand.n, i;
+      placeButton(hand.p[hand.button].seat, t);
+      t += 250;
+      [hand.sb, hand.bb].forEach(function (k) {
+        var q = hand.p[k];
+        setBet(q.seat, q.bet, t); t += 160;
+        later(t, function () { plate(q.seat, { stack: q.stack }); });
+      });
+      t += 200;
+      for (var round = 0; round < 2; round++) for (i = 0; i < n; i++) {
+        var q = hand.p[(hand.sb + i) % n];
+        var sp = deal1(q.hole[round], holeSlot(q.seat, round), faceUp(q.seat), t);
+        (holes[q.seat] = holes[q.seat] || []).push(sp);
+        t += 120;
+      }
+      return t + 350;
+    }
+    function sniff(i, lines) {
+      var f = puppet(i), best = -Infinity;
+      lines.forEach(function (l) { best = Math.max(best, l.v); });
+      if (f) { f.act('sniff'); f.glow('#7df0c4', 0.45, 0); }
+      think(i, null, lines);
+      scent(i, best >= 0 ? SMELL_GOOD : SMELL_BAD);
+      plate(i, { acting: true });
+      dealer.look(head(SEATS[i]), 1500);
+    }
+    function waitFor(i) { plate(i, { acting: true }); dealer.look(head(SEATS[i]), 1e9); }
+    var SAY = { fold: 'Fold', check: 'Check', call: 'Call', bet: 'Bet', raise: 'Raise' };
+    /* Seat i did ev (from Poker.Hand.act). Returns how long the gesture takes. */
+    function act(i, ev, stack) {
+      var f = puppet(i), at = SEATS[i], ms = 800;
+      scent(null); dealer.look(null, 0);
+      if (f) f.glow('#7df0c4', 0, 0);
+      think(f ? i : null, ev.type === 'fold' ? 'Fold.' : ev.type === 'check' ? 'Check.' : SAY[ev.type] + (ev.type === 'call' ? ' ' + ev.paid : ' to ' + ev.level) + '!');
+      floatText(ev.type === 'check' || ev.type === 'fold' ? SAY[ev.type] : SAY[ev.type] + ' ' + (ev.type === 'call' ? ev.paid : ev.level), ev.type === 'fold' ? '#ff9b7a' : '#f3ead2', at.bet.x, at.bet.y - 18, 150);
+      if (ev.type === 'fold') {
+        if (f) f.act('fold');
+        (holes[i] || []).forEach(function (sp, k) { move(sp, { x: MUCK.x, y: MUCK.y, s: 0.4, o: 0, r: 0 }, 420, 250 + k * 60, { arc: 20, done: sp.remove.bind(sp) }); });
+        holes[i] = [];
+        later(500, function () { plate(i, { folded: true, acting: false }); });
+        ms = 900;
+      } else if (ev.type === 'check') {
+        if (f) { f.act('tap'); ripple(i, 380); ripple(i, 760); }
+        later(700, function () { plate(i, { acting: false }); });
+        ms = 900;
+      } else {
+        if (f) f.act('push');
+        setBet(i, ev.bet, 200);
+        later(500, function () { plate(i, { acting: false, stack: stack }); });
+        ms = 850;
+      }
+      later(ms, function () { if (f && ev.type !== 'fold') f.act('idle'); think(null); });
+      return ms + 150;
+    }
+    /* The betting round is over: bets slide into the pot. */
+    function gather(potAmount) {
+      var t = 0;
+      bets.forEach(function (b, i) {
+        if (!b || !b.sp) return;
+        var sp = b.sp; b.sp = null; betLabel(i, 0);
+        move(sp, { x: POT.x, y: POT.y, o: 0.2 }, 380, t, { arc: 12, done: sp.remove.bind(sp) });
+        t += 40;
+      });
+      bets = [];
+      later(t + 380, function () { drawPot(potAmount); });
+      return t + 450;
+    }
+    function deal_board(cards, from) {
+      var t = 0;
+      for (var k = 0; k < cards.length; k++) { board.push(deal1(cards[k], boardSlot(from + k), true, t)); t += 230; }
+      dealer.look(boardSlot(from), 900);
+      return t + 450;
+    }
+    /* Everyone still in turns their cards over; each hand's name appears above it. */
+    function showdown(hand) {
+      var t = 0;
+      hand.p.forEach(function (q) {
+        if (q.folded) return;
+        reveal(q.seat, true);
+        var c = SEATS[q.seat].cards;
+        later(300, function () { floatName(q.handName, c.x, c.y - 52); });
+        t = 900;
+      });
+      return t;
+    }
+    function floatName(str, x, y) {
+      var g = make('g', {}, layer.labels), sp = new Sprite(g);
+      text(g, str, 0, 0, 'hand-name', null, 'middle');
+      sp.x = x; sp.y = y; sp.draw();
+      return sp;
+    }
+    /* The pot goes to the winner(s); each fly reacts to how its hand went. */
+    function payout(hand) {
+      var amountTotal = hand.pot(), t = 200;
+      think(null); scent(null);
+      if (pot) { var p0 = pot; pot = null; p0.remove(); }
+      drawPot(0);
+      hand.winners.forEach(function (w, k) {
+        var q = hand.p[w.i], at = SEATS[q.seat], sp = K.stackSprite(layer.chips, w.amount, 12);
+        sp.x = POT.x; sp.y = POT.y; sp.draw();
+        dealer.reach(k === 0, POT, 0);
+        move(sp, { x: at.bet.x, y: at.bet.y }, 500, t + k * 150, { arc: 30, done: function () {
+          move(sp, { x: at.plate.x, y: at.plate.y - 16, o: 0 }, 420, 500, { done: sp.remove.bind(sp) });
+        } });
+        floatText('+' + w.amount, '#ffd46b', at.bet.x, at.bet.y - 20, t + 400, 'fx-float');
+        later(t + 1100, function () { plate(q.seat, { stack: q.stack }); });
+        sparkle(w.amount >= 30 ? 22 : 10, head(at).x, head(at).y - 20, w.amount >= 30 ? 110 : 70, t + 350);
+      });
+      hand.p.forEach(function (q, i) {
+        var f = puppet(q.seat), won = hand.winners.some(function (w) { return w.i === i; });
+        if (!f) return;
+        if (won) f.act(amountTotal >= 30 && hand.winners.length === 1 ? 'blackjack' : 'win');
+        else if (!q.folded) f.act('lose');
+        else if (q.net < -4) f.act('lose');
+      });
+      dealer.mood(hand.winners.some(function (w) { return seats[hand.p[w.i].seat].kind === 'human'; }) ? 'surprised' : 'smile', 1800);
+      return amountTotal >= 30 ? 2700 : 2100;
+    }
+    function dopamine(i, surprise) {
+      var f = puppet(i);
+      if (!f || surprise === null || surprise === undefined || Math.abs(surprise) <= 0.05) return;
+      f.glow(surprise > 0 ? '#4d9bff' : '#ff6a2e', Math.min(0.95, Math.abs(surprise) * 1.5 + 0.35), 1700);
+    }
+    /* A finished hand laid out at once (Fast and Turbo, or with reduced motion). */
+    function show(hand, faceUp) {
+      clearAll();
+      snap = true;
+      placeButton(hand.p[hand.button].seat, 0);
+      hand.p.forEach(function (q) {
+        plate(q.seat, { stack: q.stack, folded: q.folded, acting: false });
+        if (q.folded) return;
+        holes[q.seat] = q.hole.map(function (c, k) { return deal1(c, holeSlot(q.seat, k), hand.showdown || faceUp(q.seat), 0); });
+        if (hand.showdown) { var c = SEATS[q.seat].cards; floatName(q.handName, c.x, c.y - 52); }
+      });
+      hand.board.forEach(function (c, k) { board.push(deal1(c, boardSlot(k), true, 0)); });
+      snap = false;
+    }
+    function clear() { sweep(); if (button) { button.remove(); button = null; } }
+
+    function tick(t, busy) {
+      tl.run(t);
+      seats.forEach(function (s) { if (s.fly) s.fly.pose(t, busy); });
+      dealer.pose(t, { x: 600, y: 520 }, reduce);
+    }
+
+    // phones: frame the table so the cards stay readable
+    function frame() { svg.setAttribute('viewBox', svg.clientWidth && svg.clientWidth < 560 ? '110 96 980 579' : '0 0 1200 675'); }
+    if (root.ResizeObserver) new ResizeObserver(frame).observe(svg); else root.addEventListener('resize', frame);
+    frame();
+
+    return {
+      setSeats: setSeats, plate: plate, deal: deal, sniff: sniff, waitFor: waitFor, act: act, gather: gather, board: deal_board,
+      showdown: showdown, payout: payout, dopamine: dopamine, reveal: reveal, show: show, clear: clear, tick: tick,
+      onSeatClick: function (fn) { onSeatClick = fn; }, looks: Object.keys(LOOKS)
+    };
+  }
+
+  root.PokerScene = PokerScene;
+})(self);
+</script>
+<script>/* FlyJack - the poker game: five flies with their own copy of the circuit, one open seat, and
+   anyone at this screen can sit down. Runs the hands, waits for people, teaches the flies. */
+(function () {
+  'use strict';
+  var P = self.Poker, FB = self.FlyBrain, FJ = self.FlyJack;
+  var $ = function (id) { return document.getElementById(id); };
+  var reduceMotion = !!(self.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var STORE_KEY = 'flyjack.poker.v1', SEATS = 6, MINUS = '−';
+  var STRAINS = [
+    { name: 'Canton-S', note: 'wild type' }, { name: 'white', note: 'white eyes' }, { name: 'yellow', note: 'yellow body' },
+    { name: 'ebony', note: 'dark body' }, { name: 'Curly', note: 'curled wings' }
+  ];
+  var ACTION_WORD = ['fold', 'call', 'raise'];
+  var rng = FB.mulberry32((Math.random() * 1e9) | 0);
+
+  /* ---------- the players ---------- */
+  var flies = STRAINS.map(function (s, k) {
+    return { kind: 'fly', k: k, name: s.name, note: s.note, look: s.name, brain: null, stack: P.START_STACK, profit: 0, hands: 0, won: 0, recent: [] };
+  });
+  var seats = [flies[0], flies[1], flies[2], null, flies[3], flies[4]];   // seat 3, at the front, is open
+  var pending = {};                                                         // seat -> player or null, applied between hands
+  var ready = false, active = false, playing = !reduceMotion, speed = 'watch', handsTotal = 0, buttonSeat = -1, biggest = null;
+  var game = { hand: null, traces: {}, step: null, at: 0, waiting: false, pick: null, last: null, revealed: false, featured: -1 };
+  var scene = null;
+
+  function newBrain(f) {
+    var o = { code: P.SMELLS, seed: 9173 + f.k * 7919 + ((Math.random() * 1e6) | 0) };
+    for (var k in P.BRAIN_OPTIONS) o[k] = P.BRAIN_OPTIONS[k];
+    return new FB.Brain(FJ.circuit, o);
+  }
+  function humans() { var n = 0; for (var i = 0; i < SEATS; i++) if (seats[i] && seats[i].kind === 'human') n++; return n; }
+  function signed(v) { return (v > 0 ? '+' : v < 0 ? MINUS : '') + Math.abs(Math.round(v)); }
+  function cardText(c) { return c.face + SceneKitPip(c.suit); }
+  function SceneKitPip(s) { return self.SceneKit.PIPS[s]; }
+
+  /* ---------- remembering the flies between visits ---------- */
+  function b64(u16) {
+    var b = new Uint8Array(u16.buffer), s = '';
+    for (var i = 0; i < b.length; i += 8192) s += String.fromCharCode.apply(null, b.subarray(i, i + 8192));
+    return btoa(s);
+  }
+  function unb64(str) {
+    var s = atob(str), b = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
+    return new Uint16Array(b.buffer);
+  }
+  var dirty = false;
+  function save() {
+    if (!ready || !dirty) return;
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ hands: handsTotal, flies: flies.map(function (f) {
+        var mem = f.brain.exportMemory();
+        return { hands: mem.hands, stack: f.stack, profit: f.profit, won: f.won, played: f.hands, recent: f.recent.slice(-300), edges: mem.strengths.length, strengths: b64(mem.strengths) };
+      }) }));
+      dirty = false;
+    } catch (e) { /* storage full or blocked: the flies start fresh next time */ }
+  }
+  function restore() {
+    try {
+      var d = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+      if (!d || !d.flies || d.flies.length !== flies.length) return;
+      d.flies.forEach(function (m, k) {
+        var f = flies[k];
+        if (m.edges !== f.brain.nEdges || !f.brain.importMemory({ hands: m.hands, strengths: unb64(m.strengths) })) return;
+        f.stack = Math.min(P.BANK_ABOVE, +m.stack || P.START_STACK); f.profit = +m.profit || 0; f.won = +m.won || 0; f.hands = +m.played || 0;
+        f.recent = Array.isArray(m.recent) ? m.recent : [];
+      });
+      handsTotal = +d.hands || 0;
+    } catch (e) { /* ignore a damaged save */ }
+  }
+
+  /* ---------- one hand ---------- */
+  function applyPending() {
+    var changed = false;
+    for (var i = 0; i < SEATS; i++) if (i in pending) { seats[i] = pending[i]; delete pending[i]; changed = true; }
+    if (changed) { scene.setSeats(seatList()); renderSeats(); syncSpeed(); }
+  }
+  function seatList() {
+    return seats.map(function (p) { return p ? { kind: p.kind, name: p.name, look: p.look, stack: p.stack } : { kind: 'empty' }; });
+  }
+  function startHand() {
+    applyPending();
+    var players = [], i;
+    for (i = 0; i < SEATS; i++) {
+      var p = seats[i];
+      if (!p) continue;
+      if (p.stack < P.TOP_UP_BELOW || p.stack > P.BANK_ABOVE) { p.stack = P.START_STACK; scene.plate(i, { stack: p.stack }); }   // top up, or bank the winnings
+      players.push({ seat: i, stack: p.stack });
+    }
+    if (players.length < 2) return null;
+    for (i = 1; i <= SEATS; i++) { var s = (buttonSeat + i) % SEATS; if (seats[s]) { buttonSeat = s; break; } }
+    var b = 0;
+    players.forEach(function (q, k) { if (q.seat === buttonSeat) b = k; });
+    game.hand = new P.Hand(players, b, rng); game.traces = {}; game.revealed = false;
+    return game.hand;
+  }
+  function flyDecide(hand, i, sims) {
+    var q = hand.p[i], f = seats[q.seat], sit = P.situation(hand, i, sims);
+    var c = f.brain.choose(sit.state, sit.options.actions);
+    (game.traces[q.seat] = game.traces[q.seat] || []).push({ odor: c.odor, inBefore: q.total });
+    return { action: c.action, sit: sit, choice: c, fly: f };
+  }
+  /* The hand is over: stacks settle, every fly learns from what it won or lost. */
+  function finishHand(hand) {
+    handsTotal++; dirty = true;
+    var pot = hand.pot();
+    if (!biggest || pot > biggest.pot) {
+      var w = hand.p[hand.winners[0].i];
+      biggest = { pot: pot, text: (seats[w.seat] ? seats[w.seat].name : 'someone') + (hand.showdown ? ', ' + w.handName.toLowerCase() : '') + ', hand ' + handsTotal };
+    }
+    hand.p.forEach(function (q) {
+      var p = seats[q.seat];
+      if (!p) return;
+      p.stack = q.stack; p.profit += q.net;
+      if (p.kind !== 'fly') return;
+      p.hands++; p.recent.push(q.net); if (p.recent.length > 1000) p.recent.shift();
+      if (hand.winners.some(function (w) { return w.i === hand.p.indexOf(q); })) p.won++;
+      // each choice is judged by what happened from then on: chips already in the pot are gone
+      // whatever the fly does, so folding is always worth exactly 0 (12 chips count as one bet)
+      var tr = game.traces[q.seat] || [];
+      q.surprise = null;
+      for (var k = 0; k < tr.length; k++) q.surprise = p.brain.learn(tr[k].odor, Math.max(-1, Math.min(1, (q.net + tr[k].inBefore) / 12)));
+      p.brain.hands++;
+    });
+    game.last = hand;
+  }
+  function playQuick() {
+    var hand = startHand();
+    if (!hand) return null;
+    while (!hand.done) {
+      if (hand.toAct === -1) { hand.advance(); continue; }
+      hand.act(flyDecide(hand, hand.toAct, 60).action);
+    }
+    finishHand(hand); game.hand = null;
+    return hand;
+  }
+
+  /* ---------- Watch: one hand step by step. Each step returns [nextStep, delayMs] ---------- */
+  function faceUp(seat) { return !!(seats[seat] && seats[seat].kind === 'human' && humans() === 1); }
+  function stepDeal() {
+    var hand = startHand();
+    clearLog(); showMeters(null); say(' ', ' ');
+    if (!hand) { scene.clear(); say('Waiting for players', 'A game needs at least two seats filled.'); return [stepDeal, 1500]; }
+    log('New hand. ' + seats[buttonSeat].name + ' has the button.');
+    return [stepNext, scene.deal(hand, faceUp)];
+  }
+  function stepNext() {
+    var hand = game.hand;
+    if (hand.done) return hand.showdown ? [stepShowdown, 300] : [stepPayout, 300];
+    if (hand.toAct === -1) {
+      var ms = scene.gather(hand.pot()), from = hand.board.length, dealt = hand.advance();
+      if (hand.done) return [stepNext, ms];
+      log(['', 'Flop', 'Turn', 'River'][hand.street] + ': ' + dealt.map(cardText).join(' '));
+      return [stepNext, Math.max(ms, scene.board(dealt, from)) + 150];
+    }
+    var seat = hand.p[hand.toAct].seat;
+    if (seats[seat].kind === 'fly') return [stepSniff, 150];
+    waitForHuman(); return [null, 0];
+  }
+  function stepSniff() {
+    var hand = game.hand, i = hand.toAct, d = game.pick = flyDecide(hand, i, 150), seat = hand.p[i].seat, lines = [];
+    var o = d.sit.options, v = d.choice.values;
+    o.actions.forEach(function (a) { lines.push({ label: actionLabel(a, o, hand), v: v[a] }); });
+    scene.sniff(seat, lines);
+    showMeters(d, hand);
+    game.featured = seat;
+    FJ.scope.show(d.fly.brain, d.choice.odor, d.fly.name + ' smells "' + actionLabel(d.action, o, hand) + '"');
+    say(d.fly.name + ' is thinking', 'Holding ' + P.STRENGTH_NAMES[d.sit.strength] + ' cards for ' + (hand.inHand() - 1) + ' opponent' + (hand.inHand() > 2 ? 's' : '') + '.');
+    return [stepFlyAct, 1050];
+  }
+  function stepFlyAct() {
+    var hand = game.hand, i = hand.toAct, seat = hand.p[i].seat, ev = hand.act(game.pick.action);
+    describeAct(ev);
+    return [stepNext, scene.act(seat, ev, hand.p[i].stack)];
+  }
+  function stepShowdown() { return [stepPayout, scene.showdown(game.hand) + 700]; }
+  function stepPayout() {
+    var hand = game.hand;
+    finishHand(hand);
+    var ms = scene.payout(hand);
+    hand.p.forEach(function (q) { scene.dopamine(q.seat, q.surprise); });
+    announce(hand);
+    game.hand = null;
+    return [stepDeal, ms + 500];
+  }
+  function finishWatchHand() {                    // leaving Watch mid-hand: flies play it out at once
+    var hand = game.hand;
+    game.step = null; game.waiting = false; hideBar();
+    if (!hand) return;
+    while (!hand.done) {
+      if (hand.toAct === -1) { hand.advance(); continue; }
+      hand.act(flyDecide(hand, hand.toAct, 60).action);
+    }
+    finishHand(hand); game.hand = null;
+  }
+
+  /* ---------- people ---------- */
+  function actionLabel(a, o, hand) { return a === P.FOLD ? 'fold' : a === P.CALL ? (o.toCall ? 'call' : 'check') : (hand.level === 0 ? 'bet' : 'raise'); }
+  function waitForHuman() {
+    var hand = game.hand, i = hand.toAct, seat = hand.p[i].seat, p = seats[seat], o = hand.options();
+    if (!game.waiting) game.revealed = humans() === 1;
+    game.waiting = true;
+    scene.waitFor(seat); showMeters(null);
+    say(p.name + ', your turn', o.toCall ? 'It costs ' + o.toCall + ' to stay in.' : 'Nobody has bet yet.');
+    var bar = $('pk-actionbar');
+    bar.hidden = false;
+    $('pk-ab-name').textContent = p.name;
+    $('pk-ab-label').textContent = game.revealed ? 'Your turn' : 'Pass the screen to';
+    $('pk-reveal').hidden = game.revealed;
+    $('pk-reveal').textContent = 'I\'m ' + p.name + ', show my cards';
+    $('pk-fold').hidden = !game.revealed || !o.toCall;
+    $('pk-call').hidden = !game.revealed;
+    $('pk-raise').hidden = !game.revealed || !o.canRaise;
+    $('pk-call').textContent = o.toCall ? 'Call ' + o.toCall : 'Check';
+    $('pk-raise').textContent = (hand.level === 0 ? 'Bet ' : 'Raise to ') + o.raiseTo;
+    showMyCards(game.revealed ? hand.p[i] : null);
+    ($(game.revealed ? 'pk-call' : 'pk-reveal')).focus({ preventScroll: true });
+  }
+  function showMyCards(q) {
+    var box = $('pk-ab-cards'), hand = game.hand;
+    box.textContent = ''; $('pk-ab-hand').textContent = '';
+    if (!q) return;
+    q.hole.forEach(function (c) {
+      var el = document.createElement('span');
+      el.className = 'mcard' + (c.suit === 'h' || c.suit === 'd' ? ' red' : '');
+      el.textContent = c.face + SceneKitPip(c.suit);
+      box.appendChild(el);
+    });
+    var all = q.hole.concat(hand.board);
+    var sit = P.situation(hand, hand.toAct, 300);
+    $('pk-ab-hand').textContent = (hand.board.length ? P.describe(P.score(all)) + ' · ' : '') + 'about ' + Math.round(sit.equity * 100) + '% to win against ' + (hand.inHand() - 1);
+  }
+  function reveal() {
+    if (!game.waiting) return;
+    game.revealed = true;
+    waitForHuman();                               // the cards show in the bar only, not on the table
+  }
+  function humanAct(action) {
+    if (!game.waiting || !game.revealed) return;
+    var hand = game.hand, i = hand.toAct, seat = hand.p[i].seat;
+    var ev = hand.act(action);
+    hideBar(); describeAct(ev);
+    game.waiting = false;
+    game.step = stepNext; game.at = performance.now() + scene.act(seat, ev, hand.p[i].stack);
+  }
+  function hideBar() { $('pk-actionbar').hidden = true; showMyCards(null); }
+  $('pk-fold').addEventListener('click', function () { humanAct(P.FOLD); });
+  $('pk-call').addEventListener('click', function () { humanAct(P.CALL); });
+  $('pk-raise').addEventListener('click', function () { humanAct(P.RAISE); });
+  $('pk-reveal').addEventListener('click', reveal);
+  document.addEventListener('keydown', function (e) {
+    if (!active || !game.waiting || !game.revealed || e.target.closest('input, select, textarea')) return;
+    var k = e.key.toLowerCase();
+    if (k === 'f' && !$('pk-fold').hidden) humanAct(P.FOLD);
+    else if (k === 'c') humanAct(P.CALL);
+    else if (k === 'r' && !$('pk-raise').hidden) humanAct(P.RAISE);
+  });
+
+  /* ---------- the panel beside the brain ---------- */
+  function setMeter(which, v, picked, name) {
+    var el = $('pk-meter-' + which), fill = el.querySelector('.fill'), val = el.querySelector('.val');
+    el.classList.toggle('picked', !!picked);
+    if (name) el.querySelector('.name').textContent = name;
+    if (v === null || v === undefined) { fill.style.width = '0'; fill.style.left = '50%'; val.textContent = ' '; return; }
+    var x = Math.max(-0.6, Math.min(0.6, v)) / 0.6 * 50;
+    fill.style.left = (x < 0 ? 50 + x : 50) + '%'; fill.style.width = Math.abs(x) + '%';
+    val.textContent = (v < 0 ? MINUS : '+') + Math.abs(v).toFixed(2);
+  }
+  function showMeters(d, hand) {
+    if (!d) {
+      ['fold', 'call', 'raise'].forEach(function (w) { setMeter(w, null, false); });
+      $('pk-odds').textContent = ''; $('pk-choice-label').textContent = 'How each choice smells to the fly';
+      return;
+    }
+    var o = d.sit.options, v = d.choice.values;
+    $('pk-choice-label').textContent = 'How each choice smells to ' + d.fly.name;
+    setMeter('fold', o.toCall ? v[P.FOLD] : null, d.action === P.FOLD, 'Fold');
+    setMeter('call', v[P.CALL], d.action === P.CALL, o.toCall ? 'Call' : 'Check');
+    setMeter('raise', o.canRaise ? v[P.RAISE] : null, d.action === P.RAISE, hand.level === 0 ? 'Bet' : 'Raise');
+    $('pk-odds').textContent = Math.round(100 * d.choice.p[d.action]) + '% sure';
+  }
+  function say(what, why) { $('pk-verdict').textContent = what; $('pk-why').textContent = why; }
+  function clearLog() { $('pk-log').textContent = ''; }
+  function log(str) {
+    var ol = $('pk-log'), li = document.createElement('li');
+    li.textContent = str; ol.appendChild(li);
+    while (ol.children.length > 7) ol.removeChild(ol.firstChild);
+  }
+  function describeAct(ev) {
+    var name = seats[ev.seat].name;
+    log(name + ' ' + (ev.type === 'fold' ? 'folds' : ev.type === 'check' ? 'checks' : ev.type === 'call' ? 'calls ' + ev.paid : (ev.type === 'bet' ? 'bets ' : 'raises to ') + ev.level));
+  }
+  function announce(hand) {
+    var w = hand.winners.map(function (x) { return seats[hand.p[x.i].seat].name; });
+    var q0 = hand.p[hand.winners[0].i];
+    var what = w.join(' and ') + (w.length > 1 ? ' split ' : ' wins ') + hand.pot() + (hand.showdown ? ' with ' + q0.handName.toLowerCase() : '');
+    log(what + (hand.showdown ? '' : ', everyone else folded'));
+    var f = game.featured >= 0 && seats[game.featured] && seats[game.featured].kind === 'fly' ? game.featured : -1, why = ' ';
+    hand.p.forEach(function (q) { if (q.seat === f && q.surprise !== null && q.surprise !== undefined) {
+      var n = seats[f].name;
+      why = q.surprise > 0.05 ? 'Better than ' + n + ' expected: reward dopamine fires.' : q.surprise < -0.05 ? 'Worse than ' + n + ' expected: punishment dopamine fires.' : 'About what ' + n + ' expected: dopamine stays quiet.';
+      FJ.scope.dopamine(q.surprise);
+    } });
+    say(what, why);
+  }
+
+  /* ---------- who's at the table ---------- */
+  function renderSeats() {
+    var box = $('pk-seats');
+    box.textContent = '';
+    for (var i = 0; i < SEATS; i++) box.appendChild(seatCard(i));
+  }
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; }
+  function seatCard(i) {
+    var p = seats[i], next = i in pending ? pending[i] : undefined, card = el('div', 'seatcard' + (p ? ' ' + p.kind : ' empty'));
+    card.appendChild(el('span', 'label', 'Seat ' + (i + 1) + (i === 2 || i === 3 ? ' · front' : '')));
+    if (p) {
+      card.appendChild(el('strong', 'who', p.name + (p.kind === 'human' ? ' (person)' : '')));
+      card.appendChild(el('span', 'sub', p.kind === 'fly' ? p.note + ' · fly' : 'playing at this screen'));
+      var st = el('span', 'num'); st.id = 'pk-seat-stack-' + i; st.textContent = 'stack ' + p.stack + ' · ' + signed(p.profit) + ' overall'; card.appendChild(st);
+    } else {
+      card.appendChild(el('strong', 'who', 'Open seat'));
+    }
+    if (next !== undefined) {
+      card.appendChild(el('span', 'note', next ? next.name + ' sits down next hand' : 'leaves after this hand'));
+      var undo = el('button', 'btn quiet', 'Undo'); undo.type = 'button';
+      undo.addEventListener('click', function () { delete pending[i]; renderSeats(); syncSpeed(); });
+      card.appendChild(undo);
+      return card;
+    }
+    if (p) {
+      var leave = el('button', 'btn quiet', p.kind === 'fly' ? 'Ask to leave' : 'Leave'); leave.type = 'button';
+      leave.addEventListener('click', function () { change(i, null); });
+      card.appendChild(leave);
+      return card;
+    }
+    var form = el('form', 'join'), input = el('input'), sit = el('button', 'btn primary', 'Sit down');
+    input.type = 'text'; input.id = 'pk-name-' + i; input.placeholder = 'Your name'; input.maxLength = 16; input.autocomplete = 'off';
+    input.setAttribute('aria-label', 'Name for seat ' + (i + 1));
+    sit.type = 'submit';
+    form.appendChild(input); form.appendChild(sit);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var name = input.value.trim().slice(0, 16);
+      if (!name) { input.focus(); return; }
+      change(i, { kind: 'human', name: name, look: null, stack: P.START_STACK, profit: 0 });
+    });
+    card.appendChild(form);
+    var away = flies.filter(function (f) { return seats.indexOf(f) < 0 && !pendingHas(f); });
+    if (away.length) {
+      var row = el('div', 'join'), pick = el('select'), bring = el('button', 'btn quiet', 'Seat this fly');
+      pick.setAttribute('aria-label', 'Fly for seat ' + (i + 1));
+      away.forEach(function (f) { var o = el('option', '', f.name + ' (' + f.note + ')'); o.value = f.k; pick.appendChild(o); });
+      bring.type = 'button';
+      bring.addEventListener('click', function () { change(i, flies[+pick.value]); });
+      row.appendChild(pick); row.appendChild(bring); card.appendChild(row);
+    }
+    return card;
+  }
+  function pendingHas(f) { for (var k in pending) if (pending[k] === f) return true; return false; }
+  /* Sit someone down or stand them up: now if no hand is running, else after this hand. */
+  function change(i, who) {
+    if (game.hand) pending[i] = who;             // a hand is running: change seats when it ends
+    else { seats[i] = who; scene.setSeats(seatList()); }
+    renderSeats(); syncSpeed();
+    if (who && who.kind === 'human' && !playing) setPlaying(true);
+  }
+  function focusSeat(i) {
+    var input = $('pk-name-' + i);
+    if (input) { input.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' }); input.focus({ preventScroll: true }); }
+  }
+
+  /* ---------- are they learning? ---------- */
+  function policyStats(f) {
+    var strong = 0, ns = 0, weak = 0, nw = 0, st, sn, pr;
+    for (sn = 0; sn < P.N_STREET; sn++) for (pr = 0; pr < P.N_PRESSURE; pr++) {
+      var acts = pr ? [P.FOLD, P.CALL, P.RAISE] : [P.CALL, P.RAISE];
+      for (st = 8; st <= 9; st++) { strong += f.brain.preferences(P.stateIndex(st, sn, pr), acts)[P.RAISE]; ns++; }
+      if (pr) for (st = 0; st <= 1; st++) { weak += f.brain.preferences(P.stateIndex(st, sn, pr), acts)[P.FOLD]; nw++; }
+    }
+    return { strong: strong / ns, weak: weak / nw };
+  }
+  function per100(f) {
+    var r = f.recent, n = Math.min(r.length, 500), s = 0;
+    for (var i = r.length - n; i < r.length; i++) s += r[i];
+    return n ? 100 * s / n : null;
+  }
+  function pct(v) { return Math.round(v * 100) + '%'; }
+  function drawBoard() {
+    var rows = '<tr><th>Player</th><th>Stack</th><th>Overall</th><th>Per 100 hands, lately</th><th>Raises with strong hands</th><th>Folds weak hands to a bet</th></tr>';
+    var everyone = flies.slice();
+    seats.forEach(function (p) { if (p && p.kind === 'human') everyone.push(p); });
+    everyone.forEach(function (p) {
+      var sat = seats.indexOf(p) >= 0, s = p.kind === 'fly' ? policyStats(p) : null, r = p.kind === 'fly' ? per100(p) : null;
+      rows += '<tr><td>' + esc(p.name) + (p.kind === 'fly' ? ' <span class="muted">' + p.note + (sat ? '' : ', not seated') + '</span>' : ' <span class="muted">person</span>') + '</td><td>' + p.stack + '</td><td>' + signed(p.profit) +
+        '</td><td>' + (r === null ? '–' : signed(r)) + '</td><td>' + (s ? pct(s.strong) : '–') + '</td><td>' + (s ? pct(s.weak) : '–') + '</td></tr>';
+    });
+    $('pk-board').innerHTML = rows;
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  /* the strategy grid of one fly: rows = how strong its cards are, columns = street x pressure */
+  function buildGrid() {
+    var t = $('pk-grid'), html = '<tr><th></th>', st, sn, pr;
+    ['Before flop', 'Flop', 'Turn', 'River'].forEach(function (s) { html += '<th colspan="3" scope="colgroup" class="grp">' + s + '</th>'; });
+    html += '</tr><tr><th></th>';
+    for (sn = 0; sn < 4; sn++) html += '<th scope="col">free</th><th scope="col">bet</th><th scope="col">raise</th>';
+    html += '</tr>';
+    for (st = P.N_STRENGTH - 1; st >= 0; st--) {
+      html += '<tr><th class="row" scope="row">' + P.STRENGTH_NAMES[st] + '</th>';
+      for (sn = 0; sn < 4; sn++) for (pr = 0; pr < 3; pr++) html += '<td data-st="' + st + '" data-sn="' + sn + '" data-pr="' + pr + '"></td>';
+      html += '</tr>';
+    }
+    t.innerHTML = html;
+    var pick = $('pk-pick');
+    flies.forEach(function (f) { var o = document.createElement('option'); o.value = f.k; o.textContent = f.name + ' (' + f.note + ')'; pick.appendChild(o); });
+    pick.addEventListener('change', drawGrid);
+  }
+  function drawGrid() {
+    var f = flies[+$('pk-pick').value];
+    Array.prototype.forEach.call($('pk-grid').querySelectorAll('td'), function (td) {
+      var pr = +td.dataset.pr, acts = pr ? [P.FOLD, P.CALL, P.RAISE] : [P.CALL, P.RAISE];
+      var p = f.brain.preferences(P.stateIndex(+td.dataset.st, +td.dataset.sn, pr), acts), best = P.CALL;
+      acts.forEach(function (a) { if (p[a] > p[best]) best = a; });
+      td.className = 'a-' + ACTION_WORD[best];
+      td.textContent = best === P.FOLD ? 'F' : best === P.CALL ? (pr ? 'C' : 'K') : 'R';
+      td.title = (pr ? 'fold ' + pct(p[P.FOLD]) + ', call ' : 'check ') + pct(p[P.CALL]) + ', ' + (pr ? 'raise ' : 'bet ') + pct(p[P.RAISE]);
+    });
+  }
+
+  var lastRefresh = 0, lastBoard = 0, rate = { t: 0, h: 0, v: 0 }, shownHand = null;
+  function refresh(force) {
+    var now = performance.now();
+    if (!force && now - lastRefresh < 250) return;
+    lastRefresh = now;
+    if (!rate.t) { rate.t = now; rate.h = handsTotal; }
+    else if (now - rate.t > 500) { rate.v = (handsTotal - rate.h) / ((now - rate.t) / 1000); rate.t = now; rate.h = handsTotal; }
+    $('pk-t-hands').textContent = handsTotal.toLocaleString('en-US');
+    $('pk-t-rate').textContent = playing && speed !== 'watch' && rate.v >= 2 ? Math.round(rate.v) + ' hands a second' : ' ';
+    var best = null;
+    flies.forEach(function (f) { var r = per100(f); if (r !== null && f.recent.length >= 50 && (!best || r > best.r)) best = { f: f, r: r }; });
+    $('pk-t-best').textContent = best ? best.f.name : '–';
+    $('pk-t-best-sub').textContent = best ? signed(best.r) + ' chips per 100 hands lately' : 'after 50 hands';
+    var people = seats.filter(function (p) { return p && p.kind === 'human'; });
+    $('pk-t-pot').textContent = biggest ? biggest.pot : '\u2013';
+    $('pk-t-pot-sub').textContent = biggest ? biggest.text : ' ';
+    $('pk-t-you').textContent = people.length ? people.map(function (p) { return signed(p.profit); }).join(' / ') : '–';
+    $('pk-t-you-sub').textContent = people.length ? people.map(function (p) { return p.name; }).join(' / ') : 'nobody has sat down yet';
+    for (var i = 0; i < SEATS; i++) { var s = $('pk-seat-stack-' + i); if (s && seats[i]) s.textContent = 'stack ' + seats[i].stack + ' · ' + signed(seats[i].profit) + ' overall'; }
+    if (force || now - lastBoard > 1000) { lastBoard = now; drawBoard(); drawGrid(); }
+    if (speed !== 'watch' && game.last && shownHand !== game.last) {
+      var h = game.last; shownHand = h;
+      scene.show(h, faceUp);
+      if (h.winners.length) {
+        var q = h.p[h.winners[0].i];
+        say(seats[q.seat] ? seats[q.seat].name + ' wins ' + h.pot() + (h.showdown ? ' with ' + q.handName.toLowerCase() : '') : ' ', ' ');
+      }
+    }
+  }
+
+  /* ---------- controls ---------- */
+  function setPlaying(p) { playing = p; $('pk-play').textContent = p ? 'Pause' : 'Play'; if (!p) save(); rate.t = 0; }
+  function syncSpeed() {
+    var people = humans() > 0 || Object.keys(pending).some(function (k) { return pending[k] && pending[k].kind === 'human'; });
+    ['fast', 'turbo'].forEach(function (s) { $('pk-speed-' + s).disabled = people; });
+    if (people && speed !== 'watch') { $('pk-speed-watch').checked = true; setSpeed('watch'); }
+    $('pk-note').textContent = people ? 'People are playing, so the table runs at Watch speed. Fast and Turbo come back when everyone has left.' :
+      'Five flies, each with its own copy of the mushroom body circuit, playing Limit Hold\'em against each other. Fresh flies play almost at random: let them play on Turbo for a few minutes, then sit down in the open seat.';
+  }
+  function setSpeed(v) {
+    if (speed === 'watch' && v !== 'watch') finishWatchHand();
+    speed = v; game.step = null; rate.t = 0; due = 0; shownHand = null;
+    if (!playing) setPlaying(true);
+  }
+  $('pk-play').addEventListener('click', function () { setPlaying(!playing); });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="pk-speed"]'), function (r) {
+    r.addEventListener('change', function () { if (r.checked) setSpeed(r.value); });
+  });
+  $('pk-join-open').addEventListener('click', function () {
+    for (var i = 0; i < SEATS; i++) if (!seats[i] && !(i in pending)) return focusSeat(i);
+    $('pk-note').textContent = 'Every seat is taken. Ask a fly to leave in the seat list below, then sit down there.';
+    $('pk-seats').scrollIntoView({ block: 'start', behavior: reduceMotion ? 'auto' : 'smooth' });
+  });
+  $('pk-reset').addEventListener('click', function () { $('pk-reset-confirm').hidden = false; $('pk-reset').hidden = true; });
+  $('pk-reset-no').addEventListener('click', function () { $('pk-reset-confirm').hidden = true; $('pk-reset').hidden = false; });
+  $('pk-reset-yes').addEventListener('click', function () {
+    $('pk-reset-confirm').hidden = true; $('pk-reset').hidden = false;
+    game.hand = null; game.step = null; game.waiting = false; game.last = null; hideBar();
+    flies.forEach(function (f) { f.brain = newBrain(f); f.stack = P.START_STACK; f.profit = 0; f.hands = 0; f.won = 0; f.recent = []; });
+    seats.forEach(function (p) { if (p && p.kind === 'human') { p.stack = P.START_STACK; p.profit = 0; } });
+    handsTotal = 0; biggest = null;
+    try { localStorage.removeItem(STORE_KEY); } catch (e) { /* nothing stored */ }
+    scene.setSeats(seatList()); scene.clear(); renderSeats(); clearLog(); say(' ', ' '); refresh(true);
+  });
+
+  /* ---------- the loop ---------- */
+  var due = 0, prev = 0;
+  function frame(now) {
+    var dt = Math.min(100, now - (prev || now)); prev = now;
+    if (active) {
+      if (playing) {
+        if (speed === 'watch') {
+          if (!game.waiting) {
+            if (!game.step) { game.step = stepDeal; game.at = now; }
+            if (now >= game.at) { var next = game.step(); game.step = next[0]; game.at = now + next[1]; refresh(true); }
+          }
+        } else if (speed === 'fast') {
+          due += dt * 0.008;
+          while (due >= 1) { playQuick(); due--; }
+        } else {
+          var t0 = performance.now();
+          while (performance.now() - t0 < 14) playQuick();
+        }
+      }
+      refresh(false);
+      scene.tick(now, playing && speed !== 'watch');
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- switching games ---------- */
+  function init() {
+    if (ready) return;
+    scene = self.PokerScene($('pk-scene'), { reduceMotion: reduceMotion });
+    scene.onSeatClick(focusSeat);
+    flies.forEach(function (f) { f.brain = newBrain(f); });
+    restore();
+    scene.setSeats(seatList());
+    renderSeats(); buildGrid(); syncSpeed();
+    ready = true;
+    requestAnimationFrame(frame);
+  }
+  function showGame(name) {
+    var poker = name === 'poker';
+    $('game-blackjack').hidden = poker; $('game-poker').hidden = !poker;
+    $('game-' + (poker ? 'pk' : 'bj')).checked = true;
+    if (poker) { FJ.suspend(true); init(); FJ.scope.mount($('pk-scope-slot')); active = true; refresh(true); }
+    else { active = false; save(); FJ.scope.mount($('bj-scope-slot')); FJ.suspend(false); }
+    try { localStorage.setItem('flyjack.game', name); } catch (e) { /* fine */ }
+    if (history.replaceState) history.replaceState(null, '', poker ? '#poker' : location.pathname + location.search);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="game"]'), function (r) {
+    r.addEventListener('change', function () { if (r.checked) showGame(r.value); });
+  });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
+  setInterval(save, 15000);
+  $('pk-play').textContent = playing ? 'Pause' : 'Play';
+  var startGame = location.hash === '#poker' ? 'poker' : null;
+  if (!startGame) { try { startGame = localStorage.getItem('flyjack.game'); } catch (e) { /* fine */ } }
+  if (startGame === 'poker') showGame('poker');
+  self.FlyJackPoker = {
+    seats: seats, flies: flies, game: game, sit: change, policyStats: policyStats, per100: per100,
+    train: function (n) { init(); for (var i = 0; i < n; i++) playQuick(); refresh(true); return handsTotal; }
+  };
 })();
 </script>

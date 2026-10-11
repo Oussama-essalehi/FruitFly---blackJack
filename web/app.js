@@ -219,7 +219,7 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(base, 0, 0);
     ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
-    var i, c, a, on = view.odor >= 0;
+    var i, c, a, on = view.odor >= 0, vb = view.brain || S.brain;
     // dopamine neurons: reward (PAM) glows when things went better than expected, punishment (PPL1) when worse
     var reward = view.dopamine > 0 ? fade * Math.min(1, view.dopamine * 1.5 + 0.25) : 0;
     var punish = view.dopamine < 0 ? fade * Math.min(1, -view.dopamine * 1.5 + 0.25) : 0;
@@ -231,18 +231,19 @@
     for (i = 0; i < view.kc.length; i++) { c = byGroup.kc[view.kc[i][0]]; a = Math.min(1, view.kc[i][1] * 9); dot(c, 1.3 + 1.5 * a, COLORS.actHi, 0.45 + 0.55 * a); }
     // output neurons: size and brightness relative to their response before any learning
     for (i = 0; i < byGroup.mbon.length; i++) {
-      c = byGroup.mbon[i]; a = on ? Math.min(2, view.mbon[c.i] / (S.brain.mbonBaseline[c.i] || 1)) : 0;
-      dot(c, 2.6 + 2.2 * a, S.brain.valence[c.i] > 0 ? COLORS.pos : COLORS.neg, 0.3 + 0.35 * a);
+      c = byGroup.mbon[i]; a = on ? Math.min(2, view.mbon[c.i] / (vb.mbonBaseline[c.i] || 1)) : 0;
+      dot(c, 2.6 + 2.2 * a, vb.valence[c.i] > 0 ? COLORS.pos : COLORS.neg, 0.3 + 0.35 * a);
       ctx.globalAlpha = 0.9; ctx.lineWidth = 1; ctx.strokeStyle = '#0a0e0c'; ctx.stroke();
     }
     ctx.globalAlpha = 1;
     $('scope-state').textContent = fade > 0 ? (view.dopamine > 0 ? 'reward dopamine' : 'punishment dopamine') : (view.label || ' ');
   }
-  function showOdor(odor, label) {
+  function showOdor(odor, label, brain) {      // brain: another fly's (the poker table), else this one's
+    var b = view.brain = brain || S.brain;
     view.odor = odor; view.label = label;
-    S.brain.glomerulusPattern(odor, view.glom);
-    view.kc = S.brain.activeKenyonCells(odor);
-    S.brain.respond(odor); view.mbon.set(S.brain.mbon);
+    b.glomerulusPattern(odor, view.glom);
+    view.kc = b.activeKenyonCells(odor);
+    b.respond(odor); view.mbon.set(b.mbon);
     view.changed = true;
   }
   function flashDopamine(surprise) {
@@ -408,10 +409,10 @@
   }
 
   /* ---------- main loop ---------- */
-  var due = 0, prev = 0;
+  var due = 0, prev = 0, suspended = false;   // suspended: the poker tab is showing
   function frame(now) {
     var dt = Math.min(100, now - (prev || now)); prev = now;
-    if (playing) {
+    if (playing && !suspended) {
       if (speed === 'watch') {
         if (!watch.step) { watch.step = stepDeal; watch.at = now; }
         if (now >= watch.at) { var next = watch.step(); watch.step = next[0]; watch.at = now + next[1]; refresh(true); }
@@ -423,8 +424,7 @@
         while (performance.now() - t0 < 12) for (var i = 0; i < 40; i++) quickHand();
       }
     }
-    refresh(false);
-    scene.tick(now, playing && speed !== 'watch');
+    if (!suspended) { refresh(false); scene.tick(now, playing && speed !== 'watch'); }
     drawBrain(now);
     requestAnimationFrame(frame);
   }
@@ -466,5 +466,24 @@
     showHand(h); showChoice(d || null); if (d) showOdor(d.odor, 'last choice');
   }
   requestAnimationFrame(frame);
-  self.FlyJack = { sessions: sessions, current: function () { return S; } };
+  /* The poker tab borrows the brain view and pauses this table while it shows. */
+  var scopeEl = document.querySelector('.scope');
+  self.FlyJack = {
+    sessions: sessions, current: function () { return S; }, circuit: circuit,
+    suspend: function (on) {
+      if (on === suspended) return;
+      suspended = on; prev = 0;
+      if (on) { save(); return; }
+      view.brain = null; view.odor = -1; view.dopamine = 0; view.label = ' '; view.changed = true;
+      S.rateT = 0; refresh(true);
+    },
+    scope: {
+      mount: function (slot) { if (scopeEl.parentNode !== slot) slot.appendChild(scopeEl); view.changed = true; },
+      show: function (brain, odor, label) { showOdor(odor, label, brain); },
+      dopamine: function (surprise) {
+        if (surprise === null || surprise === undefined || Math.abs(surprise) <= 0.05) return;
+        view.dopamine = surprise; view.dopamineAt = performance.now(); view.changed = true;
+      }
+    }
+  };
 })();

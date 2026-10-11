@@ -60,6 +60,7 @@ button, select { font: inherit; color: inherit; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg input:checked + label { background: var(--ink); color: var(--bg); }
 .seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: -2px; }
+.seg input:disabled + label { opacity: 0.45; cursor: not-allowed; }
 .field { display: inline-flex; align-items: center; gap: 8px; }
 .field select { border: 1px solid var(--line); background: var(--surface); padding: 8px 10px; border-radius: 8px; max-width: 100%; }
 .confirm { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -178,6 +179,76 @@ table.grid td:hover { outline: 2px solid var(--ink); outline-offset: 0; }
 a { color: inherit; text-underline-offset: 2px; }
 section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
+/* games: blackjack and poker share the page */
+.shared-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.games { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.seg.big label { padding: 10px 22px; font-family: var(--display); font-weight: 700; font-size: 1.1rem; }
+.game { display: flex; flex-direction: column; gap: 28px; }
+.scope-slot { display: contents; }
+
+/* poker table */
+.neon-word { font-family: var(--display); font-weight: 700; font-size: 54px; fill: #d9f7ff; stroke: #39cfff; stroke-width: 1.5; letter-spacing: 2px; }
+.plate rect { fill: #08140e; fill-opacity: 0.82; stroke: #e8c27a; stroke-opacity: 0.45; stroke-width: 1.5; }
+.plate.acting rect { stroke: #ffd46b; stroke-opacity: 1; stroke-width: 3; }
+.plate.folded { opacity: 0.55; }
+.plate-name { font-family: var(--body); font-weight: 600; font-size: 14px; fill: #f3ead2; }
+.plate-stack { font-family: var(--mono); font-size: 13px; fill: #e8c27a; }
+.bet-label { font-family: var(--mono); font-size: 14px; fill: #f3ead2; paint-order: stroke; stroke: #0c0507; stroke-width: 3px; }
+.pot-pill { fill: #08140e; fill-opacity: 0.8; stroke: #e8c27a; stroke-opacity: 0.5; }
+.pot-label { font-family: var(--mono); font-size: 14px; fill: #f3ead2; }
+.hand-name { font-family: var(--display); font-weight: 700; font-size: 17px; fill: #ffd46b; paint-order: stroke; stroke: #0c0507; stroke-width: 4px; }
+.fx-say { font-family: var(--display); font-weight: 700; font-size: 20px; paint-order: stroke; stroke: #0c0507; stroke-width: 4px; }
+.dealer-btn { font-family: var(--display); font-weight: 700; font-size: 11px; }
+.avatar-letter { font-family: var(--display); font-weight: 700; font-size: 30px; }
+.seat-open { cursor: pointer; }
+.seat-open:focus { outline: none; }
+.seat-open:hover circle, .seat-open:focus-visible circle { fill-opacity: 0.16; stroke-opacity: 1; }
+.seat-plus { font-family: var(--display); font-weight: 500; font-size: 36px; }
+.bubble-row { font-family: var(--body); font-weight: 600; font-size: 15px; fill: #1c1c1c; }
+.bubble-val { font-family: var(--mono); font-size: 14px; }
+
+/* a person's turn */
+.actionbar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; padding: 14px 16px; border-radius: 14px;
+  background: var(--surface); border: 2px solid var(--accent); min-width: 0; }
+.ab-who { display: flex; flex-direction: column; }
+.ab-who .label { color: var(--ink-3); }
+.ab-name { font-family: var(--display); font-weight: 700; font-size: 1.4rem; line-height: 1.1; }
+.ab-cards { display: flex; gap: 6px; }
+.mcard { width: 44px; height: 62px; border-radius: 6px; background: #fbfaf5; color: #1c1c1c; border: 1px solid rgba(0, 0, 0, 0.18); display: grid; place-items: center;
+  font-family: var(--display); font-weight: 700; font-size: 1.1rem; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }
+.mcard.red { color: #c2332d; }
+.ab-hand { color: var(--ink-2); flex: 1 1 200px; min-width: 0; }
+.ab-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.ab-buttons .btn { min-width: 96px; }
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; color: var(--felt-ink-2); min-height: 9.5em; }
+.log li:last-child { color: var(--felt-ink); }
+
+/* seats */
+.seats { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.seatcard { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;
+  align-items: flex-start; min-width: 0; }
+.seatcard.empty { border-style: dashed; }
+.seatcard.human { border-color: var(--accent); }
+.seatcard .label { color: var(--ink-3); }
+.seatcard .who { font-family: var(--display); font-size: 1.15rem; }
+.seatcard .sub { color: var(--ink-2); font-size: 0.85rem; }
+.seatcard .num { color: var(--ink-2); font-size: 0.85rem; font-family: var(--mono); }
+.seatcard .note { color: var(--flag); font-size: 0.85rem; }
+.join { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; }
+.join input, .join select { flex: 1 1 110px; min-width: 0; font: inherit; color: inherit; border: 1px solid var(--line); background: var(--bg); padding: 7px 10px; border-radius: 8px; }
+.muted { color: var(--ink-3); font-size: 0.85em; }
+table.grid.pk-grid td { width: 30px; }
+table.grid.pk-grid th { font-size: 0.72rem; }
+table.grid.pk-grid th.grp { color: var(--ink-2); border-bottom: 1px solid var(--line); }
+table.grid.pk-grid td[data-pr="0"] { border-left: 4px solid var(--bg); }
+.a-fold { background: var(--seq-lo); color: var(--seq-lo-ink); }
+.a-call { background: color-mix(in oklab, var(--seq-hi) 45%, var(--seq-lo)); color: var(--ink); }
+.a-raise { background: var(--seq-hi); color: var(--seq-hi-ink); }
+table.grid.pk-grid td.a-fold { background: var(--seq-lo); }
+table.grid.pk-grid td.a-call { background: color-mix(in oklab, var(--seq-hi) 45%, var(--seq-lo)); }
+table.grid.pk-grid td.a-raise { background: var(--seq-hi); }
+.key-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; margin-right: 6px; border: 1px solid var(--line); }
+
 @media (max-width: 820px) {
   .stage { grid-template-columns: minmax(0, 1fr); }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -190,11 +261,46 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 </style>
 
 <div class="page">
+  <svg class="shared-defs" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="cj-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c111b"/><stop offset=".6" stop-color="#1b0a11"/><stop offset="1" stop-color="#0c0407"/></linearGradient>
+      <radialGradient id="cj-felt" cx="600" cy="420" r="560" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f8d5e"/><stop offset=".6" stop-color="#1f6a46"/><stop offset="1" stop-color="#103b27"/></radialGradient>
+      <linearGradient id="cj-rail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6e3b20"/><stop offset=".55" stop-color="#4a2512"/><stop offset="1" stop-color="#24110a"/></linearGradient>
+      <linearGradient id="cj-cone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9b0" stop-opacity=".16"/><stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/></linearGradient>
+      <radialGradient id="cj-pool"><stop offset="0" stop-color="#ffe9b0" stop-opacity=".13"/><stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/></radialGradient>
+      <radialGradient id="cj-vignette" cx=".5" cy=".55" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></radialGradient>
+      <radialGradient id="cj-eye" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="#ff6d4f"/><stop offset=".45" stop-color="#d22b21"/><stop offset="1" stop-color="#6c0c0b"/></radialGradient>
+      <pattern id="cj-facets" width="5" height="4.4" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.2" r="1.9" fill="none" stroke="#3a0505" stroke-opacity=".35" stroke-width=".6"/></pattern>
+      <linearGradient id="cj-thorax" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dcae66"/><stop offset="1" stop-color="#8a5b2b"/></linearGradient>
+      <linearGradient id="cj-abdomen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4b76f"/><stop offset="1" stop-color="#9e6a33"/></linearGradient>
+      <pattern id="cj-back" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#7a1d2a"/><rect width="3" height="8" fill="#97303e"/></pattern>
+      <filter id="cj-blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="10"/></filter>
+      <filter id="cj-soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
+      <filter id="cj-neon" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="cj-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#000" flood-opacity=".45"/></filter>
+      <clipPath id="cj-abd-clip"><ellipse cx="62" cy="-78" rx="60" ry="40" transform="rotate(12 62 -78)"/></clipPath>
+      <!-- the poker flies wear the looks of classic lab strains -->
+      <radialGradient id="cj-eye-white" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#ece6da"/><stop offset="1" stop-color="#b9b0a0"/></radialGradient>
+      <linearGradient id="cj-thorax-yellow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6dc86"/><stop offset="1" stop-color="#c99a3a"/></linearGradient>
+      <linearGradient id="cj-abdomen-yellow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8e294"/><stop offset="1" stop-color="#cfa244"/></linearGradient>
+      <linearGradient id="cj-thorax-ebony" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5c4636"/><stop offset="1" stop-color="#22160f"/></linearGradient>
+      <linearGradient id="cj-abdomen-ebony" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#604a3a"/><stop offset="1" stop-color="#261911"/></linearGradient>
+    </defs>
+  </svg>
   <header class="masthead">
     <p class="label" style="color:var(--ink-3)">A fruit fly's learning circuit, wired from the real connectome</p>
     <h1>FlyJack</h1>
-    <p class="lede">4,406 neurons from the mushroom body of a male fruit fly, connected exactly as they were mapped, sit down at a blackjack table. Wins and losses arrive as dopamine. Watch what the fly works out.</p>
+    <p class="lede">4,406 neurons from the mushroom body of a male fruit fly, connected exactly as they were mapped, sit down in a casino. Wins and losses arrive as dopamine. Watch what the fly works out at blackjack, or deal five flies into a poker game and take the sixth seat yourself.</p>
   </header>
+
+  <nav class="games" aria-label="Choose a game">
+    <div class="seg big" role="radiogroup" aria-label="Game">
+      <input type="radio" name="game" id="game-bj" value="blackjack" checked><label for="game-bj">Blackjack</label>
+      <input type="radio" name="game" id="game-pk" value="poker"><label for="game-pk">Poker</label>
+    </div>
+  </nav>
+
+  <div class="game" id="game-blackjack">
 
   <section aria-label="Controls">
     <div class="controls">
@@ -227,25 +333,7 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
       <svg id="scene" viewBox="0 0 1200 675" role="img" aria-labelledby="scene-title scene-desc">
         <title id="scene-title">The fly at the blackjack table</title>
         <desc id="scene-desc"></desc>
-        <defs>
-          <linearGradient id="cj-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c111b"/><stop offset=".6" stop-color="#1b0a11"/><stop offset="1" stop-color="#0c0407"/></linearGradient>
-          <radialGradient id="cj-felt" cx="600" cy="420" r="560" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f8d5e"/><stop offset=".6" stop-color="#1f6a46"/><stop offset="1" stop-color="#103b27"/></radialGradient>
-          <linearGradient id="cj-rail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6e3b20"/><stop offset=".55" stop-color="#4a2512"/><stop offset="1" stop-color="#24110a"/></linearGradient>
-          <linearGradient id="cj-cone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9b0" stop-opacity=".16"/><stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/></linearGradient>
-          <radialGradient id="cj-pool"><stop offset="0" stop-color="#ffe9b0" stop-opacity=".13"/><stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/></radialGradient>
-          <radialGradient id="cj-vignette" cx=".5" cy=".55" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></radialGradient>
-          <radialGradient id="cj-eye" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="#ff6d4f"/><stop offset=".45" stop-color="#d22b21"/><stop offset="1" stop-color="#6c0c0b"/></radialGradient>
-          <pattern id="cj-facets" width="5" height="4.4" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.2" r="1.9" fill="none" stroke="#3a0505" stroke-opacity=".35" stroke-width=".6"/></pattern>
-          <linearGradient id="cj-thorax" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dcae66"/><stop offset="1" stop-color="#8a5b2b"/></linearGradient>
-          <linearGradient id="cj-abdomen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4b76f"/><stop offset="1" stop-color="#9e6a33"/></linearGradient>
-          <pattern id="cj-back" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#7a1d2a"/><rect width="3" height="8" fill="#97303e"/></pattern>
-          <filter id="cj-blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="10"/></filter>
-          <filter id="cj-soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
-          <filter id="cj-neon" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-          <filter id="cj-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#000" flood-opacity=".45"/></filter>
-          <clipPath id="cj-abd-clip"><ellipse cx="62" cy="-78" rx="60" ry="40" transform="rotate(12 62 -78)"/></clipPath>
-          <path id="cj-felt-arc" d="M330 382Q600 452 870 382"/>
-        </defs>
+        <defs><path id="cj-felt-arc" d="M330 382Q600 452 870 382"/></defs>
 
         <!-- the room -->
         <rect width="1200" height="675" fill="url(#cj-wall)"/>
@@ -275,14 +363,14 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
           <path d="M563 132C560 96 586 88 600 88C614 88 640 96 637 132C630 112 570 112 563 132Z" fill="#2b1d16"/>
           <path d="M556 114Q600 92 644 114L652 123Q600 106 548 123Z" fill="#2aa36a" fill-opacity=".88"/>
           <path d="M562 112Q600 96 638 112" stroke="#1b6e46" stroke-width="3" fill="none"/>
-          <g id="cj-brows" stroke="#2b1d16" stroke-width="3" stroke-linecap="round" fill="none"><path d="M579 128Q586 124 594 128"/><path d="M606 128Q614 124 621 128"/></g>
-          <g id="cj-eyes">
+          <g id="cj-brows" data-part="brows" stroke="#2b1d16" stroke-width="3" stroke-linecap="round" fill="none"><path d="M579 128Q586 124 594 128"/><path d="M606 128Q614 124 621 128"/></g>
+          <g id="cj-eyes" data-part="eyes">
             <ellipse cx="586" cy="138" rx="6" ry="5" fill="#fff"/><ellipse cx="614" cy="138" rx="6" ry="5" fill="#fff"/>
-            <circle id="cj-pupil-l" cx="586" cy="139" r="3" fill="#1d1a20"/><circle id="cj-pupil-r" cx="614" cy="139" r="3" fill="#1d1a20"/>
+            <circle id="cj-pupil-l" data-part="pupil-l" cx="586" cy="139" r="3" fill="#1d1a20"/><circle id="cj-pupil-r" data-part="pupil-r" cx="614" cy="139" r="3" fill="#1d1a20"/>
           </g>
           <path d="M600 141Q596 152 602 153" stroke="#b9845e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
           <path d="M584 160Q592 152 600 157Q608 152 616 160Q608 158 600 161Q592 158 584 160Z" fill="#2b1d16"/>
-          <path id="cj-mouth" d="M592 167Q600 170 608 167" stroke="#7a3b2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path id="cj-mouth" data-part="mouth" d="M592 167Q600 170 608 167" stroke="#7a3b2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
         </g>
 
         <!-- the table -->
@@ -328,10 +416,10 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
         <!-- the dealer's arms reach over the felt -->
         <g id="cj-arms">
-          <path id="cj-arm-l" stroke="#ebe5d8" stroke-width="22" stroke-linecap="round" fill="none"/>
-          <path id="cj-arm-r" stroke="#ebe5d8" stroke-width="22" stroke-linecap="round" fill="none"/>
-          <ellipse id="cj-hand-l" rx="13" ry="9" fill="#e0ad85"/>
-          <ellipse id="cj-hand-r" rx="13" ry="9" fill="#e0ad85"/>
+          <path id="cj-arm-l" data-part="arm-l" stroke="#ebe5d8" stroke-width="22" stroke-linecap="round" fill="none"/>
+          <path id="cj-arm-r" data-part="arm-r" stroke="#ebe5d8" stroke-width="22" stroke-linecap="round" fill="none"/>
+          <ellipse id="cj-hand-l" data-part="hand-l" rx="13" ry="9" fill="#e0ad85"/>
+          <ellipse id="cj-hand-r" data-part="hand-r" rx="13" ry="9" fill="#e0ad85"/>
         </g>
 
         <g id="cj-cards" filter="url(#cj-shadow)"></g>
@@ -348,26 +436,26 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
         <!-- the fly, drawn around its feet, facing the dealer -->
         <g id="cj-fly" transform="translate(860 566)">
-          <ellipse id="cj-fly-shadow" cy="2" rx="105" ry="11" fill="#000" opacity=".35"/>
-          <g id="cj-fly-body">
-            <g id="cj-fly-buzz" opacity="0" stroke="#fff" stroke-opacity=".4" stroke-width="2" fill="none" stroke-linecap="round">
+          <ellipse id="cj-fly-shadow" data-part="shadow" cy="2" rx="105" ry="11" fill="#000" opacity=".35"/>
+          <g id="cj-fly-body" data-part="body">
+            <g id="cj-fly-buzz" data-part="buzz" opacity="0" stroke="#fff" stroke-opacity=".4" stroke-width="2" fill="none" stroke-linecap="round">
               <path d="M40 -158Q80 -176 122 -156"/><path d="M58 -178Q92 -192 130 -174"/>
             </g>
             <g stroke="#24180e" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path id="cj-fly-leg-ff" d="M-26 -70L-46 -56L-52 -22L-58 -3"/>
+              <path id="cj-fly-leg-ff" data-part="leg-ff" d="M-26 -70L-46 -56L-52 -22L-58 -3"/>
               <path d="M0 -62L10 -40L4 -14L0 -3"/>
               <path d="M26 -66L56 -52L70 -20L86 -3"/>
             </g>
-            <path id="cj-fly-wing-f" d="M2 -122C42 -146 122 -142 160 -116C170 -106 152 -94 122 -96C82 -98 32 -106 2 -116Z" fill="#c8d7eb" fill-opacity=".18" stroke="#fff" stroke-opacity=".3"/>
-            <ellipse cx="62" cy="-78" rx="60" ry="40" transform="rotate(12 62 -78)" fill="url(#cj-abdomen)"/>
+            <path id="cj-fly-wing-f" data-part="wing-f" d="M2 -122C42 -146 122 -142 160 -116C170 -106 152 -94 122 -96C82 -98 32 -106 2 -116Z" fill="#c8d7eb" fill-opacity=".18" stroke="#fff" stroke-opacity=".3"/>
+            <ellipse data-part="abdomen" cx="62" cy="-78" rx="60" ry="40" transform="rotate(12 62 -78)" fill="url(#cj-abdomen)"/>
             <g clip-path="url(#cj-abd-clip)" fill="none" stroke="#3b2414" stroke-linecap="round">
               <path d="M44 -124Q54 -80 40 -34" stroke-width="7" opacity=".7"/>
               <path d="M68 -122Q78 -78 64 -32" stroke-width="8" opacity=".78"/>
               <path d="M92 -116Q102 -74 88 -30" stroke-width="9" opacity=".85"/>
               <ellipse cx="124" cy="-62" rx="22" ry="32" fill="#3b2414" stroke="none"/>
             </g>
-            <ellipse cx="-10" cy="-92" rx="44" ry="38" fill="url(#cj-thorax)"/>
-            <ellipse cx="26" cy="-112" rx="14" ry="9" fill="#c7964f"/>
+            <ellipse data-part="thorax" cx="-10" cy="-92" rx="44" ry="38" fill="url(#cj-thorax)"/>
+            <ellipse data-part="scutellum" cx="26" cy="-112" rx="14" ry="9" fill="#c7964f"/>
             <path d="M-40 -110Q-10 -126 26 -110" stroke="#8a5b2b" stroke-width="3" stroke-opacity=".4" fill="none"/>
             <g stroke="#2a1a0c" stroke-width="1.6" stroke-linecap="round" fill="none">
               <path d="M-30 -126q-4 -10 -12 -14"/><path d="M-8 -130q0 -11 -8 -17"/><path d="M14 -126q6 -10 2 -18"/><path d="M30 -118q10 -6 12 -16"/>
@@ -376,25 +464,25 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
               <path d="M-6 -60L4 -36L-12 -10L-22 -1"/>
               <path d="M18 -62L50 -46L62 -16L78 -1"/>
             </g>
-            <g id="cj-fly-head">
-              <circle id="cj-fly-glow" cx="-62" cy="-104" r="42" fill="#3987e5" opacity="0" filter="url(#cj-blur)"/>
-              <circle cx="-62" cy="-104" r="33" fill="#c99652"/>
-              <ellipse cx="-68" cy="-106" rx="24" ry="28" fill="url(#cj-eye)"/>
+            <g id="cj-fly-head" data-part="head">
+              <circle id="cj-fly-glow" data-part="glow" cx="-62" cy="-104" r="42" fill="#3987e5" opacity="0" filter="url(#cj-blur)"/>
+              <circle data-part="headshell" cx="-62" cy="-104" r="33" fill="#c99652"/>
+              <ellipse data-part="eye" cx="-68" cy="-106" rx="24" ry="28" fill="url(#cj-eye)"/>
               <ellipse cx="-68" cy="-106" rx="24" ry="28" fill="url(#cj-facets)"/>
               <ellipse cx="-77" cy="-120" rx="7" ry="4.5" fill="#fff" opacity=".75" transform="rotate(-25 -77 -120)"/>
               <circle cx="-62" cy="-110" r="2.6" fill="#fff" opacity=".45"/>
               <g fill="#7a1a10"><circle cx="-50" cy="-135" r="2"/><circle cx="-44" cy="-133" r="2"/><circle cx="-47" cy="-138" r="2"/></g>
               <path d="M-80 -78Q-90 -66 -86 -58" stroke="#8a5a2a" stroke-width="6" fill="none" stroke-linecap="round"/>
               <ellipse cx="-86" cy="-56" rx="6" ry="3.5" fill="#a0703a"/>
-              <g id="cj-fly-antenna">
+              <g id="cj-fly-antenna" data-part="antenna">
                 <ellipse cx="-88" cy="-124" rx="5" ry="6" fill="#a87436"/>
                 <ellipse cx="-94" cy="-116" rx="6" ry="9" fill="#c08440" transform="rotate(25 -94 -116)"/>
                 <path d="M-92 -122Q-104 -142 -100 -160" stroke="#2a1a0c" stroke-width="1.6" fill="none"/>
                 <path d="M-97 -134l-6 -3M-99 -142l-6 -2M-100 -150l-6 -1M-96 -138l5 -4M-98 -147l5 -3M-99 -155l5 -2" stroke="#2a1a0c" stroke-width="1.1"/>
               </g>
             </g>
-            <path id="cj-fly-leg-f" d="M-32 -66L-58 -52L-70 -18L-80 -1" stroke="#3a2818" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <g id="cj-fly-wing-n">
+            <path id="cj-fly-leg-f" data-part="leg-f" d="M-32 -66L-58 -52L-70 -18L-80 -1" stroke="#3a2818" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <g id="cj-fly-wing-n" data-part="wing-n">
               <path d="M0 -118C40 -142 120 -138 158 -112C168 -102 150 -90 120 -92C80 -94 30 -102 0 -112Z" fill="#e1eeff" fill-opacity=".3" stroke="#fff" stroke-opacity=".6" stroke-width="1.2"/>
               <g stroke="#6e5032" stroke-opacity=".55" stroke-width="1.1" fill="none">
                 <path d="M4 -116C60 -132 118 -126 156 -110"/><path d="M8 -113C60 -116 110 -106 142 -96"/><path d="M14 -110C56 -106 96 -100 122 -93"/><path d="M78 -122L84 -106"/><path d="M110 -116L114 -100"/>
@@ -437,6 +525,7 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
       </ul>
     </div>
 
+    <div class="scope-slot" id="bj-scope-slot">
     <div class="scope">
       <div class="scope-head"><span class="label">The brain, seen from above</span><span class="label" id="scope-state">&nbsp;</span></div>
       <canvas id="brain" aria-label="Positions and activity of the fly's neurons"></canvas>
@@ -446,6 +535,7 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
         <span><i class="dot" style="background:#d95926"></i>avoid outputs, punishment dopamine</span>
       </div>
       <p class="caption">Each dot is one real neuron at its measured cell-body position. Front of the head is at the top; the two dense clouds at the back are the Kenyon cells. Point at a dot to see which neuron it is.</p>
+    </div>
     </div>
   </section>
 
@@ -512,13 +602,174 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
       </div>
       <p class="sub-note">Learning depends on dopamine reaching the right outputs. It does not depend on exactly which smell channel reaches which Kenyon cell: scrambling that wiring changes nothing, which fits what biologists found in real flies, where those connections look close to random.</p>
     </div>
-    <p class="credits wide">Connectome: MaleCNS v1.0, FlyEM at HHMI Janelia with the University of Cambridge, the MRC Laboratory of Molecular Biology and Google Research (Berg et al.), licensed CC BY 4.0, read from the preprocessed matrices at github.com/YijieYin/connectome_data_prep. Rules: hit or stand only, blackjack pays 3 to 2, dealer stands on 17, continuously shuffled shoe.</p>
   </section>
+  </div>
+
+  <div class="game" id="game-poker" hidden>
+  <section aria-label="Poker controls">
+    <div class="controls">
+      <button class="btn primary" id="pk-play" type="button">Pause</button>
+      <div class="seg" role="radiogroup" aria-label="Poker speed">
+        <input type="radio" name="pk-speed" id="pk-speed-watch" value="watch" checked><label for="pk-speed-watch">Watch</label>
+        <input type="radio" name="pk-speed" id="pk-speed-fast" value="fast"><label for="pk-speed-fast">Fast</label>
+        <input type="radio" name="pk-speed" id="pk-speed-turbo" value="turbo"><label for="pk-speed-turbo">Turbo</label>
+      </div>
+      <button class="btn" id="pk-join-open" type="button">Take a seat</button>
+      <button class="btn quiet" id="pk-reset" type="button">Start over</button>
+      <span class="confirm" id="pk-reset-confirm" hidden>Erase what all five flies have learned?
+        <button class="btn" id="pk-reset-yes" type="button">Erase</button>
+        <button class="btn quiet" id="pk-reset-no" type="button">Keep</button>
+      </span>
+    </div>
+    <p class="hint" id="pk-note"></p>
+  </section>
+
+  <section class="stage" aria-label="The poker table and the brain">
+    <div class="casino">
+      <svg id="pk-scene" viewBox="0 0 1200 675" role="img" aria-labelledby="pk-title">
+        <title id="pk-title">Five flies and an open seat at a poker table</title>
+        <!-- the room, as at the blackjack table -->
+        <rect width="1200" height="675" fill="url(#cj-wall)"/>
+        <path d="M50 0V250M150 0V250M250 0V250M350 0V250M450 0V250M550 0V250M650 0V250M750 0V250M850 0V250M950 0V250M1050 0V250M1150 0V250" stroke="#e8c27a" stroke-opacity=".06" stroke-width="2"/>
+        <rect y="250" width="1200" height="425" fill="#0c0507"/>
+        <path d="M0 250H1200" stroke="#e8c27a" stroke-opacity=".2" stroke-width="3"/>
+        <g id="pk-bokeh" class="cj-bokeh" filter="url(#cj-soft)"></g>
+        <g class="neon" filter="url(#cj-neon)">
+          <text x="215" y="140" text-anchor="middle" class="neon-text">FlyJack</text>
+          <path d="M115 162H315" stroke="#ff4fae" stroke-width="3" stroke-linecap="round"/>
+        </g>
+        <g class="neon neon-late" filter="url(#cj-neon)"><text x="985" y="140" text-anchor="middle" class="neon-word">HOLD'EM</text></g>
+        <line x1="600" y1="0" x2="600" y2="26" stroke="#050304" stroke-width="3"/>
+        <path d="M572 26H628L662 62H538Z" fill="#1f4a35"/>
+        <path d="M538 62H662" stroke="#d6b25e" stroke-width="3"/>
+        <ellipse cx="600" cy="66" rx="56" ry="9" fill="#fff4cf" filter="url(#cj-blur)"/>
+        <g id="pk-dealer"></g>
+
+        <!-- the oval table -->
+        <ellipse cx="600" cy="472" rx="505" ry="212" fill="#1a0c06"/>
+        <ellipse cx="600" cy="452" rx="505" ry="212" fill="url(#cj-rail)"/>
+        <ellipse cx="600" cy="452" rx="501" ry="208" fill="none" stroke="#ffdcb4" stroke-opacity=".14" stroke-width="2"/>
+        <ellipse cx="600" cy="452" rx="470" ry="185" fill="url(#cj-felt)"/>
+        <ellipse cx="600" cy="452" rx="470" ry="185" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="6"/>
+        <ellipse cx="600" cy="452" rx="405" ry="152" fill="none" stroke="#e8c27a" stroke-opacity=".3" stroke-width="2"/>
+        <g fill="none" stroke="#e8c27a" stroke-opacity=".2" stroke-width="1.5">
+          <rect x="430" y="385" width="60" height="86" rx="6"/><rect x="500" y="385" width="60" height="86" rx="6"/><rect x="570" y="385" width="60" height="86" rx="6"/>
+          <rect x="640" y="385" width="60" height="86" rx="6"/><rect x="710" y="385" width="60" height="86" rx="6"/>
+        </g>
+        <text x="600" y="497" text-anchor="middle" class="felt-text">LIMIT HOLD'EM · 2 / 4</text>
+        <polygon points="548,66 652,66 790,330 410,330" fill="url(#cj-cone)" pointer-events="none"/>
+        <ellipse cx="600" cy="440" rx="470" ry="230" fill="url(#cj-pool)" pointer-events="none"/>
+        <g id="pk-arms"></g>
+
+        <g id="pk-places"></g>
+        <g id="pk-flies"></g>
+        <g id="pk-cards" filter="url(#cj-shadow)"></g>
+        <g id="pk-chips"></g>
+        <g id="pk-labels"></g>
+        <g id="pk-scent" class="wisps"></g>
+        <g id="pk-fx"></g>
+        <g id="pk-bubble" class="bubble">
+          <circle id="pk-bubble-dot1" r="7" fill="#fbfaf5"/>
+          <circle id="pk-bubble-dot2" r="4" fill="#fbfaf5"/>
+          <ellipse rx="86" ry="40" fill="#fbfaf5"/>
+          <g id="pk-bubble-rows"></g>
+        </g>
+        <rect width="1200" height="675" fill="url(#cj-vignette)" pointer-events="none"/>
+      </svg>
+    </div>
+
+    <div class="actionbar" id="pk-actionbar" hidden>
+      <div class="ab-who"><span class="label" id="pk-ab-label">Your turn</span><span class="ab-name" id="pk-ab-name"></span></div>
+      <div class="ab-cards" id="pk-ab-cards"></div>
+      <div class="ab-hand" id="pk-ab-hand"></div>
+      <div class="ab-buttons">
+        <button class="btn primary" id="pk-reveal" type="button">Show my cards</button>
+        <button class="btn" id="pk-fold" type="button">Fold</button>
+        <button class="btn" id="pk-call" type="button">Check</button>
+        <button class="btn primary" id="pk-raise" type="button">Bet 2</button>
+      </div>
+    </div>
+
+    <div class="felt">
+      <div class="choice">
+        <div class="seat-head"><span class="label" id="pk-choice-label">How each choice smells to the fly</span><span class="total" id="pk-odds"></span></div>
+        <div class="meter" id="pk-meter-fold"><span class="name">Fold</span><span class="track"><span class="fill"></span></span><span class="val">&nbsp;</span></div>
+        <div class="meter" id="pk-meter-call"><span class="name">Call</span><span class="track"><span class="fill"></span></span><span class="val">&nbsp;</span></div>
+        <div class="meter" id="pk-meter-raise"><span class="name">Raise</span><span class="track"><span class="fill"></span></span><span class="val">&nbsp;</span></div>
+        <p class="scale-note">Left of the line smells bad, right smells good. The number is the result the fly expects, where 12 chips count as one bet.</p>
+      </div>
+      <div class="verdict">
+        <span class="what" id="pk-verdict">&nbsp;</span>
+        <span class="why" id="pk-why">&nbsp;</span>
+      </div>
+      <div class="recent">
+        <span class="label">This hand</span>
+        <ol class="log" id="pk-log"></ol>
+      </div>
+    </div>
+    <div class="scope-slot" id="pk-scope-slot"></div>
+  </section>
+
+  <section aria-label="Seats">
+    <h2>Who's at the table</h2>
+    <p class="sub-note">Anyone at this screen can sit in an open seat, or ask a fly to leave and take its place. With two or more people, the table asks you to pass the screen before it shows anyone's cards. People can use the buttons or the keys F, C and R.</p>
+    <div class="seats" id="pk-seats"></div>
+  </section>
+
+  <section class="record" aria-label="Poker learning record">
+    <h2>Are they learning?</h2>
+    <div class="tiles">
+      <div class="tile"><span class="label">Hands played</span><span class="value" id="pk-t-hands">0</span><span class="sub" id="pk-t-rate">&nbsp;</span></div>
+      <div class="tile"><span class="label">Best fly lately</span><span class="value" id="pk-t-best">&nbsp;</span><span class="sub" id="pk-t-best-sub">&nbsp;</span></div>
+      <div class="tile"><span class="label">People's winnings</span><span class="value" id="pk-t-you">&nbsp;</span><span class="sub" id="pk-t-you-sub">&nbsp;</span></div>
+      <div class="tile"><span class="label">Biggest pot</span><span class="value" id="pk-t-pot">&nbsp;</span><span class="sub" id="pk-t-pot-sub">&nbsp;</span></div>
+    </div>
+    <div style="overflow-x:auto"><table class="plain" id="pk-board"></table></div>
+    <p class="sub-note">A fly that is learning raises more with strong cards and folds more of its weak ones when someone bets. Both columns are read straight from each fly's current synapses, not from lucky or unlucky hands. Chips won "lately" covers each fly's last 500 hands.</p>
+  </section>
+
+  <section aria-label="Poker strategy">
+    <h2>What a fly does with each hand</h2>
+    <div class="controls"><span class="field"><label for="pk-pick">Fly</label><select id="pk-pick"></select></span></div>
+    <div class="grid-box"><table class="grid pk-grid" id="pk-grid"></table></div>
+    <div class="grid-key">
+      <span><i class="key-swatch a-fold"></i>F = usually folds</span>
+      <span><i class="key-swatch a-call"></i>C = calls, K = checks</span>
+      <span><i class="key-swatch a-raise"></i>R = bets or raises</span>
+    </div>
+    <p class="sub-note">Rows are how good the fly's cards are compared with an average hand against the players still in. Columns are the street, and whether the fly can check for free, faces one bet, or faces a raise. A sensible player raises at the top, folds at the bottom when it costs something, and gets more careful when raised.</p>
+  </section>
+
+  <section class="notes" aria-label="What is real and what is not, at the poker table">
+    <div>
+      <h2>What is real</h2>
+      <ul>
+        <li>Each fly's brain. All five run the same mushroom body circuit as the blackjack fly, with the same measured wiring and dopamine. Each fly has its own copy and learns only from its own wins and losses, so they drift apart.</li>
+        <li>The learning. As in blackjack, every choice a fly made in a hand is paired with the chips it won or lost, delivered as reward or punishment dopamine.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>What I made up</h2>
+      <ul>
+        <li>The strength smell. A fly cannot read cards or count outs. The page deals out the rest of the hand a few hundred times to see how often the fly's cards would win, and gives the fly that as part of the smell, sorted into ten steps from hopeless to a monster. What the fly learns is what to do about each smell.</li>
+        <li>The looks. Canton-S, white, yellow, ebony and Curly are real lab strains, but here they are only costumes: all five flies have the same wiring.</li>
+        <li>Limit rules keep it to three choices. Stacks are topped up to 100 when they drop below 50, and winnings above 250 are banked, so nobody goes all in and there are no side pots. The "Overall" column counts every chip.</li>
+        <li>How loud the cards are in the smell, and how often a fly tries something other than its favourite choice, are my settings. Without enough trying, a fly that loses a few early calls stops calling for good.</li>
+      </ul>
+    </div>
+  </section>
+  </div>
+
+  <p class="credits">Connectome: MaleCNS v1.0, FlyEM at HHMI Janelia with the University of Cambridge, the MRC Laboratory of Molecular Biology and Google Research (Berg et al.), licensed CC BY 4.0, read from the preprocessed matrices at github.com/YijieYin/connectome_data_prep. Blackjack: hit or stand only, blackjack pays 3 to 2, dealer stands on 17, continuously shuffled shoe. Poker: Limit Texas Hold'em, blinds 1 and 2, bets of 2 then 4, three raises at most.</p>
 </div>
 <div class="tip" id="tip" hidden></div>
 
 <script type="application/json" id="circuit-data">/*CIRCUIT*/</script>
 <script>/*BLACKJACK*/</script>
 <script>/*FLYBRAIN*/</script>
+<script>/*POKER*/</script>
+<script>/*SCENEKIT*/</script>
 <script>/*CASINO*/</script>
 <script>/*APP*/</script>
+<script>/*POKERTABLE*/</script>
+<script>/*POKERAPP*/</script>
