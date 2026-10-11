@@ -28,7 +28,7 @@ Nothing else is trained. The learning comes from the real wiring and a simple do
 
 ## Try it
 
-Open `web/index.html` in your browser. That's it: no install, no server, works offline.
+Open https://fruitfly-blackjack-web.vercel.app/ in your browser.
 
 ## What you'll see
 
