@@ -1,131 +1,102 @@
 # FlyJack
 
-A fruit fly's learning circuit, wired from the real connectome, learns to play blackjack.
+**A real fruit fly brain, rebuilt in a browser, learns to play blackjack and poker.**
 
-Open `web/index.html` in a browser. That is the whole app: no install, no server.
+## Where this started
 
-## What it does
+Scientists recently mapped, for the first time, the complete brain and nervous system of an adult
+male fruit fly. Google Research worked with HHMI Janelia and other labs, using AI to turn millions
+of microscope images into 3D neurons. The result is a full wiring diagram (a "connectome"): every
+neuron and who it talks to.
 
-The page runs 4,406 neurons from the mushroom body of the MaleCNS v1.0 connectome
-(236 projection neurons, 3,741 Kenyon cells, 97 output neurons, 332 dopamine neurons,
-78,937 connections). Each blackjack situation plus each choice ("hit" or "stand") is turned
-into a smell. The fly picks the choice that smells better. Wins and losses arrive as dopamine,
-which changes the synapses between Kenyon cells and output neurons. Nothing else is trained.
+![Google's announcement of the complete fruit fly brain map](google%20study.jpg)
 
-In Watch mode the fly acts it out at a casino table: it sniffs each choice (blue scent smells
-good, orange smells bad), taps the felt to hit, waves a leg to stand, and its head glows with
-reward or punishment dopamine when the hand is paid.
+That made me ask a simple question: **if we copy the real wiring of a fly's brain, can it learn
+to play a game?**
 
-The casino is a 3D scene drawn with three.js (bundled into the page, so it still works offline)
-in a retro pixel look: few polygons, flat shading and big pixels, on a neon-trimmed platform
-above a city at night in the rain. A read-out over the scene follows the fly's brain: how many
-of the circuit's cells are active, and a raster of 96 of them that scrolls with time. The model
-works with activity levels, not spikes, so an active cell draws a bar. Drag the scene to walk
-around the table; double-click to come back.
+## What this project does
 
-## The brain model
+FlyJack takes the part of the fly's brain that handles learning and memory (the *mushroom body*),
+wired exactly as it is in the real map, and teaches it to play cards.
 
-Beside the table, a 3D model shows the whole nervous system: one small sphere for each of the
-139,462 neurons whose cell-body position is in the connectome, the brain with its eye lobes at
-one end and the nerve cord at the other, in the mixed colours connectome pictures use. The
-strands through the neck join each of 3,136 descending and ascending neurons to its strongest
-partner on the other side. They show connections, not the neurons' real shapes: the full
-shapes are tens of gigabytes and are not part of this project. The neurons of the learning
-circuit light up on top as the fly smells, chooses and gets its dopamine. The model is drawn
-faded so those firing neurons stand out; one button under it brings back the full colours and
-another zooms in on the brain. Drag to turn the model.
+- Each game situation and each possible move is turned into a **smell**.
+- The fly picks the move that **smells better**.
+- When it wins, it gets a shot of **reward dopamine**. When it loses, **punishment dopamine**.
+- Over time, the dopamine changes its connections, and the fly gets better.
 
-## Poker
+Nothing else is trained. The learning comes from the real wiring and a simple dopamine rule.
 
-The Poker tab seats five flies at a Limit Texas Hold'em table: Canton-S, white, yellow, ebony
-and Curly, dressed as classic lab strains but all running their own copy of the same circuit.
-The sixth seat is open: anyone at the screen can type a name and sit down, or ask a fly to
-leave and take its place. With two or more people, the table asks you to pass the screen before
-it shows anyone's cards.
+## Try it
 
-A poker situation smells of three things: how often the fly's cards would win against the
-players still in (estimated by dealing the rest out a few hundred times, then scaled so a fair
-share sits in the middle), the street, and whether there is a bet or a raise to call. Each
-choice (fold, call, raise) is judged by the chips won or lost from that moment on, so folding
-is always worth zero. In a headless run of 30,000 hands, flop decisions facing a bet went from
-folding a monster 14% of the time and a weak hand about 30% of the time, to raising or calling
-monsters nearly always and folding weak hands 60 to 85% of the time.
+Open `web/index.html` in your browser. That's it: no install, no server, works offline.
 
-## Results (three flies, 200,000 hands each)
+## What you'll see
 
-Average result per hand, as a share of the bet. Exact values from the game's maths.
+**Blackjack.** A fly sits at a 3D casino table in a rainy neon city. It sniffs each choice
+(blue smells good, orange smells bad), taps the table to hit, waves a leg to stand, and its head
+glows when the dopamine arrives. Drag to look around; double-click to reset the view.
 
-| Brain                          | Before | After  | Plays like an expert |
-|--------------------------------|--------|--------|----------------------|
-| Intact                         | -25.8% | -4.3%  | 91%                  |
-| Dopamine blocked               | -25.8% | -25.8% | 42%                  |
-| Reward and punishment swapped  | -25.8% | -20.6% | 38%                  |
-| Dopamine targets scrambled     | -25.8% | -16.6% | 51%                  |
-| Smell wiring scrambled (PN-KC) | -34.3% | -4.2%  | 90%                  |
-| KC-MBON wiring scrambled       | -28.3% | -5.3%  | 78%                  |
+**The brain.** Next to the table, a 3D model shows the fly's whole nervous system, one dot per
+neuron. The learning circuit lights up as the fly smells, decides and gets rewarded. Drag to
+turn it.
 
-For reference: expert play -2.7%, always stand -16.0%, coin flip -29.9%.
+**Poker.** Five flies, each with its own copy of the brain, play Texas Hold'em together. There's
+an empty seat: type your name and join them, or swap out a fly. With several people at one
+screen, the table asks you to pass it around before showing anyone's cards.
 
-Reproduce with `node tools/experiment.js --controls` (about six minutes).
+## Does it really learn?
 
-## What is real and what is not
+Yes. At first the fly plays about as badly as flipping a coin. After training it plays very close
+to an expert strategy. In poker it learns to bet with strong hands and fold weak ones.
 
-Real, measured in the connectome: who connects to whom and with how many synapses; each output
-neuron's transmitter (which sets approach or avoid); how many synapses the reward (PAM) and
-punishment (PPL1) dopamine neurons make on each output neuron.
+To check that the learning really comes from the brain, I also tested "broken" flies:
 
-Engineered: how cards become smells; the neuron model (activity levels, no spikes, top 5% of
-Kenyon cells stay active); the exact learning rule and its numbers. `src/flybrain.js` starts
-with the full list.
+| Fly                              | Does it learn? |
+|----------------------------------|----------------|
+| Normal brain                     | Yes, plays almost like an expert |
+| Dopamine blocked                 | No, doesn't improve at all |
+| Reward and punishment swapped    | Barely |
+| Dopamine sent to the wrong place | Only a little |
 
-## Files
+So without working dopamine, the fly can't learn. Full numbers are in `results/`, and you can
+rerun the tests with `node tools/experiment.js --controls`.
 
-    web/index.html         the finished page (built, self-contained)
-    web/page.html          page layout and styles
-    web/scenekit.js        shared timing: tweens, timers, easing
-    web/scene3d.js         the 3D casino: night city, tables, cards, chips, the dealer, labels, read-out, camera
-    web/fly3d.js           the fly, modelled and animated in 3D
-    web/vendor/three.min.js  three.js r149 (MIT, see web/vendor/three.LICENSE)
-    web/casino.js          the blackjack table: dealing, chips, the fly's gestures
-    web/brain3d.js         the 3D model of the whole nervous system
-    web/app.js             blackjack game loop, brain activity, charts
-    web/pokertable.js      the poker table: six seats, a fly per seat, pot, showdown
-    web/pokerapp.js        the poker game: seats and joining, turns, learning, leaderboard
-    src/poker.js           Limit Hold'em rules, hand ranking, strength estimate, poker smells
-    src/flybrain.js        the brain: smell code, decision, dopamine learning
-    src/blackjack.js       rules and exact maths
-    data/circuit.json      the extracted circuit
-    data/cns_cloud.json    every neuron's cell-body position, and the strands through the neck
-    tools/build_circuit.py extracts data/circuit.json from the connectome
-    tools/build_cloud.py   extracts data/cns_cloud.json from the connectome
-    tools/build_web.py     assembles web/index.html
-    tools/experiment.js    offline training and control experiments
-    results/               output of the control experiments
+## What's real and what's not
 
-## Rebuilding from the raw connectome
+**Real (from the brain map):** which neurons connect to which, and how strongly; whether each
+output neuron pushes the fly toward or away from a choice; where the reward and punishment
+dopamine neurons connect.
+
+**Made up by me:** how cards are turned into smells, the simplified neuron model, and the exact
+learning rule. The top of `src/flybrain.js` lists every assumption.
+
+## How the project is organised
+
+    web/    the app you open in the browser (3D casino, fly, brain model, games)
+    src/    the brain, the blackjack rules and the poker rules
+    data/   the brain circuit taken from the real map
+    tools/  scripts to rebuild the data and the page, and to run the experiments
+    results/  output of the "broken fly" tests
+
+## Rebuilding from the raw brain map
+
+You only need this if you want to regenerate the data yourself.
 
     mkdir raw && cd raw
     B=https://raw.githubusercontent.com/YijieYin/connectome_data_prep/main/data/maleCNS
-    curl -LO $B/mcns_syncount_all_neuron.npz     # 79 MB
-    curl -LO $B/mcns_all_neuron_meta.csv         # 28 MB
+    curl -LO $B/mcns_syncount_all_neuron.npz
+    curl -LO $B/mcns_all_neuron_meta.csv
     cd ..
     pip install numpy scipy pandas
     python3 tools/build_circuit.py raw data/circuit.json
     python3 tools/build_cloud.py raw data/cns_cloud.json
     python3 tools/build_web.py
 
-## Rules of the games
-
-Blackjack: hit or stand only, blackjack pays 3 to 2, dealer stands on 17 and checks for
-blackjack first, continuously shuffled shoe.
-
-Poker: Limit Texas Hold'em, six seats, blinds 1 and 2, bets of 2 then 4 from the turn, one bet
-and three raises per round. Stacks top up to 100 below 50 and bank winnings above 250, so no
-one is ever all in.
-
 ## Credits
 
-Connectome: MaleCNS v1.0, FlyEM at HHMI Janelia with the University of Cambridge, the MRC
+Brain map: MaleCNS v1.0, by FlyEM at HHMI Janelia with the University of Cambridge, the MRC
 Laboratory of Molecular Biology and Google Research (Berg et al.), CC BY 4.0,
-https://male-cns.janelia.org. Read from the preprocessed matrices at
+https://male-cns.janelia.org. Read from the preprocessed data at
 https://github.com/YijieYin/connectome_data_prep. Any published use must cite the dataset.
+
+3D graphics: three.js (MIT licence, see `web/vendor/three.LICENSE`).
