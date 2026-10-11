@@ -19,7 +19,7 @@
   });
   var seats = [flies[0], flies[1], flies[2], null, flies[3], flies[4]];   // seat 3, at the front, is open
   var pending = {};                                                         // seat -> player or null, applied between hands
-  var ready = false, active = false, playing = !reduceMotion, speed = 'watch', handsTotal = 0, buttonSeat = -1, biggest = null;
+  var ready = false, active = false, playing = !reduceMotion, handsTotal = 0, buttonSeat = -1, biggest = null;
   var game = { hand: null, traces: {}, step: null, at: 0, waiting: false, pick: null, last: null, revealed: false, featured: -1 };
   var scene = null;
 
@@ -73,7 +73,7 @@
   function applyPending() {
     var changed = false;
     for (var i = 0; i < SEATS; i++) if (i in pending) { seats[i] = pending[i]; delete pending[i]; changed = true; }
-    if (changed) { scene.setSeats(seatList()); renderSeats(); syncSpeed(); }
+    if (changed) { scene.setSeats(seatList()); renderSeats(); syncNote(); }
   }
   function seatList() {
     return seats.map(function (p) { return p ? { kind: p.kind, name: p.name, look: p.look, stack: p.stack } : { kind: 'empty' }; });
@@ -182,16 +182,6 @@
     announce(hand);
     game.hand = null;
     return [stepDeal, ms + 500];
-  }
-  function finishWatchHand() {                    // leaving Watch mid-hand: flies play it out at once
-    var hand = game.hand;
-    game.step = null; game.waiting = false; hideBar();
-    if (!hand) return;
-    while (!hand.done) {
-      if (hand.toAct === -1) { hand.advance(); continue; }
-      hand.act(flyDecide(hand, hand.toAct, 60).action);
-    }
-    finishHand(hand); game.hand = null;
   }
 
   /* ---------- people ---------- */
@@ -324,7 +314,7 @@
     if (next !== undefined) {
       card.appendChild(el('span', 'note', next ? next.name + ' sits down next hand' : 'leaves after this hand'));
       var undo = el('button', 'btn quiet', 'Undo'); undo.type = 'button';
-      undo.addEventListener('click', function () { delete pending[i]; renderSeats(); syncSpeed(); });
+      undo.addEventListener('click', function () { delete pending[i]; renderSeats(); syncNote(); });
       card.appendChild(undo);
       return card;
     }
@@ -362,7 +352,7 @@
   function change(i, who) {
     if (game.hand) pending[i] = who;             // a hand is running: change seats when it ends
     else { seats[i] = who; scene.setSeats(seatList()); }
-    renderSeats(); syncSpeed();
+    renderSeats(); syncNote();
     if (who && who.kind === 'human' && !playing) setPlaying(true);
   }
   function focusSeat(i) {
@@ -428,15 +418,12 @@
     });
   }
 
-  var lastRefresh = 0, lastBoard = 0, rate = { t: 0, h: 0, v: 0 }, shownHand = null;
+  var lastRefresh = 0, lastBoard = 0;
   function refresh(force) {
     var now = performance.now();
     if (!force && now - lastRefresh < 250) return;
     lastRefresh = now;
-    if (!rate.t) { rate.t = now; rate.h = handsTotal; }
-    else if (now - rate.t > 500) { rate.v = (handsTotal - rate.h) / ((now - rate.t) / 1000); rate.t = now; rate.h = handsTotal; }
     $('pk-t-hands').textContent = handsTotal.toLocaleString('en-US');
-    $('pk-t-rate').textContent = playing && speed !== 'watch' && rate.v >= 2 ? Math.round(rate.v) + ' hands a second' : ' ';
     var best = null;
     flies.forEach(function (f) { var r = per100(f); if (r !== null && f.recent.length >= 50 && (!best || r > best.r)) best = { f: f, r: r }; });
     $('pk-t-best').textContent = best ? best.f.name : '–';
@@ -448,34 +435,14 @@
     $('pk-t-you-sub').textContent = people.length ? people.map(function (p) { return p.name; }).join(' / ') : 'nobody has sat down yet';
     for (var i = 0; i < SEATS; i++) { var s = $('pk-seat-stack-' + i); if (s && seats[i]) s.textContent = 'stack ' + seats[i].stack + ' · ' + signed(seats[i].profit) + ' overall'; }
     if (force || now - lastBoard > 1000) { lastBoard = now; drawBoard(); drawGrid(); }
-    if (speed !== 'watch' && game.last && shownHand !== game.last) {
-      var h = game.last; shownHand = h;
-      scene.show(h, faceUp);
-      if (h.winners.length) {
-        var q = h.p[h.winners[0].i];
-        say(seats[q.seat] ? seats[q.seat].name + ' wins ' + h.pot() + (h.showdown ? ' with ' + q.handName.toLowerCase() : '') : ' ', ' ');
-      }
-    }
   }
 
   /* ---------- controls ---------- */
-  function setPlaying(p) { playing = p; $('pk-play').textContent = p ? 'Pause' : 'Play'; if (!p) save(); rate.t = 0; }
-  function syncSpeed() {
-    var people = humans() > 0 || Object.keys(pending).some(function (k) { return pending[k] && pending[k].kind === 'human'; });
-    ['fast', 'turbo'].forEach(function (s) { $('pk-speed-' + s).disabled = people; });
-    if (people && speed !== 'watch') { $('pk-speed-watch').checked = true; setSpeed('watch'); }
-    $('pk-note').textContent = people ? 'People are playing, so the table runs at Watch speed. Fast and Turbo come back when everyone has left.' :
-      'Five flies, each with its own copy of the mushroom body circuit, playing Limit Hold\'em against each other. Fresh flies play almost at random: let them play on Turbo for a few minutes, then sit down in the open seat.';
-  }
-  function setSpeed(v) {
-    if (speed === 'watch' && v !== 'watch') finishWatchHand();
-    speed = v; game.step = null; rate.t = 0; due = 0; shownHand = null;
-    if (!playing) setPlaying(true);
+  function setPlaying(p) { playing = p; $('pk-play').textContent = p ? 'Pause' : 'Play'; if (!p) save(); }
+  function syncNote() {
+    $('pk-note').textContent = 'Five flies, each with its own copy of the mushroom body circuit, playing Limit Hold\'em against each other. Fresh flies play almost at random and improve as they play. Take the open seat to join them.';
   }
   $('pk-play').addEventListener('click', function () { setPlaying(!playing); });
-  Array.prototype.forEach.call(document.querySelectorAll('input[name="pk-speed"]'), function (r) {
-    r.addEventListener('change', function () { if (r.checked) setSpeed(r.value); });
-  });
   $('pk-join-open').addEventListener('click', function () {
     for (var i = 0; i < SEATS; i++) if (!seats[i] && !(i in pending)) return focusSeat(i);
     $('pk-note').textContent = 'Every seat is taken. Ask a fly to leave in the seat list below, then sit down there.';
@@ -494,26 +461,14 @@
   });
 
   /* ---------- the loop ---------- */
-  var due = 0, prev = 0;
   function frame(now) {
-    var dt = Math.min(100, now - (prev || now)); prev = now;
     if (active) {
-      if (playing) {
-        if (speed === 'watch') {
-          if (!game.waiting) {
-            if (!game.step) { game.step = stepDeal; game.at = now; }
-            if (now >= game.at) { var next = game.step(); game.step = next[0]; game.at = now + next[1]; refresh(true); }
-          }
-        } else if (speed === 'fast') {
-          due += dt * 0.008;
-          while (due >= 1) { playQuick(); due--; }
-        } else {
-          var t0 = performance.now();
-          while (performance.now() - t0 < 14) playQuick();
-        }
+      if (playing && !game.waiting) {
+        if (!game.step) { game.step = stepDeal; game.at = now; }
+        if (now >= game.at) { var next = game.step(); game.step = next[0]; game.at = now + next[1]; refresh(true); }
       }
       refresh(false);
-      scene.tick(now, playing && speed !== 'watch');
+      scene.tick(now, false);
     }
     requestAnimationFrame(frame);
   }
@@ -526,7 +481,7 @@
     flies.forEach(function (f) { f.brain = newBrain(f); });
     restore();
     scene.setSeats(seatList());
-    renderSeats(); buildGrid(); syncSpeed();
+    renderSeats(); buildGrid(); syncNote();
     ready = true;
     requestAnimationFrame(frame);
   }

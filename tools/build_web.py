@@ -12,8 +12,10 @@ for group in ("pn", "kc", "mbon", "pam", "ppl1"):          # keep the page small
     circuit[group].pop("aplSynapses", None)
 circuit.pop("glomerulusSynapses", None)
 data = json.dumps(circuit, separators=(",", ":")).replace("<", "\\u003c")
+cloud = (root / "data/cns_cloud.json").read_text(encoding="utf-8").replace("<", "\\u003c")
 page = (root / "web/page.html").read_text(encoding="utf-8")
 parts = {"/*CIRCUIT*/": data,
+         "/*CLOUD*/": cloud,
          "/*BLACKJACK*/": (root / "src/blackjack.js").read_text(encoding="utf-8"),
          "/*FLYBRAIN*/": (root / "src/flybrain.js").read_text(encoding="utf-8"),
          "/*POKER*/": (root / "src/poker.js").read_text(encoding="utf-8"),
@@ -21,6 +23,7 @@ parts = {"/*CIRCUIT*/": data,
          "/*SCENEKIT*/": (root / "web/scenekit.js").read_text(encoding="utf-8"),
          "/*SCENE3D*/": (root / "web/scene3d.js").read_text(encoding="utf-8"),
          "/*FLY3D*/": (root / "web/fly3d.js").read_text(encoding="utf-8"),
+         "/*BRAIN3D*/": (root / "web/brain3d.js").read_text(encoding="utf-8"),
          "/*CASINO*/": (root / "web/casino.js").read_text(encoding="utf-8"),
          "/*APP*/": (root / "web/app.js").read_text(encoding="utf-8"),
          "/*POKERTABLE*/": (root / "web/pokertable.js").read_text(encoding="utf-8"),

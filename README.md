@@ -16,9 +16,24 @@ In Watch mode the fly acts it out at a casino table: it sniffs each choice (blue
 good, orange smells bad), taps the felt to hit, waves a leg to stand, and its head glows with
 reward or punishment dopamine when the hand is paid.
 
-The casino is a 3D scene drawn with three.js (bundled into the page, so it still works offline):
-the table, cards, chips, dealer and flies are 3D models under a lamp that casts shadows. Drag
-the scene to walk around the table; double-click to come back.
+The casino is a 3D scene drawn with three.js (bundled into the page, so it still works offline)
+in a retro pixel look: few polygons, flat shading and big pixels, on a neon-trimmed platform
+above a city at night in the rain. A read-out over the scene follows the fly's brain: how many
+of the circuit's cells are active, and a raster of 96 of them that scrolls with time. The model
+works with activity levels, not spikes, so an active cell draws a bar. Drag the scene to walk
+around the table; double-click to come back.
+
+## The brain model
+
+Beside the table, a 3D model shows the whole nervous system: one small sphere for each of the
+139,462 neurons whose cell-body position is in the connectome, the brain with its eye lobes at
+one end and the nerve cord at the other, in the mixed colours connectome pictures use. The
+strands through the neck join each of 3,136 descending and ascending neurons to its strongest
+partner on the other side. They show connections, not the neurons' real shapes: the full
+shapes are tens of gigabytes and are not part of this project. The neurons of the learning
+circuit light up on top as the fly smells, chooses and gets its dopamine. The model is drawn
+faded so those firing neurons stand out; one button under it brings back the full colours and
+another zooms in on the brain. Drag to turn the model.
 
 ## Poker
 
@@ -26,7 +41,7 @@ The Poker tab seats five flies at a Limit Texas Hold'em table: Canton-S, white, 
 and Curly, dressed as classic lab strains but all running their own copy of the same circuit.
 The sixth seat is open: anyone at the screen can type a name and sit down, or ask a fly to
 leave and take its place. With two or more people, the table asks you to pass the screen before
-it shows anyone's cards. Fast and Turbo train the flies against each other when nobody is seated.
+it shows anyone's cards.
 
 A poker situation smells of three things: how often the fly's cards would win against the
 players still in (estimated by dealing the rest out a few hundred times, then scaled so a fair
@@ -68,18 +83,21 @@ with the full list.
     web/index.html         the finished page (built, self-contained)
     web/page.html          page layout and styles
     web/scenekit.js        shared timing: tweens, timers, easing
-    web/scene3d.js         the 3D casino: room, lamp, tables, cards, chips, the dealer, labels, camera
+    web/scene3d.js         the 3D casino: night city, tables, cards, chips, the dealer, labels, read-out, camera
     web/fly3d.js           the fly, modelled and animated in 3D
     web/vendor/three.min.js  three.js r149 (MIT, see web/vendor/three.LICENSE)
     web/casino.js          the blackjack table: dealing, chips, the fly's gestures
-    web/app.js             blackjack game loop, brain view, charts
+    web/brain3d.js         the 3D model of the whole nervous system
+    web/app.js             blackjack game loop, brain activity, charts
     web/pokertable.js      the poker table: six seats, a fly per seat, pot, showdown
     web/pokerapp.js        the poker game: seats and joining, turns, learning, leaderboard
     src/poker.js           Limit Hold'em rules, hand ranking, strength estimate, poker smells
     src/flybrain.js        the brain: smell code, decision, dopamine learning
     src/blackjack.js       rules and exact maths
     data/circuit.json      the extracted circuit
+    data/cns_cloud.json    every neuron's cell-body position, and the strands through the neck
     tools/build_circuit.py extracts data/circuit.json from the connectome
+    tools/build_cloud.py   extracts data/cns_cloud.json from the connectome
     tools/build_web.py     assembles web/index.html
     tools/experiment.js    offline training and control experiments
     results/               output of the control experiments
@@ -93,6 +111,7 @@ with the full list.
     cd ..
     pip install numpy scipy pandas
     python3 tools/build_circuit.py raw data/circuit.json
+    python3 tools/build_cloud.py raw data/cns_cloud.json
     python3 tools/build_web.py
 
 ## Rules of the games

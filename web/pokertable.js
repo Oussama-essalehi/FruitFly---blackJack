@@ -27,20 +27,20 @@
       views: { wide: { pos: [0, 520, 900], target: [0, 60, -20], fov: 42 }, narrow: { pos: [0, 900, 760], target: [0, -20, 60], fov: 56 } }
     });
     stage.reduce = reduce;
+    new S3.Hud(stage, { corner: 'tr' });
     stage.pieces = new T.Group(); stage.scene.add(stage.pieces);
     var snap = false, tl = new K.Timeline(function () { return snap || reduce; });
     var move = tl.move.bind(tl), later = tl.later.bind(tl);
 
     S3.buildRoom(stage, {
       wallZ: -580, seed: 11, lamp: { x: 0, y: 540, z: 0, aim: [0, 0, 10] },
-      neon: [{ text: 'FlyJack', fill: '#ffe1f1', glow: '#ff4fae', x: -560, y: 290, w: 440, size: 170 },
-             { text: 'HOLD\'EM', fill: '#d9f7ff', glow: '#39cfff', x: 560, y: 290, w: 440, size: 150, phase: 4 }]
+      neon: []
     });
     S3.pokerTable(stage, RX, RZ, function (g) {
-      g.strokeStyle = 'rgba(232,194,122,0.4)'; g.lineWidth = 2.5;
+      g.strokeStyle = 'rgba(39,224,208,0.55)'; g.lineWidth = 3.5;
       g.beginPath(); g.ellipse(0, 0, RX - 62, RZ - 52, 0, 0, 6.2832); g.stroke();
       for (var k = 0; k < 5; k++) { var b = feltXY(460 + k * 70, 428); g.strokeRect(b[0] - 30, b[1] - 43, 60, 86); }
-      g.fillStyle = 'rgba(232,194,122,0.55)'; g.font = '600 17px ' + S3.MONO; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = 'rgba(39,224,208,0.7)'; g.font = '600 17px ' + S3.MONO; g.textAlign = 'center'; g.textBaseline = 'middle';
       var c = feltXY(600, 497); g.fillText('LIMIT HOLD\'EM  ·  2 / 4', c[0], c[1] + 6);
     });
     var deck = new T.Group(), dk = feltXY(DECK.x, DECK.y); deck.position.set(dk[0] + 70, 0, dk[1]); stage.table.add(deck);
@@ -339,7 +339,7 @@
       if (!f || surprise === null || surprise === undefined || Math.abs(surprise) <= 0.05) return;
       f.glow(surprise > 0 ? '#4d9bff' : '#ff6a2e', Math.min(0.95, Math.abs(surprise) * 1.5 + 0.35), 1700);
     }
-    /* A finished hand laid out at once (Fast and Turbo, or with reduced motion). */
+    /* A finished hand laid out at once (with reduced motion). */
     function show(hand, faceUp) {
       clearAll();
       snap = true;

@@ -1,7 +1,7 @@
 <title>FlyJack</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Silkscreen:wght@400;700&display=swap">
 <style>
-/* Layout: one black theme. A 3D casino where the fly plays (lit by the table lamp), then the
+/* Layout: one black theme. A pixel-art 3D casino above a neon city where the fly plays, then the
    fly's choice beside a microscope view of its brain (like a fluorescence image), then the
    learning record underneath. */
 :root {
@@ -9,17 +9,22 @@
   --accent: #3fd39a; --accent-ink: #03130c; --accent-line: #3fd39a;
   --felt: #0f1f18; --felt-edge: #1d3a2d; --felt-ink: #f2f6f3; --felt-ink-2: #a8c3b5; --felt-line: #24443a;
   color-scheme: dark;
-  --scope: #000000; --scope-ink: #c9d4cd; --scope-ink-2: #8a988f; --scope-line: #1d2420;
+  --scope: #0b0c12; --scope-ink: #e9ebf2; --scope-ink-2: #9a9dab; --scope-line: #2a2c38;   /* the brain panel: near-black, like the page */
   --card: #fbfaf5; --card-ink: #1c1c1c; --card-red: #c2332d; --card-back: #2d4f7a;
   --seq-lo: #1b1c1e; --seq-hi: #3fd39a; --seq-lo-ink: #b9bab4; --seq-hi-ink: #03130c; --flag: #ff8a4b;
   --act: #199e70; --pos: #3987e5; --neg: #d95926;   /* brain panel: activity, approach/reward, avoid/punishment */
   --display: "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif;
   --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --pixel: "Silkscreen", "IBM Plex Mono", ui-monospace, monospace;   /* the casino scene and its read-out */
+  --c-teal: #27e0d0; --c-pink: #ff5c9d; --c-amber: #ffc46b; --c-blue: #6aa8ff; --c-green: #3fd39a; --c-orange: #ff8a50;   /* the colours of the panels under the stage */
+  --neon: #27e0d0; --neon-2: #ff3d8a; --night: #070a1c; --night-2: #1d2a5e; --night-ink: #eaf0ff; --night-ink-2: #8f9bd0;
 }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
-.page { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: flex; flex-direction: column; gap: 28px; }
+.page { margin: 0 auto; padding-block: 0 56px; display: flex; flex-direction: column; gap: 28px; }
+/* the stage runs from edge to edge; everything under it keeps to a readable column */
+.game > :not(.stage), .page > .credits { width: min(1120px, 100% - 40px); margin-inline: auto; }
 h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.1; }
 h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); font-weight: 700; letter-spacing: -0.02em; }
 h2 { font-size: 1.5rem; font-weight: 700; }
@@ -28,8 +33,21 @@ p { margin: 0; }
 .label { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
-.masthead { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
-.masthead .lede { max-width: 62ch; color: var(--ink-2); font-size: 1.05rem; }
+/* header: the title on the left, the game switch on the right */
+.topbar { position: sticky; top: 0; z-index: 20; background: rgba(5, 5, 5, 0.86); border-bottom: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.topbar-inner { max-width: 1120px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.brand-mark { flex: none; width: 30px; height: 30px; display: block; }
+.brand-name { font-family: var(--display); font-weight: 700; font-size: 1.4rem; letter-spacing: -0.01em; line-height: 1; margin: 0; }
+.brand-tag { color: var(--ink-3); font-size: 0.82rem; padding-left: 14px; border-left: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tabs { display: inline-flex; flex: none; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.tabs input { position: absolute; opacity: 0; pointer-events: none; }
+.tabs label { padding: 7px 18px; border-radius: 999px; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--ink-2); transition: background 0.15s, color 0.15s; }
+.tabs label:hover { color: var(--ink); }
+.tabs input:checked + label { background: var(--ink); color: var(--bg); }
+.tabs input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 720px) { .brand-tag { display: none; } .topbar-inner { padding: 10px 16px; } .tabs label { padding: 6px 14px; } }
 
 /* controls */
 .controls { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; }
@@ -39,72 +57,117 @@ button, select { font: inherit; color: inherit; }
 .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); min-width: 92px; }
 .btn.quiet { background: transparent; }
 :is(button, select, input, summary, td, canvas):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
-.seg label { padding: 8px 14px; cursor: pointer; font-weight: 500; border-left: 1px solid var(--line); }
-.seg label:first-of-type { border-left: 0; }
-.seg input { position: absolute; opacity: 0; pointer-events: none; }
-.seg input:checked + label { background: var(--ink); color: var(--bg); }
-.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: -2px; }
-.seg input:disabled + label { opacity: 0.45; cursor: not-allowed; }
 .field { display: inline-flex; align-items: center; gap: 8px; }
 .field select { border: 1px solid var(--line); background: var(--surface); padding: 8px 10px; border-radius: 8px; max-width: 100%; }
 .confirm { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .hint { color: var(--ink-2); max-width: 75ch; }
 
 /* stage: the casino scene across the top, then the fly's choice beside the brain */
-.stage { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 16px; align-items: stretch; }
-.casino { grid-column: 1 / -1; border-radius: 14px; overflow: hidden; background: #000; min-width: 0;
-  box-shadow: 0 0 0 1px var(--line), 0 22px 60px -30px rgba(63, 211, 154, 0.25); }
-/* the 3D scene: a WebGL canvas with the words laid over it */
-.scene3d { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; }
-.scene-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: pan-y; }
+/* the stage: on a narrow screen the scene, then the brain, then the fly's choice, one under the other */
+.stage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 12px 16px 0; }
+.stage-controls { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; }
+.after-stage { display: flex; flex-direction: column; gap: 12px; }
+/* under the stage: everything sits in a coloured panel; --c is the panel's colour */
+.panel { --c: var(--c-teal); display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: 14px; min-width: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 10%, #0b0c12), #0b0c12 60%); border: 1px solid color-mix(in srgb, var(--c) 30%, #1a1b24); }
+.panel > h2 { display: flex; align-items: center; gap: 10px; font-size: 1.3rem; }
+.panel > h2::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 3px; background: var(--c); box-shadow: 0 0 12px color-mix(in srgb, var(--c) 70%, transparent); }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 0; padding: 0; list-style: none; font-size: 0.85rem; }
+.chips li { --c: var(--ink-3); display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; color: var(--ink);
+  background: color-mix(in srgb, var(--c) 12%, #0b0c12); border: 1px solid color-mix(in srgb, var(--c) 38%, transparent); }
+.chips .dot { background: var(--c); box-shadow: 0 0 8px color-mix(in srgb, var(--c) 70%, transparent); }
+.callout { --c: var(--c-amber); margin: 0; padding: 10px 14px; border-radius: 10px; color: var(--ink);
+  background: color-mix(in srgb, var(--c) 9%, #0b0c12); border: 1px solid color-mix(in srgb, var(--c) 32%, transparent); }
+.callout:empty { display: none; }
+.facts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; color: var(--ink-2); }
+.facts li { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 10px; }
+.facts li::before { content: ""; width: 8px; height: 8px; margin-top: 0.5em; border-radius: 2px; background: var(--c); }
+.facts b { color: var(--ink); font-weight: 600; }
+/* on a wide screen the scene is the background of the whole window under the header, and the brain
+   and the fly's choice float over its right-hand side, so nothing needs scrolling to */
+@media (min-width: 901px) {
+  .stage { --side: clamp(300px, 23vw, 370px); grid-template-columns: minmax(0, 1fr) var(--side); grid-template-rows: minmax(0, 1fr) auto; padding: 14px 16px;
+    height: calc(100vh - var(--topbar-h, 63px)); height: calc(100dvh - var(--topbar-h, 63px)); min-height: 590px; }
+  .stage > .casino { position: absolute; inset: 0; border-radius: 0; box-shadow: none; }
+  .stage > .casino > .scene3d { position: absolute; inset: 0; width: auto; aspect-ratio: auto; }
+  .stage .scope { grid-column: 2; grid-row: 1; z-index: 1; min-height: 0; background: color-mix(in srgb, var(--scope) 90%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .stage .scope canvas { flex: 1 1 0; min-height: 110px; aspect-ratio: auto; }
+  .stage > .felt { grid-column: 2; grid-row: 2; z-index: 1; background: color-mix(in srgb, var(--felt) 88%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .stage > .stage-controls { position: absolute; left: 16px; bottom: 16px; z-index: 2; padding: 8px 10px; background: rgba(7, 10, 28, 0.84); border: 1px solid var(--night-2); max-width: calc(100% - var(--side) - 48px); }
+  .stage > .actionbar { position: absolute; left: 16px; bottom: 84px; z-index: 2; max-width: calc(100% - var(--side) - 48px); }
+  /* the choice panel keeps one height whatever it says, so the brain above it never jumps */
+  .stage .choice .seat-head { min-height: 2.9em; align-content: start; }
+  .stage .verdict { height: 5.6em; min-height: 0; overflow: hidden; }
+  .stage .pips { height: 26px; overflow: hidden; }
+  .stage .log { height: 4.7em; min-height: 0; max-height: none; }
+}
+@media (min-width: 901px) and (max-height: 760px) { .stage .legend, .stage .scale-note { display: none; } }
+.casino { border-radius: 4px; overflow: hidden; background: var(--night); min-width: 0;
+  box-shadow: 0 0 0 1px var(--night-2), 0 0 0 3px var(--night), 0 0 0 4px rgba(39, 224, 208, 0.6), 0 22px 60px -30px rgba(39, 224, 208, 0.4); }
+/* the 3D scene: a WebGL canvas drawn small and enlarged into big pixels, with the words laid over it */
+.scene3d { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; container-type: inline-size; }
+.scene-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: pan-y; image-rendering: pixelated; }
 .scene-gl:active { cursor: grabbing; }
-.scene-gl:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.scene-gl:focus-visible { outline: 2px solid var(--neon); outline-offset: -2px; }
 .scene-overlay { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .scene-trails { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .tag { position: absolute; left: 0; top: 0; white-space: nowrap; transition: opacity 0.25s; will-change: transform; }
-.badge { font-family: var(--mono); font-size: 0.95rem; color: #f3ead2; background: rgba(8, 20, 14, 0.8); border: 1px solid rgba(232, 194, 122, 0.55);
-  border-radius: 999px; padding: 2px 11px; }
-.fx-float { font-family: var(--display); font-weight: 700; font-size: 2rem; -webkit-text-stroke: 4px #0c0507; paint-order: stroke fill; }
-.fx-say { font-family: var(--display); font-weight: 700; font-size: 1.25rem; -webkit-text-stroke: 4px #0c0507; paint-order: stroke fill; }
-.hand-name { font-family: var(--display); font-weight: 700; font-size: 1.05rem; color: #ffd46b; -webkit-text-stroke: 4px #0c0507; paint-order: stroke fill; }
-.bet-label { font-family: var(--mono); font-size: 0.9rem; color: #f3ead2; -webkit-text-stroke: 3px #0c0507; paint-order: stroke fill; }
-.pot-pill { font-family: var(--mono); font-size: 0.9rem; color: #f3ead2; background: rgba(8, 20, 14, 0.8); border: 1px solid rgba(232, 194, 122, 0.5);
-  border-radius: 999px; padding: 3px 12px; }
-.plate { display: flex; flex-direction: column; align-items: center; min-width: 112px; padding: 3px 12px; border-radius: 10px;
-  background: rgba(8, 20, 14, 0.82); border: 1.5px solid rgba(232, 194, 122, 0.45); line-height: 1.25; }
-.plate.acting { border: 3px solid #ffd46b; }
+.badge, .pot-pill { font-family: var(--pixel); font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--night-ink); background: rgba(7, 10, 28, 0.9);
+  border: 1px solid var(--neon); padding: 3px 9px; box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.45); }
+.fx-float { font-family: var(--pixel); font-weight: 700; font-size: 1.7rem; -webkit-text-stroke: 4px var(--night); paint-order: stroke fill; }
+.fx-say { font-family: var(--pixel); font-weight: 700; font-size: 1.05rem; text-transform: uppercase; -webkit-text-stroke: 4px var(--night); paint-order: stroke fill; }
+.hand-name { font-family: var(--pixel); font-weight: 700; font-size: 0.9rem; text-transform: uppercase; color: #ffd46b; -webkit-text-stroke: 4px var(--night); paint-order: stroke fill; }
+.bet-label { font-family: var(--pixel); font-size: 0.8rem; color: var(--night-ink); -webkit-text-stroke: 3px var(--night); paint-order: stroke fill; }
+.plate { display: flex; flex-direction: column; align-items: center; min-width: 104px; padding: 3px 10px;
+  background: rgba(7, 10, 28, 0.9); border: 1px solid var(--night-2); border-bottom: 2px solid var(--neon); line-height: 1.3; box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.45); }
+.plate.acting { border: 2px solid var(--neon-2); box-shadow: 0 0 14px rgba(255, 61, 138, 0.6); }
 .plate.folded { opacity: 0.55 !important; }
-.plate-name { font-weight: 600; font-size: 0.85rem; color: #f3ead2; }
-.plate-stack { font-family: var(--mono); font-size: 0.8rem; color: #e8c27a; }
-.avatar-letter { font-family: var(--display); font-weight: 700; font-size: 1.8rem; color: #fff; }
+.plate-name { font-family: var(--pixel); font-size: 0.74rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--night-ink); }
+.plate-stack { font-family: var(--pixel); font-size: 0.74rem; color: var(--neon); }
+.avatar-letter { font-family: var(--pixel); font-weight: 700; font-size: 1.6rem; color: #fff; }
 .seat-open-wrap { pointer-events: auto; }
-.seat-open { width: 58px; height: 58px; border-radius: 50%; border: 2px dashed rgba(232, 194, 122, 0.85); background: rgba(255, 255, 255, 0.08);
-  color: #e8c27a; font: 500 2rem/1 var(--display); cursor: pointer; }
-.seat-open:hover, .seat-open:focus-visible { background: rgba(255, 255, 255, 0.2); border-style: solid; outline: none; }
-.think { position: absolute; left: 0; top: 0; background: #fbfaf5; color: #1c1c1c; border-radius: 22px; padding: 9px 18px; text-align: center;
-  display: flex; flex-direction: column; align-items: stretch; gap: 1px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3); opacity: 0; transition: opacity 0.2s; white-space: nowrap; }
+.seat-open { width: 54px; height: 54px; border: 2px dashed var(--neon); background: rgba(39, 224, 208, 0.1);
+  color: var(--neon); font: 700 1.6rem/1 var(--pixel); cursor: pointer; }
+.seat-open:hover, .seat-open:focus-visible { background: rgba(39, 224, 208, 0.28); border-style: solid; outline: none; }
+.think { position: absolute; left: 0; top: 0; background: rgba(7, 10, 28, 0.94); color: var(--night-ink); border: 1px solid var(--neon); padding: 8px 14px; text-align: center;
+  display: flex; flex-direction: column; align-items: stretch; gap: 2px; box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5); opacity: 0; transition: opacity 0.2s; white-space: nowrap; }
 .think.on, .think-dot.on { opacity: 1; }
-.think-main { font-family: var(--display); font-weight: 700; font-size: 1.4rem; line-height: 1.15; }
-.think-sub { font-family: var(--mono); font-size: 0.78rem; color: #47564d; }
-.think-row { display: flex; justify-content: space-between; gap: 14px; font-weight: 600; font-size: 0.9rem; }
-.think-val { font-family: var(--mono); }
-.think-dot { position: absolute; left: 0; top: 0; border-radius: 50%; background: #fbfaf5; opacity: 0; transition: opacity 0.2s; }
-.think-dot.d0 { width: 13px; height: 13px; }
-.think-dot.d1 { width: 8px; height: 8px; }
+.think-main { font-family: var(--pixel); font-weight: 700; font-size: 1.15rem; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.04em; }
+.think-sub { font-family: var(--pixel); font-size: 0.7rem; color: var(--night-ink-2); text-transform: uppercase; }
+.think-row { display: flex; justify-content: space-between; gap: 14px; font-family: var(--pixel); font-size: 0.78rem; text-transform: uppercase; }
+.think-val { font-family: var(--pixel); }
+.think-dot { position: absolute; left: 0; top: 0; background: var(--neon); opacity: 0; transition: opacity 0.2s; }
+.think-dot.d0 { width: 10px; height: 10px; }
+.think-dot.d1 { width: 6px; height: 6px; }
 .wisps { opacity: 0; transition: opacity 0.3s; }
 .wisps.on { opacity: 0.9; }
-.wisps path { fill: none; stroke: #6aa8ff; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 2 11; animation: cj-waft 0.9s linear infinite; }
-@keyframes cj-waft { to { stroke-dashoffset: -26; } }
+.wisps path { fill: none; stroke: #6aa8ff; stroke-width: 4; stroke-linecap: butt; stroke-dasharray: 4 10; animation: cj-waft 0.9s steps(6) infinite; }
+@keyframes cj-waft { to { stroke-dashoffset: -28; } }
+/* the read-out: a panel that follows the fly's brain */
+.hud { position: absolute; display: flex; flex-direction: column; gap: 6px; padding: 9px 11px; font-family: var(--pixel); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--night-ink); background: rgba(7, 10, 28, 0.84); border: 1px solid var(--night-2); }
+.hud-bl { left: 3cqw; bottom: 3cqw; }
+.hud-tr { right: calc(var(--clear-right, 0px) + 3cqw); top: 3cqw; }
+.hud-head { display: flex; justify-content: space-between; align-items: baseline; gap: 18px; }
+.hud-name { border-left: 4px solid var(--neon); padding-left: 8px; }
+.hud-state, .hud-unit, .hud-foot { color: var(--night-ink-2); }
+.hud-body { display: flex; align-items: flex-end; gap: 14px; }
+.hud-count { display: flex; flex-direction: column; gap: 2px; min-width: 9em; }
+.hud-num { font-size: 3em; font-weight: 400; line-height: 0.95; color: #fff; }
+.hud-raster { width: 192px; height: 96px; image-rendering: pixelated; background: #0a0e24; border-right: 2px solid #f1f4ff; }
+@container (max-width: 780px) { .hud { font-size: 9px; padding: 7px 9px; } .hud-raster { width: 144px; height: 64px; } }
+@container (max-width: 560px) { .hud-raster, .hud-foot, .hud-state { display: none; } .hud { gap: 3px; } .hud-num { font-size: 2.2em; } }
 @media (max-width: 560px) { .scene3d { aspect-ratio: 4 / 3; } }
 
-.felt { background: var(--felt); color: var(--felt-ink); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px;
-  box-shadow: inset 0 0 0 6px var(--felt-edge); min-width: 0; }
+.felt { background: var(--felt); color: var(--felt-ink); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 11px;
+  box-shadow: inset 0 0 0 1px var(--felt-edge); min-width: 0; }
 .felt .label { color: var(--felt-ink-2); }
 .seat-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; justify-content: space-between; }
 .seat-head .total { font-family: var(--mono); font-size: 0.95rem; white-space: nowrap; }
 .choice { display: flex; flex-direction: column; gap: 8px; }
-.meter { display: grid; grid-template-columns: 5.5em minmax(0, 1fr) 3.6em; gap: 10px; align-items: center; }
+.meter { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) 3.4em; gap: 8px; align-items: center; }
+.meter .name { white-space: nowrap; }
 .meter .name { font-weight: 500; }
 .meter .track { position: relative; height: 12px; background: rgba(255, 255, 255, 0.09); border-radius: 6px; }
 .meter .track::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--felt-ink-2); }
@@ -113,10 +176,11 @@ button, select { font: inherit; color: inherit; }
 .meter.picked .fill { background: var(--card); box-shadow: 0 0 0 2px var(--felt), 0 0 0 3px var(--card); }
 .meter .val { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
 .scale-note { color: var(--felt-ink-2); font-size: 0.82rem; }
-.verdict { border-top: 1px solid var(--felt-line); padding-top: 12px; min-height: 5.2em; display: flex; flex-direction: column; gap: 4px; }
-.verdict .what { font-family: var(--display); font-size: 1.5rem; font-weight: 700; }
+.verdict { border-top: 1px solid var(--felt-line); padding-top: 10px; min-height: 4.6em; display: flex; flex-direction: column; gap: 3px; }
+.verdict .what { font-family: var(--display); font-size: 1.2rem; font-weight: 700; line-height: 1.2; }
+.verdict .why { font-size: 0.85rem; }
 .verdict .why { color: var(--felt-ink-2); }
-.recent { border-top: 1px solid var(--felt-line); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.recent { border-top: 1px solid var(--felt-line); padding-top: 10px; display: flex; flex-direction: column; gap: 7px; }
 .pips { display: flex; flex-wrap: wrap; gap: 5px; min-height: 26px; }
 .pips span { font-family: var(--mono); font-size: 0.78rem; padding: 3px 7px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: var(--felt-ink-2); }
 .pips span.won { background: #f2cf72; color: #2a1d05; }
@@ -126,25 +190,30 @@ button, select { font: inherit; color: inherit; }
 .howto li { display: flex; align-items: center; gap: 8px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-.scope { background: var(--scope); color: var(--scope-ink); border-radius: 14px; padding: 16px; box-shadow: 0 0 0 1px var(--line); display: flex; flex-direction: column; gap: 10px; min-width: 0; position: relative; }
+.scope { background: var(--scope); color: var(--scope-ink); border-radius: 10px; padding: 12px; box-shadow: 0 0 0 1px var(--scope-line); display: flex; flex-direction: column; gap: 9px; min-width: 0; position: relative; }
 .scope .label { color: var(--scope-ink-2); }
 .scope-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
-.scope canvas { width: 100%; aspect-ratio: 1.42; display: block; max-width: 100%; border-radius: 8px; cursor: grab; touch-action: pan-y; }
+.scope canvas { width: 100%; aspect-ratio: 1.45; display: block; max-width: 100%; border-radius: 8px; cursor: grab; touch-action: pan-y; }
 .scope canvas:active { cursor: grabbing; }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.82rem; }
+.legend { display: flex; flex-wrap: wrap; gap: 3px 12px; font-size: 0.78rem; color: var(--scope-ink-2); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
 .scope .caption { color: var(--scope-ink-2); font-size: 0.82rem; }
+.scope-btn { font: inherit; font-size: 0.78rem; color: var(--scope-ink); background: transparent; border: 1px solid var(--scope-line); border-radius: 7px; padding: 3px 9px; cursor: pointer; }
+.scope-btn:hover { border-color: var(--scope-ink-2); }
+.scope-btns { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+.scope-tools { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
 .tip { position: fixed; z-index: 10; pointer-events: none; background: var(--ink); color: var(--bg); padding: 6px 9px; border-radius: 6px; font-size: 0.8rem;
   max-width: 260px; line-height: 1.35; }
 .tip b { font-family: var(--mono); font-weight: 500; }
 
 /* record */
 .record { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
-.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.tile { padding: 12px 16px 12px 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.tile + .tile { padding-left: 16px; border-left: 1px solid var(--line); }
-.tile .label { color: var(--ink-3); }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.tile { --c: var(--c-teal); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; border-radius: 10px;
+  background: color-mix(in srgb, var(--c) 13%, #0b0c12); border: 1px solid color-mix(in srgb, var(--c) 36%, transparent); }
+.tile:nth-child(2) { --c: var(--c-pink); } .tile:nth-child(3) { --c: var(--c-amber); } .tile:nth-child(4) { --c: var(--c-green); }
+.tile .label { color: var(--c); }
 .tile .value { font-family: var(--display); font-size: 1.7rem; font-weight: 700; line-height: 1.15; }
 .tile .sub { color: var(--ink-2); font-size: 0.85rem; }
 .chart-wrap { position: relative; min-width: 0; }
@@ -159,7 +228,10 @@ table.plain :is(th, td):first-child { text-align: left; }
 
 /* strategy */
 .grids { display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: flex-start; }
-.grid-box { display: flex; flex-direction: column; gap: 8px; min-width: 0; max-width: 100%; overflow-x: auto; }
+.grid-box { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; max-width: 100%; overflow-x: auto; }
+.with-side { display: flex; flex-wrap: wrap; gap: 20px 44px; align-items: flex-start; }
+.grid-side { flex: 1 1 240px; max-width: 340px; display: flex; flex-direction: column; gap: 14px; }
+.grid-side .grid-key { flex-direction: column; align-items: flex-start; gap: 9px; }
 table.grid { border-collapse: separate; border-spacing: 2px; font-family: var(--mono); font-size: 0.8rem; }
 table.grid th { font-weight: 400; color: var(--ink-3); padding: 0 4px; text-align: center; }
 table.grid th.row { text-align: right; padding-right: 6px; }
@@ -174,17 +246,11 @@ table.grid td:hover { outline: 2px solid var(--ink); outline-offset: 0; }
 .flagdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--flag); margin-right: 6px; }
 
 /* notes */
-.notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 40px; border-top: 1px solid var(--line); padding-top: 24px; }
-.notes > div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.notes ul { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 5px; color: var(--ink-2); }
-.notes .wide { grid-column: 1 / -1; }
-.credits { color: var(--ink-3); font-size: 0.85rem; max-width: 90ch; }
+.credits { color: var(--ink-3); font-size: 0.8rem; text-align: center; }
 a { color: inherit; text-underline-offset: 2px; }
 section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
 /* games: blackjack and poker share the page */
-.games { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-.seg.big label { padding: 10px 22px; font-family: var(--display); font-weight: 700; font-size: 1.1rem; }
 .game { display: flex; flex-direction: column; gap: 28px; }
 .scope-slot { display: contents; }
 
@@ -203,7 +269,7 @@ section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .ab-hand { color: var(--ink-2); flex: 1 1 200px; min-width: 0; }
 .ab-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
 .ab-buttons .btn { min-width: 96px; }
-.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; color: var(--felt-ink-2); min-height: 9.5em; }
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; color: var(--felt-ink-2); min-height: 4.5em; max-height: 7.5em; overflow-y: auto; }
 .log li:last-child { color: var(--felt-ink); }
 
 /* seats */
@@ -232,58 +298,33 @@ table.grid.pk-grid td.a-call { background: color-mix(in oklab, var(--seq-hi) 45%
 table.grid.pk-grid td.a-raise { background: var(--seq-hi); }
 .key-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; margin-right: 6px; border: 1px solid var(--line); }
 
+@media (max-width: 560px) { .stage > .casino > .scene3d { aspect-ratio: 4 / 3; } }
 @media (max-width: 820px) {
-  .stage { grid-template-columns: minmax(0, 1fr); }
+  .panel { padding: 16px; }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .tile:nth-child(3) { padding-left: 0; border-left: 0; }
-  .tile:nth-child(n + 3) { border-top: 1px solid var(--line); }
-  .notes { grid-template-columns: minmax(0, 1fr); }
-  .page { padding-inline: 16px; }
+  .pair { grid-template-columns: minmax(0, 1fr); }
+  .game > :not(.stage), .page > .credits { width: min(1120px, 100% - 32px); }
 }
 @media (prefers-reduced-motion: reduce) { .meter .fill { transition: none; } .wisps path { animation: none; } }
 </style>
 
-<div class="page">
-  <header class="masthead">
-    <p class="label" style="color:var(--ink-3)">A fruit fly's learning circuit, wired from the real connectome</p>
-    <h1>FlyJack</h1>
-    <p class="lede">4,406 neurons from the mushroom body of a male fruit fly, connected exactly as they were mapped, sit down in a casino. Wins and losses arrive as dopamine. Watch what the fly works out at blackjack, or deal five flies into a poker game and take the sixth seat yourself.</p>
-  </header>
-
-  <nav class="games" aria-label="Choose a game">
-    <div class="seg big" role="radiogroup" aria-label="Game">
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 30 30" aria-hidden="true"><rect x="3" y="5" width="16" height="22" rx="3" transform="rotate(-12 11 16)" fill="none" stroke="#8a8b86" stroke-width="1.5"/><rect x="10" y="3" width="16" height="22" rx="3" transform="rotate(8 18 14)" fill="#3fd39a"/><circle cx="18" cy="14" r="3" fill="#03130c" transform="rotate(8 18 14)"/></svg>
+      <h1 class="brand-name">FlyJack</h1>
+      <span class="brand-tag">A fruit fly's learning circuit, wired from the real connectome</span>
+    </div>
+    <nav class="tabs" role="radiogroup" aria-label="Game">
       <input type="radio" name="game" id="game-bj" value="blackjack" checked><label for="game-bj">Blackjack</label>
       <input type="radio" name="game" id="game-pk" value="poker"><label for="game-pk">Poker</label>
-    </div>
-  </nav>
+    </nav>
+  </div>
+</header>
+
+<div class="page">
 
   <div class="game" id="game-blackjack">
-
-  <section aria-label="Controls">
-    <div class="controls">
-      <button class="btn primary" id="play" type="button">Pause</button>
-      <div class="seg" role="radiogroup" aria-label="Speed">
-        <input type="radio" name="speed" id="speed-watch" value="watch" checked><label for="speed-watch">Watch</label>
-        <input type="radio" name="speed" id="speed-fast" value="fast"><label for="speed-fast">Fast</label>
-        <input type="radio" name="speed" id="speed-turbo" value="turbo"><label for="speed-turbo">Turbo</label>
-      </div>
-      <span class="field"><label for="mode">Brain</label>
-        <select id="mode">
-          <option value="intact">Intact</option>
-          <option value="blocked">Dopamine blocked</option>
-          <option value="swapped">Reward and punishment swapped</option>
-          <option value="scrambled">Dopamine targets scrambled</option>
-          <option value="rewired">Smell wiring scrambled</option>
-        </select>
-      </span>
-      <button class="btn quiet" id="reset" type="button">Start over</button>
-      <span class="confirm" id="reset-confirm" hidden>Erase what this fly has learned?
-        <button class="btn" id="reset-yes" type="button">Erase</button>
-        <button class="btn quiet" id="reset-no" type="button">Keep</button>
-      </span>
-    </div>
-    <p class="hint" id="mode-note"></p>
-  </section>
 
   <section class="stage" aria-label="The table and the brain">
     <div class="casino">
@@ -295,10 +336,10 @@ table.grid.pk-grid td.a-raise { background: var(--seq-hi); }
 
     <div class="felt">
       <div class="choice">
-        <div class="seat-head"><span class="label">How each choice smells to the fly</span><span class="total" id="odds"></span></div>
+        <div class="seat-head"><span class="label">How each choice smells</span><span class="total" id="odds"></span></div>
         <div class="meter" id="meter-hit"><span class="name">Hit</span><span class="track"><span class="fill"></span></span><span class="val">&nbsp;</span></div>
         <div class="meter" id="meter-stand"><span class="name">Stand</span><span class="track"><span class="fill"></span></span><span class="val">&nbsp;</span></div>
-        <p class="scale-note">Left of the line smells bad, right smells good. The number is the result the fly expects, in bets.</p>
+        <p class="scale-note">Right of the line smells good. Numbers are the bets the fly expects to win.</p>
       </div>
       <div class="verdict">
         <span class="what" id="verdict">&nbsp;</span>
@@ -308,117 +349,103 @@ table.grid.pk-grid td.a-raise { background: var(--seq-hi); }
         <span class="label">Last hands</span>
         <div class="pips" id="recent"></div>
       </div>
-      <ul class="howto">
-        <li><i class="dot" style="background:#6aa8ff"></i>blue scent: that choice smells good</li>
-        <li><i class="dot" style="background:#ff8a50"></i>orange scent: it smells bad</li>
-        <li>taps the felt to hit, waves a leg to stand</li>
-      </ul>
     </div>
 
     <div class="scope-slot" id="bj-scope-slot">
     <div class="scope">
-      <div class="scope-head"><span class="label">The brain in 3D</span><span class="label" id="scope-state">&nbsp;</span></div>
-      <canvas id="brain" tabindex="0" aria-label="3D model of the fly's neurons and their activity. Arrow keys turn it, Home resets the view."></canvas>
+      <div class="scope-head"><span class="label">The whole nervous system in 3D</span><span class="label" id="scope-state">&nbsp;</span></div>
+      <canvas id="brain" tabindex="0" aria-label="3D model of every neuron in the fly's brain and nerve cord, with the active neurons of the learning circuit lit up. Arrow keys turn it, Home resets the view."></canvas>
       <div class="legend">
-        <span><i class="dot" style="background:#199e70"></i>active smell and Kenyon cells</span>
-        <span><i class="dot" style="background:#3987e5"></i>approach outputs, reward dopamine</span>
-        <span><i class="dot" style="background:#d95926"></i>avoid outputs, punishment dopamine</span>
+        <span><i class="dot" style="background:#2ee6a8"></i>smell, Kenyon cells</span>
+        <span><i class="dot" style="background:#4d8dff"></i>approach, reward</span>
+        <span><i class="dot" style="background:#ff5a45"></i>avoid, punishment</span>
       </div>
-      <p class="caption">Each sphere is one real neuron at its measured cell-body position in 3D; the two pale clouds at the back are the Kenyon cells, and faint lines trace the path of the current smell. Drag to turn the brain, double-click to reset. Point at a neuron to see which one it is.</p>
+      <span class="scope-btns">
+        <button class="scope-btn" id="scope-ghost" type="button" aria-pressed="true">Full colours</button>
+        <button class="scope-btn" id="scope-frame" type="button" aria-pressed="false">Zoom in</button>
+      </span>
     </div>
     </div>
   </section>
 
-  <section class="record" aria-label="Learning record">
+  <ul class="chips" aria-label="How to read the scene">
+    <li style="--c:var(--c-blue)"><i class="dot"></i>blue scent: the choice smells good</li>
+    <li style="--c:var(--c-orange)"><i class="dot"></i>orange scent: it smells bad</li>
+    <li style="--c:var(--c-teal)"><i class="dot"></i>a tap on the felt means hit</li>
+    <li style="--c:var(--c-pink)"><i class="dot"></i>a waved leg means stand</li>
+    <li style="--c:var(--c-green)"><i class="dot"></i>glowing spheres in the brain are neurons firing now</li>
+  </ul>
+
+  <section class="panel record" style="--c:var(--c-blue)" aria-label="Learning record">
     <h2>Is it learning?</h2>
     <div class="tiles">
-      <div class="tile"><span class="label">Hands played</span><span class="value" id="t-hands">0</span><span class="sub" id="t-rate">&nbsp;</span></div>
+      <div class="tile"><span class="label">Hands played</span><span class="value" id="t-hands">0</span><span class="sub">by this fly so far</span></div>
       <div class="tile"><span class="label">Skill now</span><span class="value" id="t-skill">&nbsp;</span><span class="sub">average result per hand, as a share of the bet</span></div>
       <div class="tile"><span class="label">Plays like an expert</span><span class="value" id="t-agree">&nbsp;</span><span class="sub">of 260 situations</span></div>
       <div class="tile"><span class="label">Winnings so far</span><span class="value" id="t-bank">0</span><span class="sub">bets</span></div>
     </div>
     <h3>Skill over time: average result per hand, as a share of the bet</h3>
     <div class="chart-wrap" id="chart-wrap"><svg id="chart" role="img" aria-label="The fly's skill as it plays more hands"></svg></div>
-    <p class="sub-note">Skill is exact, not a lucky or unlucky streak: the fly's current habits are scored with the maths of the game. Blackjack favours the house, so even perfect play loses 2.7% of each bet on average.</p>
+    <p class="sub-note">Skill is exact, not luck: the fly's current habits are scored with the maths of the game. Even perfect play loses 2.7% of each bet.</p>
     <details><summary>Show the numbers</summary><table class="plain" id="chart-table"></table></details>
   </section>
 
-  <section aria-label="Strategy">
+  <section class="panel" style="--c:var(--c-green)" aria-label="Strategy">
     <h2>What the fly does with each hand</h2>
-    <div class="grids">
-      <div class="grid-box"><h3>Hard totals</h3><table class="grid" id="grid-hard"></table></div>
-      <div class="grid-box"><h3>Soft totals (an ace counted as 11)</h3><table class="grid" id="grid-soft"></table></div>
+    <div class="with-side">
+      <div class="grids">
+        <div class="grid-box"><h3>Hard totals</h3><table class="grid" id="grid-hard"></table></div>
+        <div class="grid-box"><h3>Soft totals (an ace counted as 11)</h3><table class="grid" id="grid-soft"></table></div>
+      </div>
+      <div class="grid-side">
+        <h3>How to read it</h3>
+        <div class="grid-key">
+          <span>always stands<i class="ramp"></i>always hits</span>
+          <span>H = usually hits, S = usually stands</span>
+          <span><i class="flagdot"></i>an expert would do the opposite</span>
+        </div>
+        <p class="sub-note">Rows are the fly's total, columns the dealer's card. An expert's chart is a staircase: hit low totals, stand on high ones, and stand earlier when the dealer shows a weak card (2 to 6).</p>
+      </div>
     </div>
-    <div class="grid-key">
-      <span>always stands<i class="ramp"></i>always hits</span>
-      <span>H = usually hits, S = usually stands</span>
-      <span><i class="flagdot"></i>an expert would do the opposite</span>
-    </div>
-    <p class="sub-note">Rows are the fly's total, columns the dealer's face-up card. An expert hits low totals, stands on high ones, and stands earlier when the dealer shows a weak card (2 to 6), which makes a staircase.</p>
   </section>
 
-  <section class="notes" aria-label="What is real and what is not">
-    <div>
-      <h2>What is real</h2>
-      <ul>
-        <li>The wiring. 236 projection neurons, 3,741 Kenyon cells, 97 output neurons and 332 dopamine neurons, with 78,937 connections between them, taken from the MaleCNS v1.0 connectome. Every connection's strength is its measured synapse count.</li>
-        <li>Which outputs mean approach and which mean avoid. It follows each output neuron's chemical transmitter, using the rule found in fly experiments: glutamate outputs drive avoidance, the others approach.</li>
-        <li>Where dopamine lands. 69% of the reward neurons' synapses fall on avoid outputs and 91% of the punishment neurons' synapses fall on approach outputs. That measured pattern is what makes a win pull the fly towards a choice and a loss push it away.</li>
+  <div class="pair">
+    <section class="panel" style="--c:var(--c-teal)" aria-label="What is real">
+      <h2>Measured in a real fly</h2>
+      <ul class="facts">
+        <li><span><b>The wiring.</b> 4,406 neurons and 78,937 connections from the MaleCNS v1.0 connectome, each as strong as its measured synapse count.</span></li>
+        <li><span><b>Approach or avoid.</b> Set by each output neuron's chemical transmitter, the rule found in fly experiments.</span></li>
+        <li><span><b>Where dopamine lands.</b> 69% of reward synapses fall on avoid outputs and 91% of punishment synapses on approach outputs. That is why a win pulls the fly towards a choice and a loss pushes it away.</span></li>
       </ul>
-    </div>
-    <div>
-      <h2>What I made up</h2>
-      <ul>
-        <li>The cards. Flies smell, they do not read. Each situation plus each choice is turned into a made-up smell: a pattern across the fly's 57 strongest smell channels.</li>
-        <li>The neurons are simplified to activity levels, with no spikes. Only the most strongly driven 5% of Kenyon cells stay active, standing in for the neuron that keeps them quiet in a real fly.</li>
-        <li>The learning rule follows the textbook picture of this circuit (dopamine weakens the synapses that were just active), but its exact form and numbers are my choices.</li>
-        <li>No real fly was involved, and this is not a claim that flies can play cards.</li>
+    </section>
+    <section class="panel" style="--c:var(--c-pink)" aria-label="What is not real">
+      <h2>Invented for the game</h2>
+      <ul class="facts">
+        <li><span><b>Cards as smells.</b> Flies smell, they do not read. Each situation and choice becomes a made-up smell across 57 smell channels.</span></li>
+        <li><span><b>Simple neurons.</b> Activity levels, no spikes, and only the most driven 5% of Kenyon cells stay active.</span></li>
+        <li><span><b>The learning rule.</b> The textbook idea (dopamine weakens the synapses that were just active), with my own numbers.</span></li>
+        <li><span><b>No real fly</b> was involved, and this does not show that flies can play cards.</span></li>
       </ul>
-    </div>
-    <div class="wide">
-      <h2>Does the wiring matter?</h2>
-      <p class="sub-note">Each row is three flies trained for 200,000 hands. You can rerun any of them with the Brain menu above.</p>
-      <div style="overflow-x:auto">
-      <table class="plain">
-        <tr><th>Brain</th><th>Before training</th><th>After training</th><th>Plays like an expert</th></tr>
-        <tr><td>Intact</td><td>−25.8%</td><td>−4.3%</td><td>91%</td></tr>
-        <tr><td>Dopamine blocked</td><td>−25.8%</td><td>−25.8%</td><td>42%</td></tr>
-        <tr><td>Reward and punishment swapped</td><td>−25.8%</td><td>−20.6%</td><td>38%</td></tr>
-        <tr><td>Dopamine targets scrambled</td><td>−25.8%</td><td>−16.6%</td><td>51%</td></tr>
-        <tr><td>Smell wiring scrambled</td><td>−34.3%</td><td>−4.2%</td><td>90%</td></tr>
-        <tr><td>Expert play, for reference</td><td></td><td>−2.7%</td><td>100%</td></tr>
-        <tr><td>Flipping a coin, for reference</td><td></td><td>−29.9%</td><td></td></tr>
-      </table>
-      </div>
-      <p class="sub-note">Learning depends on dopamine reaching the right outputs. It does not depend on exactly which smell channel reaches which Kenyon cell: scrambling that wiring changes nothing, which fits what biologists found in real flies, where those connections look close to random.</p>
-    </div>
-  </section>
+    </section>
+  </div>
   </div>
 
   <div class="game" id="game-poker" hidden>
-  <section aria-label="Poker controls">
-    <div class="controls">
-      <button class="btn primary" id="pk-play" type="button">Pause</button>
-      <div class="seg" role="radiogroup" aria-label="Poker speed">
-        <input type="radio" name="pk-speed" id="pk-speed-watch" value="watch" checked><label for="pk-speed-watch">Watch</label>
-        <input type="radio" name="pk-speed" id="pk-speed-fast" value="fast"><label for="pk-speed-fast">Fast</label>
-        <input type="radio" name="pk-speed" id="pk-speed-turbo" value="turbo"><label for="pk-speed-turbo">Turbo</label>
+  <section class="stage" aria-label="The poker table and the brain">
+    <div class="casino">
+      <div id="pk-scene" class="scene3d" role="group" aria-labelledby="pk-title">
+        <span class="sr-only" id="pk-title">Five flies and an open seat at a poker table, in 3D. Drag to walk around the table.</span>
       </div>
+    </div>
+
+    <div class="stage-controls">
+      <button class="btn primary" id="pk-play" type="button">Pause</button>
       <button class="btn" id="pk-join-open" type="button">Take a seat</button>
       <button class="btn quiet" id="pk-reset" type="button">Start over</button>
       <span class="confirm" id="pk-reset-confirm" hidden>Erase what all five flies have learned?
         <button class="btn" id="pk-reset-yes" type="button">Erase</button>
         <button class="btn quiet" id="pk-reset-no" type="button">Keep</button>
       </span>
-    </div>
-    <p class="hint" id="pk-note"></p>
-  </section>
-
-  <section class="stage" aria-label="The poker table and the brain">
-    <div class="casino">
-      <div id="pk-scene" class="scene3d" role="group" aria-labelledby="pk-title">
-        <span class="sr-only" id="pk-title">Five flies and an open seat at a poker table, in 3D. Drag to walk around the table.</span>
-      </div>
     </div>
 
     <div class="actionbar" id="pk-actionbar" hidden>
@@ -439,7 +466,7 @@ table.grid.pk-grid td.a-raise { background: var(--seq-hi); }
         <div class="meter" id="pk-meter-fold"><span class="name">Fold</span><span class="track"><span class="fill"></span></span><span class="val">&nbsp;</span></div>
         <div class="meter" id="pk-meter-call"><span class="name">Call</span><span class="track"><span class="fill"></span></span><span class="val">&nbsp;</span></div>
         <div class="meter" id="pk-meter-raise"><span class="name">Raise</span><span class="track"><span class="fill"></span></span><span class="val">&nbsp;</span></div>
-        <p class="scale-note">Left of the line smells bad, right smells good. The number is the result the fly expects, where 12 chips count as one bet.</p>
+        <p class="scale-note">Right of the line smells good. 12 chips count as one bet.</p>
       </div>
       <div class="verdict">
         <span class="what" id="pk-verdict">&nbsp;</span>
@@ -453,25 +480,34 @@ table.grid.pk-grid td.a-raise { background: var(--seq-hi); }
     <div class="scope-slot" id="pk-scope-slot"></div>
   </section>
 
-  <section aria-label="Seats">
+  <div class="after-stage">
+    <p class="callout" id="pk-note" style="--c:var(--c-amber)"></p>
+    <ul class="chips" aria-label="How to read the scene">
+      <li style="--c:var(--c-green)"><i class="dot"></i>glowing spheres in the brain are neurons firing now</li>
+      <li style="--c:var(--c-pink)"><i class="dot"></i>a pink name plate marks whose turn it is</li>
+      <li style="--c:var(--c-teal)"><i class="dot"></i>people can use the buttons or the keys F, C and R</li>
+    </ul>
+  </div>
+
+  <section class="panel" style="--c:var(--c-amber)" aria-label="Seats">
     <h2>Who's at the table</h2>
-    <p class="sub-note">Anyone at this screen can sit in an open seat, or ask a fly to leave and take its place. With two or more people, the table asks you to pass the screen before it shows anyone's cards. People can use the buttons or the keys F, C and R.</p>
+    <p class="sub-note">Sit in the open seat, or ask a fly to leave and take its place. With two or more people, the table asks you to pass the screen before it shows anyone's cards.</p>
     <div class="seats" id="pk-seats"></div>
   </section>
 
-  <section class="record" aria-label="Poker learning record">
+  <section class="panel record" style="--c:var(--c-blue)" aria-label="Poker learning record">
     <h2>Are they learning?</h2>
     <div class="tiles">
-      <div class="tile"><span class="label">Hands played</span><span class="value" id="pk-t-hands">0</span><span class="sub" id="pk-t-rate">&nbsp;</span></div>
+      <div class="tile"><span class="label">Hands played</span><span class="value" id="pk-t-hands">0</span><span class="sub">at this table so far</span></div>
       <div class="tile"><span class="label">Best fly lately</span><span class="value" id="pk-t-best">&nbsp;</span><span class="sub" id="pk-t-best-sub">&nbsp;</span></div>
       <div class="tile"><span class="label">People's winnings</span><span class="value" id="pk-t-you">&nbsp;</span><span class="sub" id="pk-t-you-sub">&nbsp;</span></div>
       <div class="tile"><span class="label">Biggest pot</span><span class="value" id="pk-t-pot">&nbsp;</span><span class="sub" id="pk-t-pot-sub">&nbsp;</span></div>
     </div>
     <div style="overflow-x:auto"><table class="plain" id="pk-board"></table></div>
-    <p class="sub-note">A fly that is learning raises more with strong cards and folds more of its weak ones when someone bets. Both columns are read straight from each fly's current synapses, not from lucky or unlucky hands. Chips won "lately" covers each fly's last 500 hands.</p>
+    <p class="sub-note">A fly that is learning raises more with strong cards and folds more weak ones when someone bets. Both columns are read from each fly's synapses, not from lucky hands. "Lately" covers its last 500 hands.</p>
   </section>
 
-  <section aria-label="Poker strategy">
+  <section class="panel" style="--c:var(--c-green)" aria-label="Poker strategy">
     <h2>What a fly does with each hand</h2>
     <div class="controls"><span class="field"><label for="pk-pick">Fly</label><select id="pk-pick"></select></span></div>
     <div class="grid-box"><table class="grid pk-grid" id="pk-grid"></table></div>
@@ -480,34 +516,35 @@ table.grid.pk-grid td.a-raise { background: var(--seq-hi); }
       <span><i class="key-swatch a-call"></i>C = calls, K = checks</span>
       <span><i class="key-swatch a-raise"></i>R = bets or raises</span>
     </div>
-    <p class="sub-note">Rows are how good the fly's cards are compared with an average hand against the players still in. Columns are the street, and whether the fly can check for free, faces one bet, or faces a raise. A sensible player raises at the top, folds at the bottom when it costs something, and gets more careful when raised.</p>
+    <p class="sub-note">Rows are how good the fly's cards are; columns are the street and whether the fly can check, faces a bet, or faces a raise. A sensible player raises at the top, folds at the bottom when it costs something, and gets careful when raised.</p>
   </section>
 
-  <section class="notes" aria-label="What is real and what is not, at the poker table">
-    <div>
-      <h2>What is real</h2>
-      <ul>
-        <li>Each fly's brain. All five run the same mushroom body circuit as the blackjack fly, with the same measured wiring and dopamine. Each fly has its own copy and learns only from its own wins and losses, so they drift apart.</li>
-        <li>The learning. As in blackjack, every choice a fly made in a hand is paired with the chips it won or lost, delivered as reward or punishment dopamine.</li>
+  <div class="pair">
+    <section class="panel" style="--c:var(--c-teal)" aria-label="What is real, at the poker table">
+      <h2>Measured in a real fly</h2>
+      <ul class="facts">
+        <li><span><b>Each fly's brain.</b> All five run the same circuit as the blackjack fly, each with its own copy that learns only from its own wins and losses.</span></li>
+        <li><span><b>The learning.</b> Every choice in a hand is paired with the chips won or lost, delivered as reward or punishment dopamine.</span></li>
       </ul>
-    </div>
-    <div>
-      <h2>What I made up</h2>
-      <ul>
-        <li>The strength smell. A fly cannot read cards or count outs. The page deals out the rest of the hand a few hundred times to see how often the fly's cards would win, and gives the fly that as part of the smell, sorted into ten steps from hopeless to a monster. What the fly learns is what to do about each smell.</li>
-        <li>The looks. Canton-S, white, yellow, ebony and Curly are real lab strains, but here they are only costumes: all five flies have the same wiring.</li>
-        <li>Limit rules keep it to three choices. Stacks are topped up to 100 when they drop below 50, and winnings above 250 are banked, so nobody goes all in and there are no side pots. The "Overall" column counts every chip.</li>
-        <li>How loud the cards are in the smell, and how often a fly tries something other than its favourite choice, are my settings. Without enough trying, a fly that loses a few early calls stops calling for good.</li>
+    </section>
+    <section class="panel" style="--c:var(--c-pink)" aria-label="What is not real, at the poker table">
+      <h2>Invented for the game</h2>
+      <ul class="facts">
+        <li><span><b>The strength smell.</b> The page deals the hand out a few hundred times to see how often the fly's cards win, and gives the fly that as a smell in ten steps. The fly learns what to do about each smell.</span></li>
+        <li><span><b>The looks.</b> Canton-S, white, yellow, ebony and Curly are real lab strains, used here only as costumes.</span></li>
+        <li><span><b>The rules.</b> Limit betting keeps it to three choices. Stacks top up to 100 below 50 and bank winnings above 250, so nobody goes all in.</span></li>
+        <li><span><b>My settings.</b> How loud the cards are in the smell, and how often a fly tries something other than its favourite choice.</span></li>
       </ul>
-    </div>
-  </section>
+    </section>
+  </div>
   </div>
 
-  <p class="credits">Connectome: MaleCNS v1.0, FlyEM at HHMI Janelia with the University of Cambridge, the MRC Laboratory of Molecular Biology and Google Research (Berg et al.), licensed CC BY 4.0, read from the preprocessed matrices at github.com/YijieYin/connectome_data_prep. Blackjack: hit or stand only, blackjack pays 3 to 2, dealer stands on 17, continuously shuffled shoe. Poker: Limit Texas Hold'em, blinds 1 and 2, bets of 2 then 4, three raises at most.</p>
+  <p class="credits">Brain data: MaleCNS v1.0 connectome (FlyEM at HHMI Janelia, University of Cambridge, MRC LMB, Google Research), CC BY 4.0.</p>
 </div>
 <div class="tip" id="tip" hidden></div>
 
 <script type="application/json" id="circuit-data">/*CIRCUIT*/</script>
+<script type="application/json" id="cloud-data">/*CLOUD*/</script>
 <script>/*BLACKJACK*/</script>
 <script>/*FLYBRAIN*/</script>
 <script>/*POKER*/</script>
@@ -515,6 +552,7 @@ table.grid.pk-grid td.a-raise { background: var(--seq-hi); }
 <script>/*SCENEKIT*/</script>
 <script>/*SCENE3D*/</script>
 <script>/*FLY3D*/</script>
+<script>/*BRAIN3D*/</script>
 <script>/*CASINO*/</script>
 <script>/*APP*/</script>
 <script>/*POKERTABLE*/</script>

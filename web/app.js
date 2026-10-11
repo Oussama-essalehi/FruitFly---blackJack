@@ -1,4 +1,4 @@
-/* FlyJack - the page: runs the table (drawn by web/casino.js), draws the brain, keeps the learning record. */
+/* FlyJack - the page: runs the table (drawn by web/casino.js), drives the brain model (web/brain3d.js), keeps the learning record. */
 (function () {
   'use strict';
   var BJ = self.Blackjack, FB = self.FlyBrain;
@@ -7,7 +7,7 @@
   var reduceMotion = !!(self.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   var MODES = {
-    intact: { options: {}, note: 'The circuit as it was mapped. A fresh fly plays close to a coin flip. Switch to Turbo for a minute, then come back to Watch.' },
+    intact: { options: {}, note: 'The circuit as it was mapped. A fresh fly plays close to a coin flip and gets better with every hand.' },
     blocked: { options: { dopamine: 'blocked' }, note: 'Dopamine neurons are silenced, so no result ever reaches the synapses. This fly keeps its starting habits forever.' },
     swapped: { options: { dopamine: 'swapped' }, note: 'Reward neurons now do the punishment neurons\' job and the reverse. Wins push the fly away from what worked.' },
     scrambled: { options: { dopamine: 'shuffled' }, note: 'Each output neuron gets some other output\'s share of dopamine. Whether this fly learns anything depends on the luck of the shuffle.' },
@@ -26,7 +26,7 @@
   function newSession(m) {
     var opts = { seed: (Math.random() * 1e9) | 0 }, o = MODES[m].options, k;
     for (k in o) opts[k] = o[k];
-    var s = { mode: m, brain: new FB.Brain(circuit, opts), bank: 0, recent: [], curve: [], every: 10, last: null, dirty: false, rateT: 0, rateH: 0, rate: 0 };
+    var s = { mode: m, brain: new FB.Brain(circuit, opts), bank: 0, recent: [], curve: [], every: 10, last: null, dirty: false };
     s.curve.push({ h: 0, s: skillOf(s.brain) });
     return s;
   }
@@ -34,9 +34,7 @@
   function useMode(m) {
     mode = m;
     S = sessions[m] || (sessions[m] = newSession(m));
-    $('mode-note').textContent = MODES[m].note;
     watch.step = null; view.odor = -1; view.dopamine = 0;
-    S.rateT = 0;
     clearTable(); refresh(true);
   }
 
@@ -73,7 +71,7 @@
   }
 
   /* ---------- playing ---------- */
-  var playing = !reduceMotion, speed = 'watch';
+  var playing = true;                 // the table has no pause button: it plays whenever it is on screen
   var watch = { step: null, at: 0, hand: null, trace: [] };
 
   function record(hand) {
@@ -85,13 +83,13 @@
       if (c.length > 320) { S.curve = c.filter(function (p, i) { return i % 2 === 0 || i === c.length - 1; }); S.every *= 2; }
     }
   }
-  function quickHand() { record(S.brain.playHand(BJ)); }
 
   /* Watch mode: one hand shown step by step. Each step returns [nextStep, delayMs]; the delays
      follow how long the casino scene needs to act the step out. */
   function stepDeal() {
     var hand = watch.hand = new BJ.Hand(S.brain.rng); watch.trace = [];
     view.odor = -1; view.dopamine = 0; view.label = 'waiting'; view.changed = true;
+    reportRest();
     var ms = scene.deal(hand); shown.hand = hand; describe(hand);
     showChoice(null); say(' ', ' ');
     return hand.done ? [stepResult, ms + 300] : [stepSniffHit, ms + 250];
@@ -177,197 +175,156 @@
     say(RESULT_TEXT[hand.result] + ', ' + signed(hand.reward, hand.reward % 1 ? 1 : 0), why);
   }
 
-  /* ---------- the brain view: a 3D model you can turn ---------- */
-  var canvas = $('brain'), ctx = canvas.getContext('2d');
-  var COLORS = { act: '#199e70', actHi: '#7df0c4', pos: '#3987e5', posHi: '#a9d0ff', neg: '#d95926', negHi: '#ffb08a', cloud: '201,212,205' };
+  /* ---------- the brain view: the whole nervous system in 3D (drawn by web/brain3d.js) ---------- */
+  var canvas = $('brain'), B3 = self.Brain3D, cloud = JSON.parse($('cloud-data').textContent), space = new B3.Space(cloud);
+  var ROLE = { act: B3.rgb('#2ee6a8'), pos: B3.rgb('#4d8dff'), neg: B3.rgb('#ff5a45') };   // activity, approach / reward, avoid / punishment
   var view = { odor: -1, glom: new Float32Array(circuit.glomeruli.length), kc: [], mbon: new Float32Array(circuit.mbon.type.length), dopamine: 0, dopamineAt: 0, label: '', changed: true, w: 0, h: 0 };
-  var cells = [];   // every neuron once: {x, y, z (centred, about -1..1; y up, z towards the back), group, i, type, id}
-  var floorY = 0, rightSign = 1;
-  (function layout() {
-    var groups = ['kc', 'pn', 'mbon', 'pam', 'ppl1'], lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9], g, i, d, sideX = { L: 0, R: 0 }, sideN = { L: 0, R: 0 };
-    for (g = 0; g < groups.length; g++) for (i = 0; i < circuit[groups[g]].soma.length; i++) {
-      var p = circuit[groups[g]].soma[i];
-      for (d = 0; d < 3; d++) { lo[d] = Math.min(lo[d], p[d]); hi[d] = Math.max(hi[d], p[d]); }
-    }
-    var half = Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) / 2, mid = [0, 1, 2].map(function (d) { return (lo[d] + hi[d]) / 2; });
-    for (g = 0; g < groups.length; g++) {
-      var c = circuit[groups[g]], seen = {};
-      c.soma.forEach(function (q) { seen[q] = (seen[q] || 0) + 1; });   // cells with no soma in the connectome share their group's median
-      for (i = 0; i < c.soma.length; i++) {
-        var q = c.soma[i];
-        // connectome voxels: x across the head, y downwards, z towards the back
-        cells.push({ x: (q[0] - mid[0]) / half, y: -(q[1] - mid[1]) / half, z: (q[2] - mid[2]) / half, group: groups[g], i: i, type: c.type[i], id: c.bodyId[i], guess: seen[q] > 1 });
-        if (c.side[i] in sideX) { sideX[c.side[i]] += q[0]; sideN[c.side[i]]++; }
-      }
-    }
-    floorY = -(hi[1] - mid[1]) / half - 0.12;
-    rightSign = sideX.R / (sideN.R || 1) >= sideX.L / (sideN.L || 1) ? 1 : -1;
-  })();
+  var cells = [];   // the learning circuit's neurons: {x, y, z (model space: y up, z towards the back), n (position in this list), group, i, type, id}
   var byGroup = {};
-  cells.forEach(function (c) { (byGroup[c.group] = byGroup[c.group] || []).push(c); });
-  // inputs of each Kenyon cell (PN index, synapses), to draw the path a smell takes
-  var kcInputs = byGroup.kc.map(function () { return []; }), kcOutputs = byGroup.kc.map(function () { return [-1, 0]; });
-  (function wiring() {
-    var e, t = circuit.pnKc, k = circuit.kcMbon;
-    for (e = 0; e < t.length; e += 3) kcInputs[t[e + 1]].push([t[e], t[e + 2]]);
-    for (e = 0; e < k.length; e += 3) if (k[e + 2] > kcOutputs[k[e]][1]) kcOutputs[k[e]] = [k[e + 1], k[e + 2]];   // strongest output of each KC
+  (function layout() {
+    ['kc', 'pn', 'mbon', 'pam', 'ppl1'].forEach(function (g) {
+      var c = circuit[g], seen = {};
+      c.soma.forEach(function (q) { seen[q] = (seen[q] || 0) + 1; });   // cells with no soma in the connectome share their group's median
+      byGroup[g] = c.soma.map(function (q, i) {
+        var m = space.toModel(q), cell = { x: m[0], y: m[1], z: m[2], n: cells.length, group: g, i: i, type: c.type[i], id: c.bodyId[i], guess: seen[q] > 1 };
+        cells.push(cell);
+        return cell;
+      });
+    });
   })();
+  var model = B3.create(canvas, cloud, cells);
+  if (!model) { canvas.hidden = true; $('scope-state').textContent = 'this browser cannot draw the 3D model'; }
 
-  /* the camera: turntable yaw, tilt (pitch), slow spin unless reduced motion; drag to turn */
-  var HOME = { yaw: Math.PI + 0.55, pitch: -0.62 };
-  var cam = { yaw: HOME.yaw, pitch: HOME.pitch, vYaw: 0, vPitch: 0, spin: reduceMotion ? 0 : 0.00012, heldUntil: 0, dist: 4.2, scale: 1, cx: 0, cy: 0 };
-  var drag = null, visible = true, lastDraw = 0;
-  function project(c) {
+  /* the camera: turntable yaw, tilt (pitch), slow spin unless reduced motion; drag to turn.
+     Two framings: the whole nervous system, or close on the brain where the learning circuit is. */
+  var HOME = { yaw: -2.45, pitch: -0.45 };
+  var FRAMES = { whole: { zoom: 1, target: [0, -0.06, 0] }, brain: { zoom: 1.7, target: space.toModel(cloud.brainCentre) } };
+  var cam = { yaw: HOME.yaw, pitch: HOME.pitch, vYaw: 0, vPitch: 0, spin: reduceMotion ? 0 : 0.00012, heldUntil: 0, dist: 4.2, base: 1, zoom: 1, scale: 1, cx: 0, cy: 0,
+    tx: FRAMES.whole.target[0], ty: FRAMES.whole.target[1], tz: FRAMES.whole.target[2], frame: 'whole' };
+  var drag = null, visible = true, lastDraw = 0, seeThrough = true;
+  try { seeThrough = localStorage.getItem('flyjack.brainSolid') !== '1'; } catch (e) { /* no storage: start see-through */ }
+  view.focus = 0; view.ghost = seeThrough ? 1 : 0;
+  function project(c) {             // the same maths as the shaders in web/brain3d.js
     var cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
-    var x1 = c.x * cy + c.z * sy, z1 = -c.x * sy + c.z * cy;
-    var y2 = c.y * cp - z1 * sp, z2 = c.y * sp + z1 * cp, k = cam.dist / (cam.dist + z2);
+    var x = c.x - cam.tx, y = c.y - cam.ty, z = c.z - cam.tz;
+    var x1 = x * cy + z * sy, z1 = -x * sy + z * cy;
+    var y2 = y * cp - z1 * sp, z2 = y * sp + z1 * cp, k = cam.dist / (cam.dist + z2);
     c.px = cam.cx + x1 * k * cam.scale; c.py = cam.cy - y2 * k * cam.scale; c.k = k; c.depth = z2;
   }
-  function point(x, y, z) { var p = { x: x, y: y, z: z }; project(p); return p; }
-
-  // one shaded sphere and one soft glow per colour, drawn once and stamped for every neuron
-  var sprites = {};
-  function sprite(color, kind) {
-    var key = color + kind;
-    if (sprites[key]) return sprites[key];
-    var s = document.createElement('canvas'), n = 64, g = s.getContext('2d'), grad;
-    s.width = s.height = n;
-    if (kind === 'glow') {
-      grad = g.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2);
-      grad.addColorStop(0, color + 'aa'); grad.addColorStop(0.3, color + '44'); grad.addColorStop(1, color + '00');
-    } else {
-      grad = g.createRadialGradient(n * 0.36, n * 0.33, n * 0.02, n / 2, n / 2, n / 2);
-      grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.18, color); grad.addColorStop(0.75, color); grad.addColorStop(1, '#05080a');
-    }
-    g.fillStyle = grad; g.beginPath(); g.arc(n / 2, n / 2, n / 2, 0, 6.2832); g.fill();
-    return (sprites[key] = s);
-  }
-  function fog(c) { return Math.max(0.35, Math.min(1, 0.7 - 0.45 * c.depth)); }   // far neurons fade into the dark
-
   function fit() {
     var r = canvas.getBoundingClientRect(), dpr = Math.min(2, self.devicePixelRatio || 1);
     if (!r.width) return;
     view.w = r.width; view.h = r.height;
-    canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr);
-    cam.cx = r.width / 2; cam.cy = r.height * 0.56;
-    cam.scale = Math.min(r.width * 0.5 / 1.2, r.height * 0.5 / 1.12);
-    view.dpr = dpr; view.changed = true;
+    cam.cx = r.width / 2; cam.cy = r.height / 2;
+    cam.base = Math.min(r.width / 2.05, r.height / 1.42);
+    if (model) { model.resize(r.width, r.height, dpr); model.setPaper(getComputedStyle(canvas.parentNode).getPropertyValue('--scope').trim() || '#0b0c12'); }
+    view.changed = true;
+    if (model && S) drawBrain(performance.now());      // resizing empties the picture: draw it again at once, not a frame later
   }
-  function drawFloor() {
-    var n = 5, s = 1.15, i, a, b;
-    ctx.lineWidth = 1;
-    for (i = -n; i <= n; i++) {
-      var t = i / n * s, edge = 1 - Math.abs(i) / (n + 1);
-      a = point(t, floorY, -s); b = point(t, floorY, s);
-      ctx.strokeStyle = 'rgba(120,170,150,' + (0.13 * edge).toFixed(3) + ')';
-      ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
-      a = point(-s, floorY, t); b = point(s, floorY, t);
-      ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
+  function setFrame(name) {
+    cam.frame = name; view.changed = true;
+    $('scope-frame').textContent = name === 'brain' ? 'Zoom out' : 'Zoom in';
+    $('scope-frame').setAttribute('aria-pressed', name === 'brain' ? 'true' : 'false');
+  }
+  function setSeeThrough(on) {
+    seeThrough = on; view.changed = true;
+    $('scope-ghost').textContent = on ? 'Full colours' : 'Fade it';
+    $('scope-ghost').setAttribute('aria-pressed', on ? 'true' : 'false');
+    try { localStorage.setItem('flyjack.brainSolid', on ? '0' : '1'); } catch (e) { /* not remembered */ }
+  }
+  /* which circuit neurons are lit, and how strongly; pop 1..0 makes them swell briefly as a new smell arrives */
+  function paintActivity(fade, pop) {
+    var i, c, a, on = view.odor >= 0, vb = view.brain || S.brain, big = (1 + 0.3 * view.ghost) * (1 + 0.55 * pop * pop);
+    var reward = view.dopamine > 0 ? fade * Math.min(1, view.dopamine * 1.5 + 0.25) : 0;
+    var punish = view.dopamine < 0 ? fade * Math.min(1, -view.dopamine * 1.5 + 0.25) : 0;
+    model.clearActivity();
+    // dopamine neurons: reward (PAM) lights up when things went better than expected, punishment (PPL1) when worse
+    if (reward > 0.02) for (i = 0; i < byGroup.pam.length; i++) model.light(byGroup.pam[i].n, ROLE.pos, (0.018 + 0.012 * reward) * (1 + 0.3 * view.ghost), reward);
+    if (punish > 0.02) for (i = 0; i < byGroup.ppl1.length; i++) model.light(byGroup.ppl1[i].n, ROLE.neg, (0.03 + 0.024 * punish) * (1 + 0.3 * view.ghost), punish);
+    if (on) {
+      // projection neurons: the smell channels this choice drives
+      for (i = 0; i < byGroup.pn.length; i++) { c = byGroup.pn[i]; a = view.glom[circuit.pn.glom[c.i]]; if (a > 0.2) model.light(c.n, ROLE.act, (0.018 + 0.014 * a) * big, 0.35 + 0.65 * a); }
+      // Kenyon cells: only the few that respond to this smell
+      for (i = 0; i < view.kc.length; i++) { c = byGroup.kc[view.kc[i][0]]; a = Math.min(1, view.kc[i][1] * 9); model.light(c.n, ROLE.act, (0.013 + 0.01 * a) * big, 0.6 + 0.4 * a); }
+      // output neurons: size and strength relative to their response before any learning
+      for (i = 0; i < byGroup.mbon.length; i++) {
+        c = byGroup.mbon[i]; a = Math.min(2, view.mbon[c.i] / (vb.mbonBaseline[c.i] || 1));
+        if (a > 0.15) model.light(c.n, vb.valence[c.i] > 0 ? ROLE.pos : ROLE.neg, (0.02 + 0.012 * a) * big, Math.min(1, 0.45 + 0.35 * a));
+      }
     }
-  }
-  function drawGizmo() {         // which way is front, up and the fly's right
-    var o = { x: 0, y: 0, z: 0 }, ax = [[{ x: 0, y: 0, z: -1 }, 'front', COLORS.actHi], [{ x: 0, y: 1, z: 0 }, 'top', '#c9d4cd'], [{ x: rightSign, y: 0, z: 0 }, 'right', '#8a988f']];
-    var save = [cam.cx, cam.cy, cam.scale, cam.dist], ox = 50, oy = view.h - 38;
-    cam.cx = ox; cam.cy = oy; cam.scale = 22; cam.dist = 1e6;
-    project(o);
-    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 1.5;
-    ax.forEach(function (a) {
-      project(a[0]);
-      ctx.globalAlpha = a[0].depth > 0.3 ? 0.45 : 0.9; ctx.strokeStyle = ctx.fillStyle = a[2];
-      ctx.beginPath(); ctx.moveTo(o.px, o.py); ctx.lineTo(a[0].px, a[0].py); ctx.stroke();
-      var dx = a[0].px - o.px, dy = a[0].py - o.py, len = Math.sqrt(dx * dx + dy * dy) || 1;
-      ctx.fillText(a[1], Math.max(16, a[0].px + dx / len * 16), Math.min(view.h - 6, a[0].py + dy / len * 9));
-    });
-    cam.cx = save[0]; cam.cy = save[1]; cam.scale = save[2]; cam.dist = save[3];
-    ctx.globalAlpha = 1;
+    model.commitActivity();
+    return on || reward > 0.02 || punish > 0.02;
   }
   function drawBrain(now) {
     var dt = Math.min(64, now - (lastDraw || now)); lastDraw = now;
     var fade = view.dopamine ? Math.max(0, 1 - (now - view.dopamineAt) / 1500) : 0;
-    var moving = !!drag || Math.abs(cam.vYaw) > 1e-5 || Math.abs(cam.vPitch) > 1e-5 || (cam.spin && now > cam.heldUntil);
+    var pop = reduceMotion ? 0 : Math.max(0, 1 - (now - (view.popAt || 0)) / 380);
+    var f = FRAMES[cam.frame], ease = 1 - Math.pow(0.992, dt);
+    var settling = Math.abs(cam.zoom - f.zoom) > 0.002 || Math.abs(cam.tx - f.target[0]) + Math.abs(cam.ty - f.target[1]) + Math.abs(cam.tz - f.target[2]) > 0.002;
+    var moving = !!drag || settling || Math.abs(cam.vYaw) > 1e-5 || Math.abs(cam.vPitch) > 1e-5 || (cam.spin && now > cam.heldUntil);
     if (!drag) {                    // inertia after a drag, then back to the slow spin
       cam.yaw += cam.vYaw * dt; cam.pitch = Math.max(-1.45, Math.min(1.2, cam.pitch + cam.vPitch * dt));
       cam.vYaw *= 0.92; cam.vPitch *= 0.92;
       if (cam.spin && now > cam.heldUntil) cam.yaw += cam.spin * dt;
     }
-    if (!visible || (!view.changed && !fade && !view.fading && !moving)) return;
-    view.fading = fade > 0; view.changed = false;
+    if (settling) {                 // glide between the two framings
+      cam.zoom += (f.zoom - cam.zoom) * ease;
+      cam.tx += (f.target[0] - cam.tx) * ease; cam.ty += (f.target[1] - cam.ty) * ease; cam.tz += (f.target[2] - cam.tz) * ease;
+    }
+    cam.scale = cam.base * cam.zoom;
+    if (!model || !visible || (!view.changed && !fade && !view.fading && !moving && !pop && !view.popping)) return;
+    var redo = view.changed || fade > 0 || view.fading || pop > 0 || view.popping;
+    view.fading = fade > 0; view.popping = pop > 0; view.changed = false;
     if (!view.w) return;
-    ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-    var bg = ctx.createRadialGradient(cam.cx, cam.cy, 0, cam.cx, cam.cy, Math.max(view.w, view.h) * 0.7);
-    bg.addColorStop(0, '#0d1511'); bg.addColorStop(1, '#000000');
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, view.w, view.h);
-    for (var j = 0; j < cells.length; j++) project(cells[j]);
-    drawFloor();
-
-    var i, c, a, f, on = view.odor >= 0, vb = view.brain || S.brain;
-    // Kenyon cells: a faint glowing cloud, brighter where it is dense and near
-    ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgb(' + COLORS.cloud + ')';
-    for (i = 0; i < byGroup.kc.length; i++) {
-      c = byGroup.kc[i]; if (c.guess) continue;
-      f = fog(c); a = 1.6 * c.k;
-      ctx.globalAlpha = 0.16 * f; ctx.fillRect(c.px - a / 2, c.py - a / 2, a, a);
-    }
-    // the path this smell takes: driven projection neurons -> responding Kenyon cells -> their main output neuron
-    if (on && view.kc.length) {
-      ctx.lineWidth = 0.6; ctx.strokeStyle = COLORS.act;
-      for (i = 0; i < view.kc.length; i++) {
-        var kc = byGroup.kc[view.kc[i][0]], ins = kcInputs[view.kc[i][0]], out = kcOutputs[view.kc[i][0]];
-        for (var e = 0; e < ins.length; e++) {
-          a = view.glom[circuit.pn.glom[ins[e][0]]];
-          if (a < 0.35) continue;
-          c = byGroup.pn[ins[e][0]]; ctx.globalAlpha = 0.07 * a * fog(kc);
-          ctx.beginPath(); ctx.moveTo(c.px, c.py); ctx.lineTo(kc.px, kc.py); ctx.stroke();
-        }
-        if (out[0] >= 0) {
-          c = byGroup.mbon[out[0]]; ctx.globalAlpha = 0.12 * fog(kc); ctx.strokeStyle = vb.valence[out[0]] > 0 ? COLORS.pos : COLORS.neg;
-          ctx.beginPath(); ctx.moveTo(kc.px, kc.py); ctx.lineTo(c.px, c.py); ctx.stroke(); ctx.strokeStyle = COLORS.act;
-        }
-      }
-    }
-
-    // every named neuron as a lit sphere, far ones first
-    var reward = view.dopamine > 0 ? fade * Math.min(1, view.dopamine * 1.5 + 0.25) : 0;
-    var punish = view.dopamine < 0 ? fade * Math.min(1, -view.dopamine * 1.5 + 0.25) : 0;
-    var balls = [];
-    function ball(c, r, color, alpha, glow) { balls.push({ c: c, r: 1.35 * r * c.k, color: color, alpha: alpha * fog(c), glow: glow }); }
-    // dopamine neurons: reward (PAM) glows when things went better than expected, punishment (PPL1) when worse
-    for (i = 0; i < byGroup.pam.length; i++) ball(byGroup.pam[i], 1.6 + 1.6 * reward, reward > 0.02 ? COLORS.posHi : COLORS.pos, 0.35 + 0.65 * reward, reward * 0.3);
-    for (i = 0; i < byGroup.ppl1.length; i++) ball(byGroup.ppl1[i], 2.6 + 3 * punish, punish > 0.02 ? COLORS.negHi : COLORS.neg, 0.5 + 0.5 * punish, punish * 0.8);
-    // projection neurons: brightness = how strongly their smell channel is driven
-    for (i = 0; i < byGroup.pn.length; i++) { c = byGroup.pn[i]; a = on ? view.glom[circuit.pn.glom[c.i]] : 0; ball(c, 2 + 2 * a, a > 0.5 ? COLORS.actHi : COLORS.act, 0.3 + 0.7 * a, a > 0.5 ? a * 0.6 : 0); }
-    // Kenyon cells: only the few that respond to this smell
-    for (i = 0; i < view.kc.length; i++) { c = byGroup.kc[view.kc[i][0]]; a = Math.min(1, view.kc[i][1] * 9); ball(c, 1.3 + 1.5 * a, COLORS.actHi, 0.55 + 0.45 * a, a * 0.5); }
-    // output neurons: size and brightness relative to their response before any learning
-    for (i = 0; i < byGroup.mbon.length; i++) {
-      c = byGroup.mbon[i]; a = on ? Math.min(2, view.mbon[c.i] / (vb.mbonBaseline[c.i] || 1)) : 0;
-      ball(c, 2.6 + 2.2 * a, vb.valence[c.i] > 0 ? COLORS.pos : COLORS.neg, 0.45 + 0.3 * a, a > 1 ? (a - 1) * 0.7 : 0);
-    }
-    balls.sort(function (p, q) { return q.c.depth - p.c.depth; });
-    for (i = 0; i < balls.length; i++) {
-      var b = balls[i], r = b.r;
-      if (b.glow > 0.02) {
-        ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, b.glow) * 0.55;
-        ctx.drawImage(sprite(b.color, 'glow'), b.c.px - r * 2.8, b.c.py - r * 2.8, r * 5.6, r * 5.6);
-      }
-      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = b.alpha;
-      ctx.drawImage(sprite(b.color, 'ball'), b.c.px - r, b.c.py - r, 2 * r, 2 * r);
-    }
-    ctx.globalCompositeOperation = 'source-over';
-    drawGizmo();
+    var wash = !seeThrough && view.lit ? 0.12 : 0, ghost = seeThrough ? 1 : 0;
+    view.focus += (wash - view.focus) * Math.min(1, dt / 220); view.ghost += (ghost - view.ghost) * Math.min(1, dt / 260);
+    if (Math.abs(view.focus - wash) > 0.004 || Math.abs(view.ghost - ghost) > 0.004) view.changed = true;   // keep drawing until it settles
+    if (redo || view.changed) view.lit = paintActivity(fade, pop);
+    model.render(cam, view.focus, view.ghost);
     $('scope-state').textContent = fade > 0 ? (view.dopamine > 0 ? 'reward dopamine' : 'punishment dopamine') : (view.label || ' ');
   }
+  var vbLast = null;
   function showOdor(odor, label, brain) {      // brain: another fly's (the poker table), else this one's
     var b = view.brain = brain || S.brain;
-    view.odor = odor; view.label = label;
+    if (odor !== view.odor || b !== vbLast) view.popAt = performance.now();
+    vbLast = b; view.odor = odor; view.label = label;
     b.glomerulusPattern(odor, view.glom);
     view.kc = b.activeKenyonCells(odor);
     b.respond(odor); view.mbon.set(b.mbon);
     view.changed = true;
+    report(b, label, 0);
   }
+  /* The read-out over the casino (web/scene3d.js): how many of the circuit's cells this smell
+     drives, and one raster column for a fixed sample of 96 of them. */
+  var SAMPLE = (function () {
+    var rows = [], kinds = [];
+    function take(group, n, kind) { var list = byGroup[group]; for (var i = 0; i < n; i++) { rows.push(list[Math.floor(i * list.length / n)]); kinds.push(kind); } }
+    take('pn', 24, 0); take('kc', 50, 1); take('mbon', 16, 2);
+    for (var d = 0; d < 6; d++) { rows.push(null); kinds.push(3); }      // the last six rows: three for reward dopamine, three for punishment
+    return { cells: rows, kinds: kinds, values: new Float32Array(rows.length) };
+  })();
+  function report(b, label, dopamine) {
+    var v = SAMPLE.values, lit = {}, active = 0, i, c;
+    v.fill(0);
+    if (dopamine) {                                     // a burst of dopamine: only those neurons fire
+      active = dopamine > 0 ? byGroup.pam.length : byGroup.ppl1.length;
+      for (i = 0; i < 3; i++) v[v.length - (dopamine > 0 ? 6 : 3) + i] = Math.min(1, Math.abs(dopamine) * 1.5 + 0.25);
+    } else {
+      for (i = 0; i < view.kc.length; i++) { lit[view.kc[i][0]] = Math.min(1, view.kc[i][1] * 9); active++; }
+      for (i = 0; i < byGroup.pn.length; i++) if (view.glom[circuit.pn.glom[i]] > 0.2) active++;
+      for (i = 0; i < byGroup.mbon.length; i++) if (view.mbon[i] / (b.mbonBaseline[i] || 1) > 0.15) active++;
+      for (i = 0; i < SAMPLE.cells.length; i++) {
+        c = SAMPLE.cells[i]; if (!c) continue;
+        v[i] = c.group === 'pn' ? view.glom[circuit.pn.glom[c.i]] : c.group === 'kc' ? (lit[c.i] || 0) : Math.min(1, view.mbon[c.i] / (b.mbonBaseline[c.i] || 1) / 2);
+      }
+    }
+    self.Scene3D.pulse({ state: label, active: active, total: cells.length, rows: v, kinds: SAMPLE.kinds, hold: dopamine ? 1500 : 0 });
+  }
+  function reportRest() { SAMPLE.values.fill(0); self.Scene3D.pulse({ state: 'waiting', active: 0, total: cells.length, rows: SAMPLE.values, kinds: SAMPLE.kinds }); }
   function flashDopamine(surprise) {
     if (surprise === null || surprise === undefined || S.mode === 'blocked' || Math.abs(surprise) <= 0.05) { view.dopamine = 0; return; }
     view.dopamine = surprise; view.dopamineAt = performance.now(); view.changed = true;
+    report(view.brain || S.brain, surprise > 0 ? 'reward dopamine' : 'punishment dopamine', surprise);
   }
 
   /* shared tooltip */
@@ -419,7 +376,8 @@
     if (e.pointerType === 'mouse') hold(1500);              // hold still while someone is reading a neuron
     var r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, best = null, bd = 144;
     for (var i = 0; i < cells.length; i++) {
-      var c = cells[i], d = (c.px - x) * (c.px - x) + (c.py - y) * (c.py - y);
+      var c = cells[i]; project(c);
+      var d = (c.px - x) * (c.px - x) + (c.py - y) * (c.py - y);
       if (c.group !== 'kc') d *= 0.35;                       // the sparse neurons are easier to hit than the cloud
       d *= 1 + 0.25 * c.depth;                               // and nearer ones win over those behind them
       if (d < bd) { bd = d; best = c; }
@@ -434,6 +392,9 @@
     });
   });
   canvas.addEventListener('pointerleave', hideTip);
+  $('scope-frame').addEventListener('click', function () { setFrame(cam.frame === 'brain' ? 'whole' : 'brain'); hold(1500); });
+  $('scope-ghost').addEventListener('click', function () { setSeeThrough(!seeThrough); });
+  setSeeThrough(seeThrough);
 
   /* ---------- the learning record ---------- */
   function signed(v, digits) { var s = Math.abs(v).toFixed(digits); return (v < 0 && +s !== 0 ? '−' : v > 0 ? '+' : '') + s; }
@@ -544,80 +505,42 @@
     lastRefresh = now;
     var b = S.brain;
     S.habits = b.policy(false); S.skill = BJ.expectedReturn(S.habits);
-    if (S.rateT && now - S.rateT > 400) { S.rate = (b.hands - S.rateH) / ((now - S.rateT) / 1000); S.rateT = now; S.rateH = b.hands; }
-    if (!S.rateT) { S.rateT = now; S.rateH = b.hands; S.rate = 0; }
     $('t-hands').textContent = count(b.hands);
-    $('t-rate').textContent = playing && S.rate >= 5 ? count(S.rate) + ' hands a second' : ' ';
     $('t-skill').textContent = pct(S.skill);
     $('t-agree').textContent = Math.round(100 * drawGrids()) + '%';
     $('t-bank').textContent = signed(S.bank, 0).replace(/\d+/, function (n) { return count(+n); });
     drawRecent();
     drawChart();
-    if (speed !== 'watch' && S.last && shown.hand !== S.last) {     // show the latest finished hand
-      var h = S.last, d = h.trace && h.trace[h.trace.length - 1];
-      showHand(h); showChoice(d || null); announce(h);
-      if (d) showOdor(d.odor, 'last choice: "' + (d.hit ? 'hit' : 'stand') + '"');
-      flashDopamine(h.surprise);
-    }
   }
 
   /* ---------- main loop ---------- */
-  var due = 0, prev = 0, suspended = false;   // suspended: the poker tab is showing
+  var suspended = false;   // suspended: the poker tab is showing
   function frame(now) {
-    var dt = Math.min(100, now - (prev || now)); prev = now;
     if (playing && !suspended) {
-      if (speed === 'watch') {
-        if (!watch.step) { watch.step = stepDeal; watch.at = now; }
-        if (now >= watch.at) { var next = watch.step(); watch.step = next[0]; watch.at = now + next[1]; refresh(true); }
-      } else if (speed === 'fast') {
-        due += dt * 0.012;
-        while (due >= 1) { quickHand(); due--; }
-      } else {
-        var t0 = performance.now();
-        while (performance.now() - t0 < 12) for (var i = 0; i < 40; i++) quickHand();
-      }
+      if (!watch.step) { watch.step = stepDeal; watch.at = now; }
+      if (now >= watch.at) { var next = watch.step(); watch.step = next[0]; watch.at = now + next[1]; refresh(true); }
     }
-    if (!suspended) { refresh(false); scene.tick(now, playing && speed !== 'watch'); }
+    if (!suspended) { refresh(false); scene.tick(now, false); }
     drawBrain(now);
     requestAnimationFrame(frame);
   }
 
-  /* ---------- controls ---------- */
-  function setPlaying(p) { playing = p; $('play').textContent = p ? 'Pause' : 'Play'; if (!p) save(); S.rateT = 0; }
-  $('play').addEventListener('click', function () { setPlaying(!playing); });
-  Array.prototype.forEach.call(document.querySelectorAll('input[name="speed"]'), function (r) {
-    r.addEventListener('change', function () {
-      if (!r.checked) return;
-      if (speed === 'watch' && r.value !== 'watch') finishWatchHand();
-      speed = r.value; watch.step = null; S.rateT = 0; due = 0;
-      if (!playing) setPlaying(true);
-    });
-  });
-  $('mode').addEventListener('change', function () { finishWatchHand(); save(); useMode($('mode').value); });
-  $('reset').addEventListener('click', function () { $('reset-confirm').hidden = false; $('reset').hidden = true; });
-  $('reset-no').addEventListener('click', function () { $('reset-confirm').hidden = true; $('reset').hidden = false; });
-  $('reset-yes').addEventListener('click', function () {
-    $('reset-confirm').hidden = true; $('reset').hidden = false;
-    watch.hand = null; delete sessions[mode];
-    if (mode === 'intact') { try { localStorage.removeItem(STORE_KEY); } catch (e) { /* nothing stored */ } }
-    useMode(mode);
-  });
+  /* ---------- keeping the fly's memory ---------- */
   document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
   setInterval(save, 15000);
   if (self.ResizeObserver) new ResizeObserver(function () { fit(); if (S) drawChart(); }).observe($('brain'));
   else addEventListener('resize', function () { fit(); drawChart(); });
 
   /* ---------- start ---------- */
+  function measureHeader() {            // the stage fills the window under the header (web/page.html)
+    var bar = document.querySelector('.topbar');
+    if (bar) document.documentElement.style.setProperty('--topbar-h', bar.offsetHeight + 'px');
+  }
+  measureHeader(); addEventListener('resize', measureHeader);
   buildGrid('grid-hard', false); buildGrid('grid-soft', true);
   restore();
   useMode('intact');
   fit();
-  $('play').textContent = playing ? 'Pause' : 'Play';
-  if (!playing) {                        // reduced motion: show one finished hand and wait for Play
-    var h = S.brain.playHand(BJ, false); S.brain.hands--; S.last = h;
-    var d = h.trace[h.trace.length - 1];
-    showHand(h); showChoice(d || null); if (d) showOdor(d.odor, 'last choice');
-  }
   requestAnimationFrame(frame);
   /* The poker tab borrows the brain view and pauses this table while it shows. */
   var scopeEl = document.querySelector('.scope');
@@ -625,10 +548,10 @@
     sessions: sessions, current: function () { return S; }, circuit: circuit,
     suspend: function (on) {
       if (on === suspended) return;
-      suspended = on; prev = 0;
+      suspended = on;
       if (on) { save(); return; }
       view.brain = null; view.odor = -1; view.dopamine = 0; view.label = ' '; view.changed = true;
-      S.rateT = 0; refresh(true);
+      refresh(true);
     },
     scope: {
       mount: function (slot) { if (scopeEl.parentNode !== slot) slot.appendChild(scopeEl); view.changed = true; },
@@ -636,6 +559,7 @@
       dopamine: function (surprise) {
         if (surprise === null || surprise === undefined || Math.abs(surprise) <= 0.05) return;
         view.dopamine = surprise; view.dopamineAt = performance.now(); view.changed = true;
+        report(view.brain || S.brain, surprise > 0 ? 'reward dopamine' : 'punishment dopamine', surprise);
       }
     }
   };

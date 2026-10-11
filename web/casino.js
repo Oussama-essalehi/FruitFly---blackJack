@@ -19,6 +19,7 @@
       views: { wide: { pos: [0, 330, 1000], target: [0, 95, 120], fov: 40 }, narrow: { pos: [40, 420, 720], target: [30, 40, 220], fov: 50 } }
     });
     stage.reduce = reduce;
+    new S3.Hud(stage, { corner: 'bl' });
     stage.pieces = new T.Group(); stage.scene.add(stage.pieces);
     var snap = false, tl = new K.Timeline(function () { return snap || reduce; });
     var move = tl.move.bind(tl), later = tl.later.bind(tl);
@@ -26,17 +27,16 @@
     /* ---------- the room and the table ---------- */
     S3.buildRoom(stage, {
       wallZ: -430, seed: 7, lamp: { x: 0, y: 500, z: 150, aim: [0, 0, 180] },
-      neon: [{ text: 'FlyJack', fill: '#ffe1f1', glow: '#ff4fae', x: -470, y: 330, w: 440, size: 170 },
-             { text: '♠ ♥ ♦ ♣', fill: '#d9f7ff', glow: '#39cfff', x: 470, y: 330, w: 420, size: 130, phase: 4 }]
+      neon: [{ text: '♠ ♥ ♦ ♣', fill: '#ffe1f1', glow: '#ff3d8a', x: 470, y: 340, w: 640, size: 230, phase: 4 }]
     });
     S3.blackjackTable(stage, R, function (g) {
-      g.fillStyle = 'rgba(232,194,122,0.62)'; g.font = '600 19px ' + S3.MONO; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = 'rgba(39,224,208,0.7)'; g.font = '600 19px ' + S3.MONO; g.textAlign = 'center'; g.textBaseline = 'middle';
       var str = 'BLACKJACK PAYS 3 TO 2  ·  DEALER STANDS ON 17', r = 178, span = 1.9;
       for (var i = 0; i < str.length; i++) {
         var a = Math.PI / 2 + span / 2 - span * (i + 0.5) / str.length;
         g.save(); g.translate(r * Math.cos(a), r * Math.sin(a)); g.rotate(a - Math.PI / 2); g.fillText(str[i], 0, 0); g.restore();
       }
-      g.strokeStyle = 'rgba(232,194,122,0.4)'; g.lineWidth = 2.5;
+      g.strokeStyle = 'rgba(39,224,208,0.55)'; g.lineWidth = 3.5;
       g.beginPath(); g.arc(0, 0, 300, 0.25, Math.PI - 0.25); g.stroke();
       g.beginPath(); g.arc(0, 0, 410, 0.12, Math.PI - 0.12); g.stroke();
       var b = feltXY(BET.x, BET.y);
@@ -228,7 +228,7 @@
       if (surprise === null || surprise === undefined || Math.abs(surprise) <= 0.05) return;
       fly.glow(surprise > 0 ? '#4d9bff' : '#ff6a2e', Math.min(0.95, Math.abs(surprise) * 1.5 + 0.35), 1700);
     }
-    /* A finished hand laid out at once (Fast and Turbo, or with reduced motion). */
+    /* A finished hand laid out at once (with reduced motion). */
     function show(hand) {
       clearAll();
       snap = true;

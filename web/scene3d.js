@@ -1,6 +1,8 @@
-/* FlyJack - the casino in 3D (three.js, bundled from web/vendor). A Stage is one room with a
-   table, a lamp that casts shadows, a camera you can drag around, and an HTML overlay for the
-   words (totals, name plates, thought bubbles), which stay crisp at any size.
+/* FlyJack - the casino in 3D (three.js, bundled from web/vendor). A Stage is one table in a
+   room high above a city at night, drawn the way an old console would: few polygons, flat
+   shading, big pixels, neon trim. A light casts shadows, the camera can be dragged around,
+   and an HTML overlay carries the words (totals, name plates, thought bubbles, the read-out
+   of the fly's brain), which stay crisp at any size.
    Table positions are given in "table units": the x, y of the old flat drawing (1200 x 675).
    Each table says how those map onto its felt, so the game code still thinks in x and y. */
 (function (root) {
@@ -9,6 +11,9 @@
   var PIPS = K.PIPS, RED = '#c2332d', INK = '#1c1c1c';
   var CHIPS = { red: ['#c0392b', '#7d1f17'], blue: ['#2c5aa0', '#1a3866'], green: ['#1f7a4a', '#11482b'], black: ['#26262b', '#0e0e10'], white: ['#ece6d6', '#b9b09c'], purple: ['#6a2c8a', '#3e1752'] };
   var FONT = '"Bricolage Grotesque", "Arial Narrow", Arial, sans-serif', MONO = '"IBM Plex Mono", ui-monospace, monospace';
+  var PIXEL = '"Silkscreen", "IBM Plex Mono", ui-monospace, monospace';
+  var NEON = { teal: '#27e0d0', pink: '#ff3d8a', amber: '#ffc46b', blue: '#6aa8ff', night: '#070a1c', navy: '#141a3d' };
+  var PIXEL_SIZE = 1;             // screen pixels per drawn pixel: 1 is fully sharp, 2 to 4 gives the chunky retro look
 
   /* ---------- small helpers ---------- */
   function canvas(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
@@ -20,7 +25,7 @@
   }
   function std(color, o) {
     o = o || {};
-    var m = new T.MeshStandardMaterial({ color: color, roughness: o.rough === undefined ? 0.6 : o.rough, metalness: o.metal || 0 });
+    var m = new T.MeshStandardMaterial({ color: color, roughness: o.rough === undefined ? 0.6 : o.rough, metalness: o.metal || 0, flatShading: true });
     if (o.map) m.map = o.map;
     if (o.emissive) { m.emissive = new T.Color(o.emissive); m.emissiveIntensity = o.glow || 1; }
     if (o.opacity !== undefined) { m.transparent = true; m.opacity = o.opacity; }
@@ -33,7 +38,7 @@
     if (parent) parent.add(m);
     return m;
   }
-  var SPHERE = new T.SphereGeometry(1, 28, 20), CYL = new T.CylinderGeometry(1, 1, 1, 14), UP = new T.Vector3(0, 1, 0);
+  var SPHERE = new T.SphereGeometry(1, 9, 6), CYL = new T.CylinderGeometry(1, 1, 1, 7), UP = new T.Vector3(0, 1, 0);   // few faces on purpose
   /* Stretch a unit cylinder between two points. */
   function rod(m, a, b, r) {
     var d = new T.Vector3().subVectors(b, a), len = d.length() || 1e-3;
@@ -69,17 +74,18 @@
   function Stage(el, o) {
     var self = this;
     this.el = el; this.o = o; this.mapXY = o.map;
-    this.renderer = new T.WebGLRenderer({ antialias: true, alpha: false });
-    this.renderer.setPixelRatio(Math.min(2, root.devicePixelRatio || 1));
+    this.renderer = new T.WebGLRenderer({ antialias: PIXEL_SIZE === 1, alpha: false });      // smooth edges when sharp, hard ones when chunky
+    this.renderer.setPixelRatio(PIXEL_SIZE === 1 ? Math.min(2, root.devicePixelRatio || 1) : 1);
     this.renderer.outputEncoding = T.sRGBEncoding;
     this.renderer.toneMapping = T.ACESFilmicToneMapping; this.renderer.toneMappingExposure = 1.0;
-    this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = T.PCFSoftShadowMap;
+    this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = PIXEL_SIZE === 1 ? T.PCFSoftShadowMap : T.BasicShadowMap;
     this.canvas = this.renderer.domElement; this.canvas.className = 'scene-gl';
     el.appendChild(this.canvas);
     this.overlay = document.createElement('div'); this.overlay.className = 'scene-overlay'; el.appendChild(this.overlay);
     this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); this.svg.setAttribute('class', 'scene-trails'); this.overlay.appendChild(this.svg);
     this.scene = new T.Scene();
-    this.scene.background = new T.Color('#050505');
+    this.scene.background = new T.Color(NEON.night);
+    this.scene.fog = new T.Fog(NEON.night, 2600, 6500);
     this.table = new T.Group(); this.scene.add(this.table);
     this.camera = new T.PerspectiveCamera(38, 16 / 9, 10, 6000);
     this.labels = []; this.tickers = []; this.view = null;
@@ -94,10 +100,21 @@
     var r = this.el.getBoundingClientRect();
     if (!r.width) return;
     this.w = r.width; this.h = r.height;
-    this.renderer.setSize(r.width, r.height, false);
-    this.camera.aspect = r.width / r.height;
-    this.view = this.o.views[r.width < 560 ? 'narrow' : 'wide'];
-    this.camera.fov = this.view.fov; this.camera.updateProjectionMatrix();
+    this.pix = r.width < 720 ? 1 : PIXEL_SIZE;      // a phone is always drawn at full sharpness so the cards still read
+    this.renderer.setSize(Math.ceil(r.width / this.pix), Math.ceil(r.height / this.pix), false);
+    // panels may float over the right-hand side of the scene (web/page.html): centre the view in what is left
+    var host = this.el.closest ? this.el.closest('.stage') : null, over = host ? host.querySelector('.felt') : null, clear = 0;
+    if (over) {
+      var q = over.getBoundingClientRect();
+      if (q.width && q.left < r.right && q.right > r.left && q.top < r.bottom && q.bottom > r.top) clear = Math.max(0, Math.min(r.width * 0.6, r.right - q.left + 12));
+    }
+    this.clear = clear; this.el.style.setProperty('--clear-right', clear + 'px');
+    this.camera.aspect = (r.width + clear) / r.height;
+    if (clear) this.camera.setViewOffset(r.width + clear, r.height, clear, 0, r.width, r.height); else this.camera.clearViewOffset();
+    this.view = this.o.views[r.width - clear < 560 ? 'narrow' : 'wide'];
+    var made = r.width - clear < 560 ? 4 / 3 : 16 / 9, aspect = (r.width - clear) / r.height;      // the shape each view was framed for
+    this.camera.fov = aspect < made ? 2 * Math.atan(Math.tan(this.view.fov * Math.PI / 360) * made / aspect) * 180 / Math.PI : this.view.fov;
+    this.camera.updateProjectionMatrix();
   };
   /* A point on (or above) the felt, from table units. */
   Stage.prototype.map = function (x, y, h, out) {
@@ -194,7 +211,7 @@
   Bubble.prototype.place = function () {
     if (!this.on || !this.head) return;
     var st = this.stage, p = st.project(this.head()), w = this.el.offsetWidth, h = this.el.offsetHeight;
-    var bx = Math.max(w / 2 + 6, Math.min(st.w - w / 2 - 6, p.x + this.side * (w / 2 + 34))), by = Math.max(h / 2 + 6, p.y - 70 - h / 2);
+    var bx = Math.max(w / 2 + 6, Math.min(st.w - (st.clear || 0) - w / 2 - 6, p.x + this.side * (w / 2 + 34))), by = Math.max(h / 2 + 6, p.y - 70 - h / 2);
     this.el.style.transform = 'translate(' + bx.toFixed(1) + 'px,' + by.toFixed(1) + 'px) translate(-50%,-50%)';
     var tx = bx - this.side * w * 0.2, ty = by + h / 2;
     [[0.45, 9], [0.75, 6]].forEach(function (k, i) {
@@ -258,13 +275,11 @@
   function drawFace(c, card) {
     var g = c.getContext('2d'), col = card.suit === 'h' || card.suit === 'd' ? RED : INK, W = c.width, H = c.height;
     g.clearRect(0, 0, W, H);
-    g.fillStyle = '#fbfaf5'; roundRect(g, 2, 2, W - 4, H - 4, 22); g.fill();
-    g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 3; g.stroke();
+    g.fillStyle = '#fbfaf5'; roundRect(g, 2, 2, W - 4, H - 4, 14); g.fill();
+    g.strokeStyle = 'rgba(0,0,0,0.3)'; g.lineWidth = 6; g.stroke();
     g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = '700 64px ' + FONT; g.fillText(card.face, 40, 52);
-    g.font = '44px Arial, sans-serif'; g.fillText(PIPS[card.suit], 40, 104);
-    g.font = '150px Arial, sans-serif'; g.fillText(PIPS[card.suit], W / 2 + 6, H / 2 + 24);
-    g.save(); g.translate(W - 40, H - 52); g.rotate(Math.PI); g.font = '700 64px ' + FONT; g.fillText(card.face, 0, 0); g.restore();
+    g.font = '700 ' + (card.face.length > 1 ? 150 : 176) + 'px ' + FONT; g.fillText(card.face, W / 2, 116);
+    g.font = '170px Arial, sans-serif'; g.fillText(PIPS[card.suit], W / 2 + 4, 262);
   }
   function roundRect(g, x, y, w, h, r) {
     g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
@@ -284,11 +299,11 @@
     var c = canvas(256, 360), g = c.getContext('2d');
     g.fillStyle = '#f4f1e8'; roundRect(g, 2, 2, 252, 356, 22); g.fill();
     g.save(); roundRect(g, 18, 18, 220, 324, 14); g.clip();
-    g.fillStyle = '#7a1d2a'; g.fillRect(0, 0, 256, 360);
-    g.strokeStyle = '#97303e'; g.lineWidth = 12;
+    g.fillStyle = '#16205a'; g.fillRect(0, 0, 256, 360);
+    g.strokeStyle = '#27e0d0'; g.lineWidth = 10; g.globalAlpha = 0.55;
     for (var i = -400; i < 600; i += 32) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 360, 360); g.stroke(); }
     g.restore();
-    g.strokeStyle = 'rgba(244,241,232,0.6)'; g.lineWidth = 6; g.beginPath(); g.ellipse(128, 180, 48, 68, 0, 0, 6.2832); g.stroke();
+    g.globalAlpha = 1; g.strokeStyle = '#ff3d8a'; g.lineWidth = 10; g.beginPath(); g.ellipse(128, 180, 48, 68, 0, 0, 6.2832); g.stroke();
     return (backTex = texture(c));
   }
   var CARD_GEO = new T.BoxGeometry(CARD_W, 0.8, CARD_H);
@@ -321,7 +336,7 @@
     var faceM = std('#ffffff', { rough: 0.4, map: texture(top) });
     return (chipTex[color] = [std('#ffffff', { rough: 0.45, map: texture(side) }), faceM, faceM]);
   }
-  var CHIP_GEO = new T.CylinderGeometry(17, 17, 5, 32), CHIP_STEP = 5.2;
+  var CHIP_GEO = new T.CylinderGeometry(17, 17, 5, 10), CHIP_STEP = 5.2;
   function chipStack(colors) {
     var g = new T.Group();
     colors.forEach(function (col, i) {
@@ -383,15 +398,25 @@
   function Dealer(stage, tl, o) {
     this.stage = stage; this.tl = tl; this.o = o;
     var g = this.g = new T.Group(); g.position.set(0, 0, o.z); stage.scene.add(g);
-    var skin = std('#e6b68e', { rough: 0.7 }), shirt = std('#f2ede2', { rough: 0.8 }), vest = std('#1d1a20', { rough: 0.55 }), dark = std('#2b1d16', { rough: 0.8 });
+    var skin = std('#e6b68e', { rough: 0.7 }), shirt = std('#f2ede2', { rough: 0.8 }), suit = std('#3a2f8f', { rough: 0.6 }), dark = std('#2b1d16', { rough: 0.8 });
     var torso = this.torso = new T.Group(); g.add(torso);
-    var body = mesh(new T.CylinderGeometry(64, 54, 260, 32), shirt, torso); body.position.y = 30;
-    var v = mesh(new T.CylinderGeometry(66.5, 56.5, 230, 32, 1, true, 0.42, Math.PI * 2 - 0.84), vest, torso); v.position.y = 18; v.material.side = T.DoubleSide;
-    var sh = mesh(SPHERE, shirt, torso); sh.position.set(0, 158, 0); sh.scale.set(72, 26, 46);
-    [-1, 1].forEach(function (s) { var b = mesh(SPHERE, std('#d6b25e', { rough: 0.3, metal: 0.6 }), torso); b.position.set(0, 60 - (s + 1) * 14, 62); b.scale.setScalar(3); });
-    var neck = mesh(CYL, skin, torso); neck.position.set(0, 180, 0); neck.scale.set(15, 30, 15);
-    [-1, 1].forEach(function (s) { var t = mesh(new T.ConeGeometry(11, 22, 12), std('#b3202a', { rough: 0.5 }), torso); t.position.set(s * 11, 168, 44); t.rotation.z = s * Math.PI / 2; });
-    var knot = mesh(SPHERE, std('#8e1820', { rough: 0.5 }), torso); knot.position.set(0, 168, 46); knot.scale.setScalar(6);
+    // a suit jacket: broad at the shoulders, narrower at the waist
+    var chestG = new T.BoxGeometry(150, 172, 62), cp = chestG.attributes.position, i;
+    for (i = 0; i < cp.count; i++) if (cp.getY(i) < 0) { cp.setX(i, cp.getX(i) * 0.7); cp.setZ(i, cp.getZ(i) * 0.84); }
+    chestG.computeVertexNormals();
+    var chest = mesh(chestG, suit, torso); chest.position.y = 78;
+    var hips = mesh(new T.BoxGeometry(104, 190, 50), std('#1d1850', { rough: 0.7 }), torso); hips.position.y = -100;
+    [-1, 1].forEach(function (s) { var pad = mesh(SPHERE, suit, torso); pad.position.set(s * 68, 152, 4); pad.scale.set(24, 20, 26); });
+    // the shirt showing in the V of the jacket, with a collar, a bow tie and two buttons
+    var vee = new T.BufferGeometry();
+    vee.setAttribute('position', new T.Float32BufferAttribute([-26, 164, 32.2, 26, 164, 32.2, 0, 78, 29.6], 3)); vee.computeVertexNormals();
+    var front = std('#f2ede2', { rough: 0.8, side: T.DoubleSide });
+    mesh(vee, front, torso, false);
+    var collar = mesh(new T.CylinderGeometry(19, 23, 12, 6), shirt, torso); collar.position.set(0, 167, 2);
+    [58, 34].forEach(function (y) { var b = mesh(new T.BoxGeometry(6, 6, 3), std(NEON.teal, { rough: 0.4, emissive: NEON.teal, glow: 0.6 }), torso); b.position.set(0, y, 29 - (78 - y) * 0.03); });
+    var neck = mesh(CYL, skin, torso); neck.position.set(0, 182, 0); neck.scale.set(15, 30, 15);
+    [-1, 1].forEach(function (s) { var t = mesh(new T.ConeGeometry(10, 20, 5), std(NEON.pink, { rough: 0.5, emissive: NEON.pink, glow: 0.35 }), torso); t.position.set(s * 10, 160, 35); t.rotation.z = s * Math.PI / 2; });
+    var knot = mesh(SPHERE, std('#b01c5e', { rough: 0.5 }), torso); knot.position.set(0, 160, 36); knot.scale.setScalar(5);
     var head = this.head = new T.Group(); head.position.set(0, 228, 4); torso.add(head);
     var hd = mesh(SPHERE, skin, head); hd.scale.set(36, 42, 36);
     var hair = mesh(SPHERE, dark, head); hair.position.set(0, 12, -6); hair.scale.set(37.5, 37, 36);
@@ -414,13 +439,13 @@
     this.mouths.neutral.position.set(0, -14, 35); this.mouths.neutral.rotation.z = Math.PI * 1.25;
     this.mouths.smile.position.set(0, -18, 34); this.mouths.smile.rotation.z = Math.PI * 1.1;
     this.mouths.surprised.position.set(0, -23, 34);
-    var visorM = std('#2aa36a', { rough: 0.4, opacity: 0.85, side: T.DoubleSide }); visorM.userData.base = 0.85;
-    var band = mesh(new T.CylinderGeometry(39, 39, 9, 32, 1, true, -1.9, 3.8), visorM, head); band.position.y = 24;
-    var brim = mesh(new T.CircleGeometry(38, 32, 0, Math.PI), visorM, head); brim.rotation.x = -Math.PI / 2 + 0.35; brim.position.set(0, 21, 14); brim.scale.set(1, 0.9, 1);
+    var visorM = std(NEON.teal, { rough: 0.4, opacity: 0.85, side: T.DoubleSide, emissive: NEON.teal, glow: 0.3 }); visorM.userData.base = 0.85;
+    var band = mesh(new T.CylinderGeometry(39, 39, 9, 9, 1, true, -1.9, 3.8), visorM, head); band.position.y = 24;
+    var brim = mesh(new T.CircleGeometry(38, 6, 0, Math.PI), visorM, head); brim.rotation.x = -Math.PI / 2 + 0.35; brim.position.set(0, 21, 14); brim.scale.set(1, 0.9, 1);
     // arms: shoulder, elbow, hand, each hand reaching for a point on the table
     this.arms = [-1, 1].map(function (s) {
-      var a = { side: s, upper: mesh(CYL, shirt, torso), fore: mesh(CYL, shirt, torso), elbow: mesh(SPHERE, shirt, torso), hand: mesh(SPHERE, skin, torso) };
-      a.hand.scale.set(13, 10, 15); a.elbow.scale.setScalar(13);
+      var a = { side: s, upper: mesh(CYL, suit, torso), fore: mesh(CYL, suit, torso), elbow: mesh(SPHERE, suit, torso), hand: mesh(SPHERE, skin, torso) };
+      a.hand.scale.set(15, 12, 17); a.elbow.scale.setScalar(16);
       return a;
     });
     this.handL = new K.Point(o.restL); this.handR = new K.Point(o.restR);
@@ -446,9 +471,9 @@
     this.torso.rotation.x = Math.min(0.45, Math.max(0, (far - 130) / 380));
     this.g.updateMatrixWorld(true);
     this.arms.forEach(function (a, i) {
-      var sh = new T.Vector3(a.side * 66, 150, 6), local = self.torso.worldToLocal(targets[i].clone());
+      var sh = new T.Vector3(a.side * 70, 150, 6), local = self.torso.worldToLocal(targets[i].clone());
       var j = joint(sh, local, 108, 104, new T.Vector3(a.side * 0.8, -0.7, -0.5));
-      rod(a.upper, sh, j.mid, 13); rod(a.fore, j.mid, j.end, 12);
+      rod(a.upper, sh, j.mid, 17); rod(a.fore, j.mid, j.end, 14);
       a.elbow.position.copy(j.mid); a.hand.position.copy(j.end);
     });
     var tp = st.toPoint(t < this.lookUntil && this.lookAt ? this.lookAt : idleLook);
@@ -469,82 +494,106 @@
   };
 
   /* ---------- the room ---------- */
-  function panelTexture() {
-    var c = canvas(512, 512), g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 512);
-    gr.addColorStop(0, '#19161a'); gr.addColorStop(1, '#0b0a0c');
-    g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
-    g.strokeStyle = 'rgba(232,194,122,0.2)'; g.lineWidth = 4;
-    for (var x = 32; x < 512; x += 128) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 512); g.stroke(); }
-    g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 2;
-    for (x = 96; x < 512; x += 128) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 512); g.stroke(); }
-    return texture(c, [6, 1]);
+  function gridTexture() {                   // the floor: dark, with faint neon grid lines
+    var c = canvas(128, 128), g = c.getContext('2d');
+    g.fillStyle = '#080b20'; g.fillRect(0, 0, 128, 128);
+    g.strokeStyle = 'rgba(39,224,208,0.22)'; g.lineWidth = 2; g.strokeRect(0, 0, 128, 128);
+    return texture(c, [24, 24]);
   }
-  function carpetTexture() {
-    var c = canvas(256, 256), g = c.getContext('2d');
-    g.fillStyle = '#0b0a0b'; g.fillRect(0, 0, 256, 256);
-    g.strokeStyle = 'rgba(232,194,122,0.11)'; g.lineWidth = 3;
-    for (var i = 0; i < 4; i++) for (var j = 0; j < 4; j++) {
-      g.beginPath(); g.moveTo(i * 64 + 32, j * 64 + 8); g.lineTo(i * 64 + 56, j * 64 + 32); g.lineTo(i * 64 + 32, j * 64 + 56); g.lineTo(i * 64 + 8, j * 64 + 32); g.closePath(); g.stroke();
-    }
-    return texture(c, [14, 14]);
+  var signs = [];
+  function drawSign(n) {
+    var g = n.c.getContext('2d');
+    g.clearRect(0, 0, 1024, 256);
+    g.font = '700 ' + (n.size || 150) + 'px ' + PIXEL; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.shadowColor = n.glow; g.shadowBlur = 40; g.lineWidth = 6; g.strokeStyle = n.glow; g.fillStyle = n.fill;
+    for (var i = 0; i < 3; i++) { g.strokeText(n.text, 512, 128); }
+    g.shadowBlur = 12; g.fillText(n.text, 512, 128);
+    n.tex.needsUpdate = true;
   }
   function neonTexture(str, fill, glow, size) {
-    var c = canvas(1024, 256), g = c.getContext('2d');
-    g.font = '700 ' + (size || 150) + 'px ' + FONT; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.shadowColor = glow; g.shadowBlur = 40; g.lineWidth = 6; g.strokeStyle = glow; g.fillStyle = fill;
-    for (var i = 0; i < 3; i++) { g.strokeText(str, 512, 128); }
-    g.shadowBlur = 12; g.fillText(str, 512, 128);
-    return { c: c, tex: texture(c) };
+    var n = { c: canvas(1024, 256), text: str, fill: fill, glow: glow, size: Math.round((size || 150) * 0.74) };
+    n.tex = texture(n.c); drawSign(n); signs.push(n);
+    return n;
   }
-  /* The room around the table: o {wallZ, neon: [{text, fill, glow, x, y, w, size}], lamp: {x, y, z, aim: [x,y,z]}} */
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { signs.forEach(drawSign); });   // once the pixel font arrives
+  /* One tower's worth of windows: mostly dark, a few lit in neon colours. */
+  function windowTexture(rnd, cols, rows) {
+    var c = canvas(cols * 6, rows * 8), g = c.getContext('2d'), lit = [NEON.teal, NEON.pink, NEON.amber, NEON.blue, '#e9ecff'];
+    var shade = Math.floor(rnd() * 3);
+    g.fillStyle = ['#0a0e2a', '#0d1234', '#11173f'][shade]; g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = ['#141b4a', '#18205a', '#1d2666'][shade]; g.fillRect(0, 0, 1, c.height); g.fillRect(0, 0, c.width, 2);    // a lit edge and roof line
+    for (var i = 0; i < cols; i++) for (var j = 0; j < rows; j++) {
+      var r = rnd();
+      if (r < 0.07) { g.globalAlpha = 0.5 + 0.5 * rnd(); g.fillStyle = lit[Math.floor(rnd() * lit.length)]; g.fillRect(i * 6 + 2, j * 8 + 2, 2, 4); }
+      else if (r < 0.2) { g.globalAlpha = 1; g.fillStyle = '#18205a'; g.fillRect(i * 6 + 2, j * 8 + 2, 2, 4); }
+      g.globalAlpha = 1;
+    }
+    var t = texture(c); t.magFilter = T.NearestFilter;
+    return t;
+  }
+  function neonMaterial(color) { return new T.MeshBasicMaterial({ color: color, toneMapped: false }); }
+  /* The room around the table: a platform high above a city at night, in the rain.
+     o {wallZ: how far behind the table the signs hang, neon: [{text, fill, glow, x, y, w, size}], lamp: {x, y, z, aim: [x,y,z]}} */
   function buildRoom(stage, o) {
-    var S = stage.scene, wallM = std('#ffffff', { rough: 0.85, map: panelTexture() });
-    var wall = mesh(new T.PlaneGeometry(4200, 1500), wallM, S); wall.position.set(0, 560, o.wallZ); wall.receiveShadow = true; wall.castShadow = false;
-    var dado = mesh(new T.BoxGeometry(4200, 30, 16), std('#b8924a', { rough: 0.3, metal: 0.8 }), S); dado.position.set(0, 220, o.wallZ + 8);
-    var lower = mesh(new T.PlaneGeometry(4200, 400), std('#060506', { rough: 0.9 }), S); lower.position.set(0, 20, o.wallZ + 2);
-    var floor = mesh(new T.PlaneGeometry(5000, 5000), std('#ffffff', { rough: 0.95, map: carpetTexture() }), S); floor.rotation.x = -Math.PI / 2; floor.position.y = -190; floor.castShadow = false;
-    [-1, 1].forEach(function (s) {
-      var side = mesh(new T.PlaneGeometry(3000, 1500), wallM, S); side.rotation.y = -s * Math.PI / 2; side.position.set(s * 1500, 560, o.wallZ + 1500);
+    var S = stage.scene, seed = o.seed || 7, rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }, i;
+    var floor = mesh(new T.CircleGeometry(1500, 20), std('#ffffff', { rough: 0.9, map: gridTexture() }), S); floor.rotation.x = -Math.PI / 2; floor.position.y = -190; floor.castShadow = false;
+    var rim = new T.Mesh(new T.TorusGeometry(1500, 5, 4, 20), neonMaterial(NEON.teal)); rim.rotation.x = Math.PI / 2; rim.position.y = -188; S.add(rim);
+    // the skyline: towers on every side the camera can turn to, their windows painted on
+    var inner = Math.abs(o.wallZ) + 900;
+    for (i = 0; i < 30; i++) {
+      var ang = (88 + 184 * (i + rnd() * 0.8) / 30) * Math.PI / 180, dist = inner + 300 + rnd() * 2400;      // measured from straight ahead of the camera
+      var w = 240 + rnd() * 300, h = 1000 + rnd() * 2600, cols = Math.round(w / 26), rows = Math.round(h / 36);
+      var tower = new T.Mesh(new T.BoxGeometry(w, h, w), new T.MeshBasicMaterial({ map: windowTexture(rnd, cols, rows), toneMapped: false }));
+      tower.position.set(Math.sin(ang) * dist, h / 2 - 1100 + rnd() * 500, Math.cos(ang) * dist); tower.rotation.y = rnd() * 0.5;
+      S.add(tower);
+    }
+    // tall neon tubes at the edge of the platform, like the frame of a great window
+    [[-0.5, NEON.teal, 1700], [0.42, NEON.teal, 1700], [-1.25, NEON.pink, 900], [1.2, NEON.pink, 1100], [-2.0, NEON.teal, 1300], [2.05, NEON.teal, 1300]].forEach(function (q) {
+      var bar = new T.Mesh(new T.BoxGeometry(7, q[2], 7), neonMaterial(q[1]));
+      bar.position.set(-Math.sin(q[0]) * 1490, q[2] / 2 - 190, -Math.cos(q[0]) * 1490); S.add(bar);
     });
-    // neon signs: glowing letters on the wall, with a soft light spilling from each
+    // neon signs hanging behind the table, with a soft light spilling from each
     stage.neon = (o.neon || []).map(function (n) {
       var nt = neonTexture(n.text, n.fill, n.glow, n.size), m = new T.MeshBasicMaterial({ map: nt.tex, transparent: true, depthWrite: false, toneMapped: false });
       var p = new T.Mesh(new T.PlaneGeometry(n.w, n.w / 4), m); p.position.set(n.x, n.y, o.wallZ + 4); S.add(p);
       var l = new T.PointLight(n.glow, 0.55, 700); l.position.set(n.x, n.y, o.wallZ + 120); S.add(l);
       return { m: m, l: l, phase: n.phase || 0 };
     });
-    // soft out-of-focus lights along the wall
-    var seed = o.seed || 7, rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-    var colors = ['#ffcf7a', '#ff8fb0', '#ffe0a8', '#9fd8ff'], bokeh = [];
-    for (var i = 0; i < 22; i++) {
-      var b = glowSprite(colors[i % 4], 40 + rnd() * 90, 0.25); b.position.set(-1500 + rnd() * 3000, 280 + rnd() * 700, o.wallZ + 30); S.add(b);
-      bokeh.push({ s: b, speed: 4 + rnd() * 6, phase: rnd() * 8 });
+    // rain: short streaks falling past the towers
+    var DROPS = 320, rp = new Float32Array(DROPS * 6), drops = [];
+    for (i = 0; i < DROPS; i++) {
+      var ra = (60 + 240 * rnd()) * Math.PI / 180, rd = 700 + rnd() * 2400;
+      drops.push({ x: Math.sin(ra) * rd, z: Math.cos(ra) * rd, y: -200 + rnd() * 2200, len: 40 + rnd() * 70, v: 1.0 + rnd() * 0.7 });
     }
-    // the lamp over the table
-    var L = o.lamp, lampG = new T.Group(); lampG.position.set(L.x, L.y, L.z); S.add(lampG);
-    var cord = mesh(CYL, std('#111', { rough: 0.5 }), lampG, false); cord.scale.set(1.5, 900, 1.5); cord.position.y = 470;
-    var shadeM = std('#141414', { rough: 0.3, metal: 0.4, side: T.DoubleSide });
-    var shade = mesh(new T.CylinderGeometry(34, 78, 50, 32, 1, true), shadeM, lampG, false); shade.position.y = 6;
-    var rim = mesh(new T.TorusGeometry(78, 2.5, 8, 40), std('#d6b25e', { rough: 0.3, metal: 0.8 }), lampG, false); rim.rotation.x = Math.PI / 2; rim.position.y = -19;
-    var bulb = mesh(SPHERE, new T.MeshBasicMaterial({ color: '#fff6dc', toneMapped: false }), lampG, false); bulb.scale.setScalar(16); bulb.position.y = -12;
-    var halo = glowSprite('#fff1c4', 220, 0.55); halo.position.y = -20; lampG.add(halo);
-    var spot = new T.SpotLight('#fff1d6', 1.05, 0, 0.78, 0.6); spot.position.set(L.x, L.y - 18, L.z);
+    var rg = new T.BufferGeometry(); rg.setAttribute('position', new T.BufferAttribute(rp, 3));
+    var rain = new T.LineSegments(rg, new T.LineBasicMaterial({ color: '#8fdcff', transparent: true, opacity: 0.4, depthWrite: false, toneMapped: false }));
+    rain.frustumCulled = false; S.add(rain);
+    function layRain() {
+      for (var k = 0; k < DROPS; k++) {
+        var d = drops[k];
+        rp[6 * k] = d.x; rp[6 * k + 1] = d.y; rp[6 * k + 2] = d.z; rp[6 * k + 3] = d.x + d.len * 0.12; rp[6 * k + 4] = d.y - d.len; rp[6 * k + 5] = d.z;
+      }
+      rg.attributes.position.needsUpdate = true;
+    }
+    layRain();
+    // light: a cool lamp from above for the shadows, teal from one side and pink from the other
+    var L = o.lamp, spot = new T.SpotLight('#dfe8ff', 1.0, 0, 0.78, 0.6); spot.position.set(L.x, L.y - 18, L.z);
     spot.target.position.fromArray(L.aim); S.add(spot.target);
-    spot.castShadow = true; spot.shadow.mapSize.set(2048, 2048); spot.shadow.camera.near = 80; spot.shadow.camera.far = 1600; spot.shadow.bias = -0.0004; spot.shadow.radius = 4;
+    spot.castShadow = true; spot.shadow.mapSize.set(2048, 2048); spot.shadow.camera.near = 80; spot.shadow.camera.far = 1600; spot.shadow.bias = -0.002;
     S.add(spot);
-    var coneM = new T.MeshBasicMaterial({ color: '#ffe9b0', transparent: true, opacity: 0.03, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide });
-    var hgt = L.y - 30, cone = new T.Mesh(new T.ConeGeometry(Math.tan(0.6) * hgt, hgt, 40, 1, true), coneM);
-    cone.position.set(L.x, L.y - 20 - hgt / 2, L.z); S.add(cone);
-    S.add(new T.HemisphereLight('#ffeedd', '#111111', 0.5));
-    var fill = new T.DirectionalLight('#ffd9c0', 0.38); fill.position.set(-600, 700, 900); S.add(fill);
-    var back = new T.DirectionalLight('#9fc4ff', 0.22); back.position.set(500, 400, -800); S.add(back);
-    stage.tickers.push(function (t) {
+    S.add(new T.HemisphereLight('#9aa8ff', '#150a2a', 0.6));
+    var teal = new T.PointLight(NEON.teal, 0.7, 2600); teal.position.set(760, 260, 520); S.add(teal);
+    var pink = new T.PointLight(NEON.pink, 0.6, 2600); pink.position.set(-800, 320, 360); S.add(pink);
+    var back = new T.DirectionalLight('#7f9cff', 0.3); back.position.set(500, 400, -800); S.add(back);
+    stage.tickers.push(function (t, dt) {
       stage.neon.forEach(function (n) {           // the neon flickers now and then
         var k = ((t / 1000 + n.phase) % 9) / 9, on = k > 0.18 && k < 0.2 ? 0.35 : k > 0.2 && k < 0.22 ? 0.8 : k > 0.62 && k < 0.63 ? 0.55 : 1;
         if (stage.reduce) on = 1;
         n.m.opacity = on; n.l.intensity = 0.55 * on;
       });
-      if (!stage.reduce) bokeh.forEach(function (b) { b.s.material.opacity = 0.12 + 0.18 * (0.5 + 0.5 * Math.sin((t / 1000 + b.phase) * 2 * Math.PI / b.speed)); });
+      if (stage.reduce) return;
+      for (var k = 0; k < DROPS; k++) { var d = drops[k]; d.y -= d.v * dt; if (d.y < -260) d.y += 2200; }
+      layRain();
     });
   }
 
@@ -559,16 +608,16 @@
   function woods() {
     if (woodM) return;
     var c = canvas(256, 64), g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 64);
-    gr.addColorStop(0, '#26221f'); gr.addColorStop(1, '#0c0b0a'); g.fillStyle = gr; g.fillRect(0, 0, 256, 64);
-    g.strokeStyle = 'rgba(255,240,220,0.05)'; g.lineWidth = 2;
+    gr.addColorStop(0, '#1b2358'); gr.addColorStop(1, '#0a0e2a'); g.fillStyle = gr; g.fillRect(0, 0, 256, 64);
+    g.strokeStyle = 'rgba(39,224,208,0.07)'; g.lineWidth = 2;
     for (var i = 0; i < 12; i++) { g.beginPath(); g.moveTo(0, 5 * i + 3); g.bezierCurveTo(80, 5 * i - 4, 170, 5 * i + 9, 256, 5 * i + 2); g.stroke(); }
     woodM = std('#ffffff', { rough: 0.25, map: texture(c, [8, 1]) });
-    railM = std('#161417', { rough: 0.32, metal: 0.05 });
+    railM = std('#232c6e', { rough: 0.45, metal: 0.05 });
   }
   /* The felt is drawn on a canvas seen from above; draw(g, px) paints in table-plane units scaled by px. */
   function feltTexture(size, rx, rz, draw) {
     var c = canvas(2048, 2048), g = c.getContext('2d'), gr = g.createRadialGradient(1024, 1024, 100, 1024, 1024, 1100);
-    gr.addColorStop(0, '#34383d'); gr.addColorStop(0.65, '#202326'); gr.addColorStop(1, '#101113');
+    gr.addColorStop(0, '#27307a'); gr.addColorStop(0.65, '#171d52'); gr.addColorStop(1, '#0b0f2e');
     g.fillStyle = gr; g.fillRect(0, 0, 2048, 2048);
     g.globalAlpha = 0.05;                                   // a little cloth grain
     for (var i = 0; i < 9000; i++) { g.fillStyle = i % 2 ? '#000' : '#fff'; g.fillRect(Math.random() * 2048, Math.random() * 2048, 2, 2); }
@@ -580,24 +629,28 @@
   function blackjackTable(stage, R, draw) {
     woods();
     var g = stage.table;
-    var felt = mesh(new T.CircleGeometry(R, 96, Math.PI, Math.PI).rotateX(-Math.PI / 2), std('#ffffff', { rough: 0.95, map: feltTexture(2048, R, R, draw) }), g);
+    var felt = mesh(new T.CircleGeometry(R, 24, Math.PI, Math.PI).rotateX(-Math.PI / 2), std('#ffffff', { rough: 0.95, map: feltTexture(2048, R, R, draw) }), g);
     felt.castShadow = false;
-    var rail = mesh(new T.TubeGeometry(ring(R + 14, R + 14, 0, Math.PI, 6), 96, 20, 16, false), railM, g);
+    var rail = mesh(new T.TubeGeometry(ring(R + 14, R + 14, 0, Math.PI, 6), 24, 20, 6, false), railM, g);
     var back = mesh(new T.BoxGeometry(2 * R + 60, 18, 26), woodM, g); back.position.set(0, -2, -10);
-    var body = mesh(new T.CylinderGeometry(R + 30, R - 10, 150, 64, 1, false, -Math.PI / 2, Math.PI), woodM, g); body.position.y = -84;
+    var body = mesh(new T.CylinderGeometry(R + 30, R - 10, 150, 24, 1, false, -Math.PI / 2, Math.PI), woodM, g); body.position.y = -84;
     var lip = mesh(new T.BoxGeometry(2 * R + 60, 150, 10), woodM, g); lip.position.set(0, -84, -20);
     [-1, 1].forEach(function (s) { var cap = mesh(SPHERE, railM, g); cap.position.set(s * (R + 14), 6, 0); cap.scale.setScalar(20); });
+    g.add(new T.Mesh(new T.TubeGeometry(ring(R + 33, R + 33, 0, Math.PI, -11), 24, 3, 4, false), neonMaterial(NEON.teal)));
+    g.add(new T.Mesh(new T.TubeGeometry(ring(R - 8, R - 8, 0, Math.PI, -158), 24, 3, 4, false), neonMaterial(NEON.pink)));
     return felt;
   }
   /* An oval poker table, rx by rz. */
   function pokerTable(stage, rx, rz, draw) {
     woods();
     var g = stage.table;
-    var felt = mesh(new T.CircleGeometry(1, 128).rotateX(-Math.PI / 2), std('#ffffff', { rough: 0.95, map: feltTexture(2048, rx, rz, draw) }), g);
+    var felt = mesh(new T.CircleGeometry(1, 36).rotateX(-Math.PI / 2), std('#ffffff', { rough: 0.95, map: feltTexture(2048, rx, rz, draw) }), g);
     felt.scale.set(rx, 1, rz); felt.castShadow = false;
-    var rail = mesh(new T.TubeGeometry(ring(rx + 18, rz + 18, 0, Math.PI * 2, 6), 160, 22, 16, true), railM, g);
-    var body = mesh(new T.CylinderGeometry(1, 0.94, 150, 64), woodM, g); body.scale.set(rx + 34, 1, rz + 34); body.position.y = -84;
-    var foot = mesh(new T.CylinderGeometry(120, 160, 40, 32), woodM, g); foot.position.y = -170;
+    var rail = mesh(new T.TubeGeometry(ring(rx + 18, rz + 18, 0, Math.PI * 2, 6), 36, 22, 6, true), railM, g);
+    var body = mesh(new T.CylinderGeometry(1, 0.94, 150, 36), woodM, g); body.scale.set(rx + 34, 1, rz + 34); body.position.y = -84;
+    var foot = mesh(new T.CylinderGeometry(120, 160, 40, 10), woodM, g); foot.position.y = -170;
+    g.add(new T.Mesh(new T.TubeGeometry(ring(rx + 37, rz + 37, 0, Math.PI * 2, -11), 36, 3, 4, true), neonMaterial(NEON.teal)));
+    g.add(new T.Mesh(new T.TubeGeometry(ring((rx + 34) * 0.945, (rz + 34) * 0.945, 0, Math.PI * 2, -158), 36, 3, 4, true), neonMaterial(NEON.pink)));
     return felt;
   }
 
@@ -615,25 +668,25 @@
   }
   function shoe(stage, x, z) {
     var g = new T.Group(); g.position.set(x, 0, z); g.rotation.y = -0.35; stage.table.add(g);
-    var b = mesh(new T.BoxGeometry(80, 44, 100), std('#161416', { rough: 0.3 }), g); b.position.y = 22;
+    var b = mesh(new T.BoxGeometry(80, 44, 100), std('#10153a', { rough: 0.4 }), g); b.position.y = 22;
     var top = mesh(new T.BoxGeometry(66, 2, 86), std('#f4f1e8', { rough: 0.6, map: backTexture() }), g); top.position.y = 45; top.rotation.x = 0.12;
-    var lipM = mesh(new T.BoxGeometry(82, 8, 10), std('#d6b25e', { rough: 0.3, metal: 0.7 }), g); lipM.position.set(0, 10, 52);
+    var lipM = mesh(new T.BoxGeometry(82, 8, 10), std(NEON.teal, { rough: 0.4, emissive: NEON.teal, glow: 0.5 }), g); lipM.position.set(0, 10, 52);
     return g;
   }
-  function wineGlass(stage, x, z) {
+  function wineGlass(stage, x, z) {             // a mug: a wine glass does not survive big pixels
     var g = new T.Group(); g.position.set(x, 0, z); stage.table.add(g);
-    var glass = new T.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.05, transmission: 0.9, transparent: true, opacity: 0.35, thickness: 2 });
-    var pts = [[0, 0], [24, 0], [24, 2], [3, 6], [3, 60], [20, 74], [27, 100], [24, 126], [23, 127]].map(function (p) { return new T.Vector2(p[0], p[1]); });
-    mesh(new T.LatheGeometry(pts, 32), glass, g, false);
-    var wine = mesh(new T.LatheGeometry([[0, 66], [16, 70], [24, 88], [25, 98], [0, 98]].map(function (p) { return new T.Vector2(p[0], p[1]); }), 32), std('#7a0d1e', { rough: 0.2, opacity: 0.92 }), g, false);
-    wine.castShadow = true;
+    var m = std('#7a4bd6', { rough: 0.5, side: T.DoubleSide });
+    var cup = mesh(new T.CylinderGeometry(30, 26, 58, 9, 1, true), m, g); cup.position.y = 29;
+    var base = mesh(new T.CylinderGeometry(26, 26, 4, 9), m, g); base.position.y = 2;
+    var handle = mesh(new T.TorusGeometry(15, 5, 4, 7), std(NEON.pink, { rough: 0.5 }), g); handle.position.set(34, 30, 0);
+    var drink = mesh(new T.CircleGeometry(28, 9).rotateX(-Math.PI / 2), std('#241238', { rough: 0.3 }), g, false); drink.position.y = 50;
     return g;
   }
   function snack(stage, x, z) {
     var g = new T.Group(); g.position.set(x, 0, z); stage.table.add(g);
-    var plate = mesh(new T.CylinderGeometry(52, 40, 6, 40), std('#f6f2e8', { rough: 0.3 }), g); plate.position.y = 3;
+    var plate = mesh(new T.CylinderGeometry(52, 40, 6, 10), std('#f6f2e8', { rough: 0.3 }), g); plate.position.y = 3;
     var curve = new T.CatmullRomCurve3([new T.Vector3(-40, 12, 6), new T.Vector3(-14, 20, -8), new T.Vector3(16, 20, -8), new T.Vector3(40, 14, 8)]);
-    var banana = mesh(new T.TubeGeometry(curve, 30, 9, 12, false), std('#f2cf3b', { rough: 0.5 }), g);
+    var banana = mesh(new T.TubeGeometry(curve, 7, 9, 5, false), std('#f2cf3b', { rough: 0.5 }), g);
     [[-40, 12, 6], [40, 14, 8]].forEach(function (p) { var t = mesh(SPHERE, std('#4a3514', { rough: 0.7 }), g); t.position.fromArray(p); t.scale.setScalar(5); });
     return g;
   }
@@ -650,9 +703,62 @@
     return g;
   }
 
+  /* ---------- the read-out over the scene ---------- */
+  /* A panel in one corner that follows the fly's brain: how many of the learning
+     circuit's cells are active right now, and a raster with one row per cell that scrolls with
+     time. The model works with activity levels, not spikes, so a cell that stays active draws a
+     bar. The page feeds it through Scene3D.pulse(info):
+       info {state: what is happening, active: cells active now, total: cells in the circuit,
+             rows: activity 0..1 of the cells in the raster, kinds: 0 smell channel, 1 Kenyon cell,
+             2 output neuron, 3 dopamine, hold: milliseconds it lasts (forever if absent)} */
+  var huds = [], RASTER_COLS = 96, COLUMN_MS = 110, KIND_COLORS = ['39,224,208', '207,224,255', '255,196,107', '255,61,138'];
+  function Hud(stage, o) {
+    o = o || {};
+    var self = this;
+    var el = this.el = document.createElement('div'); el.className = 'hud hud-' + (o.corner || 'bl');
+    el.innerHTML = '<div class="hud-head"><span class="hud-name">Neural live</span><span class="hud-state"></span></div>' +
+      '<div class="hud-body"><div class="hud-count"><b class="hud-num">0</b><span class="hud-unit">cells active</span></div><canvas class="hud-raster" aria-hidden="true"></canvas></div>' +
+      '<div class="hud-foot"></div>';
+    stage.overlay.appendChild(el);
+    this.num = el.querySelector('.hud-num'); this.state = el.querySelector('.hud-state'); this.foot = el.querySelector('.hud-foot');
+    this.raster = el.querySelector('.hud-raster'); this.cur = null; this.kinds = null; this.until = Infinity; this.last = 0;
+    stage.tickers.push(function (t) { self.tick(t); });
+    huds.push(this);
+  }
+  /* What the circuit is doing from now on (until the next push, or for info.hold milliseconds). */
+  Hud.prototype.push = function (info) {
+    var n = info.rows.length, c = this.raster;
+    if (!this.cur || this.cur.length !== n) {
+      this.cur = new Float32Array(n); c.width = RASTER_COLS; c.height = n;
+      var g = c.getContext('2d'); g.fillStyle = '#0a0e24'; g.fillRect(0, 0, c.width, n);
+      this.foot.textContent = info.total + ' neurons · ' + n + '-cell activity raster';
+    }
+    this.cur.set(info.rows); this.kinds = info.kinds;
+    this.until = info.hold ? now() + info.hold : Infinity;
+    this.num.textContent = String(info.active);
+    this.state.textContent = info.state || '';
+  };
+  /* The raster scrolls with time: a new column every COLUMN_MS shows which cells are active now. */
+  Hud.prototype.tick = function (t) {
+    if (!this.cur) return;
+    var cols = Math.min(RASTER_COLS, Math.floor((t - this.last) / COLUMN_MS));     // several at once if frames were slow
+    if (cols < 1) return;
+    this.last = t;
+    if (now() > this.until) { this.cur.fill(0); this.num.textContent = '0'; this.until = Infinity; }
+    var c = this.raster, g = c.getContext('2d'), n = this.cur.length, x = RASTER_COLS - cols;
+    g.globalAlpha = 1; g.drawImage(c, -cols, 0);
+    g.fillStyle = '#0a0e24'; g.fillRect(x, 0, cols, n);
+    for (var r = 0; r < n; r++) {
+      var v = this.cur[r];
+      if (v > 0.05) { g.fillStyle = 'rgba(' + KIND_COLORS[this.kinds[r]] + ',' + (0.35 + 0.65 * Math.min(1, v)).toFixed(2) + ')'; g.fillRect(x, r, cols, 1); }
+    }
+  };
+  function pulse(info) { for (var i = 0; i < huds.length; i++) huds[i].push(info); }
+
   root.Scene3D = {
     THREE: T, Stage: Stage, Label: Label, Bubble: Bubble, Trail: Trail, Piece: Piece, Dealer: Dealer,
     card: card, setFace: setFace, flip: flip, chip: chip, stack: stack, sparkle: sparkle, ripple: ripple, glowSprite: glowSprite,
+    Hud: Hud, pulse: pulse, NEON: NEON, PIXEL: PIXEL,
     buildRoom: buildRoom, blackjackTable: blackjackTable, pokerTable: pokerTable, chipTray: chipTray, shoe: shoe, wineGlass: wineGlass, snack: snack, gnat: gnat,
     std: std, mesh: mesh, rod: rod, joint: joint, SPHERE: SPHERE, CYL: CYL, canvas: canvas, texture: texture, FONT: FONT, MONO: MONO
   };
