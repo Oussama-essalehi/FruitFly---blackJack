@@ -7,7 +7,8 @@
  *   - how many synapses the reward (PAM) and punishment (PPL1) dopamine neurons make on each MBON
  *
  * WHAT IS ENGINEERED (my choices, a fly has no sense for playing cards)
- *   - how a blackjack situation is turned into a "smell" (which glomeruli light up)
+ *   - how a game situation is turned into a "smell" (which glomeruli light up): blackjack's code
+ *     is below, poker's is in src/poker.js; any game can bring its own through options.code
  *   - the neuron model: firing rates instead of spikes, and a "keep the top few percent" rule
  *     standing in for the APL neuron that keeps Kenyon cell activity sparse
  *   - the learning rule's exact form and its numbers (learning rate, choice noise)
@@ -41,7 +42,8 @@
     maxEfficacy: 2.0,      // a synapse can grow to this many times its measured strength
     valenceGain: 3.0,      // one bet won or lost = 1/valenceGain of the MBON population's balance
     wiring: 'real',        // 'real' | 'shuffled-pn-kc' | 'shuffled-kc-mbon'
-    dopamine: 'real'       // 'real' | 'blocked' | 'swapped' | 'shuffled'
+    dopamine: 'real',      // 'real' | 'blocked' | 'swapped' | 'shuffled'
+    code: null             // how situations become smells; null = blackjack (see BLACKJACK below)
   };
 
   function mulberry32(a) {
@@ -68,8 +70,8 @@
 
   /* Deal the glomeruli (already sorted strongest first) into feature groups so that every
    * group gets a fair mix of strong and weak ones. */
-  function assignGlomeruli(nGlom, sizes) {
-    var names = ['total', 'dealer', 'soft', 'hit', 'stand'], groups = {}, left = {}, sum = 0, n;
+  function assignGlomeruli(nGlom, sizes, names) {
+    var groups = {}, left = {}, sum = 0, n;
     for (n = 0; n < names.length; n++) { groups[names[n]] = []; left[names[n]] = sizes[names[n]]; sum += sizes[names[n]]; }
     if (sum !== nGlom) throw new Error('group sizes must add up to ' + nGlom + ' glomeruli, got ' + sum);
     for (var g = 0; g < nGlom; g++) {
@@ -83,8 +85,31 @@
     return groups;
   }
 
+  /* A smell code: how many smells there are, how many choices each situation offers, which
+   * feature groups share out the glomeruli, and which glomeruli a smell lights up. */
+  var BLACKJACK = {
+    name: 'blackjack', nOdors: N_ODORS, nActions: 2,
+    groupNames: ['total', 'dealer', 'soft', 'hit', 'stand'],
+    pattern: function (brain, odor, out) {
+      var o = brain.options, g = brain.groups, gain = o.groupGain;
+      var action = odor % 2, st = (odor - action) / 2;
+      var dealer = st % N_DEALER, soft = ((st - dealer) / N_DEALER) % 2, total = (st - dealer - soft * N_DEALER) / (2 * N_DEALER);
+      out.fill(0);
+      bump(out, g.total, total / (N_TOTAL - 1), o.totalWidth, gain.total);
+      bump(out, g.dealer, dealer / (N_DEALER - 1), o.dealerWidth, gain.dealer);
+      var i;
+      if (soft) for (i = 0; i < g.soft.length; i++) out[g.soft[i]] = gain.soft;
+      var act = action === 0 ? g.hit : g.stand;
+      for (i = 0; i < act.length; i++) out[act[i]] = gain.action;
+      return out;
+    }
+  };
+
   function Brain(circuit, options) {
+    var code = (options && options.code) || BLACKJACK;
     var o = this.options = merge(DEFAULTS, options || {});
+    this.code = code;
+    var N_ODORS = this.nOdors = code.nOdors;
     var rng = this.rng = mulberry32(o.seed);
     var wiringRng = mulberry32(o.seed * 7919 + 13);
     this.circuit = circuit;
@@ -125,23 +150,34 @@
     }
 
     // ---- card -> smell code
-    this.groups = assignGlomeruli(nG, o.groupSizes);
+    this.groups = assignGlomeruli(nG, code === BLACKJACK ? o.groupSizes : code.groupSizes, code.groupNames);
     this.side = Uint8Array.from(circuit.kc.side.map(function (s) { return s === 'L' ? 0 : 1; }));
 
-    // ---- precompute the Kenyon cell pattern of every smell
-    this.odorStart = new Int32Array(N_ODORS + 1);
-    var idx = [], val = [], glom = new Float32Array(nG), drive = new Float32Array(nK);
-    for (var od = 0; od < N_ODORS; od++) {
-      this.glomerulusPattern(od, glom);
-      drive.fill(0);
-      for (e = 0; e < pnKc.length; e += 3) drive[pnKc[e + 1]] += pnKc[e + 2] * glom[circuit.pn.glom[pnKc[e]]];
-      var active = sparsify(drive, this.side, o.sparsity), norm = 0;
-      for (i = 0; i < active.length; i++) norm += active[i][1] * active[i][1];
-      norm = Math.sqrt(norm) || 1;
-      for (i = 0; i < active.length; i++) { idx.push(active[i][0]); val.push(active[i][1] / norm); }
-      this.odorStart[od + 1] = idx.length;
+    // ---- precompute the Kenyon cell pattern of every smell (shared by flies wired alike)
+    var od, cache = null, key = code.name + '|' + o.sparsity + '|' +
+      JSON.stringify(code === BLACKJACK ? [o.groupSizes, o.groupGain, o.totalWidth, o.dealerWidth] : code.groupSizes);
+    if (o.wiring === 'real') {
+      if (!circuit.__odorCache) Object.defineProperty(circuit, '__odorCache', { value: {} });
+      cache = circuit.__odorCache;
     }
-    this.odorKc = Int32Array.from(idx); this.odorX = Float32Array.from(val);
+    if (cache && cache[key]) {
+      this.odorStart = cache[key].start; this.odorKc = cache[key].kc; this.odorX = cache[key].x;
+    } else {
+      this.odorStart = new Int32Array(N_ODORS + 1);
+      var idx = [], val = [], glom = new Float32Array(nG), drive = new Float32Array(nK);
+      for (od = 0; od < N_ODORS; od++) {
+        this.glomerulusPattern(od, glom);
+        drive.fill(0);
+        for (e = 0; e < pnKc.length; e += 3) drive[pnKc[e + 1]] += pnKc[e + 2] * glom[circuit.pn.glom[pnKc[e]]];
+        var active = sparsify(drive, this.side, o.sparsity), norm = 0;
+        for (i = 0; i < active.length; i++) norm += active[i][1] * active[i][1];
+        norm = Math.sqrt(norm) || 1;
+        for (i = 0; i < active.length; i++) { idx.push(active[i][0]); val.push(active[i][1] / norm); }
+        this.odorStart[od + 1] = idx.length;
+      }
+      this.odorKc = Int32Array.from(idx); this.odorX = Float32Array.from(val);
+      if (cache) cache[key] = { start: this.odorStart, kc: this.odorKc, x: this.odorX };
+    }
 
     // ---- balance approach against avoid for the untrained fly (average over all smells)
     this.mbon = new Float32Array(nM);
@@ -202,20 +238,8 @@
     return out;
   }
 
-  /* The engineered part: which glomeruli a (hand, action) pair lights up, 0..1 each. */
-  Brain.prototype.glomerulusPattern = function (odor, out) {
-    var o = this.options, g = this.groups, gain = o.groupGain;
-    var action = odor % 2, st = (odor - action) / 2;
-    var dealer = st % N_DEALER, soft = ((st - dealer) / N_DEALER) % 2, total = (st - dealer - soft * N_DEALER) / (2 * N_DEALER);
-    out.fill(0);
-    bump(out, g.total, total / (N_TOTAL - 1), o.totalWidth, gain.total);
-    bump(out, g.dealer, dealer / (N_DEALER - 1), o.dealerWidth, gain.dealer);
-    var i;
-    if (soft) for (i = 0; i < g.soft.length; i++) out[g.soft[i]] = gain.soft;
-    var act = action === 0 ? g.hit : g.stand;
-    for (i = 0; i < act.length; i++) out[act[i]] = gain.action;
-    return out;
-  };
+  /* The engineered part: which glomeruli a (situation, choice) pair lights up, 0..1 each. */
+  Brain.prototype.glomerulusPattern = function (odor, out) { return this.code.pattern(this, odor, out); };
   /* A value between 0 and 1 becomes a bump of activity along a row of glomeruli, so that
    * neighbouring values (15 and 16, say) smell similar. */
   function bump(out, glomeruli, position, width, gain) {
@@ -257,6 +281,23 @@
     var p = 1 / (1 + Math.exp(-(vHit - vStand) / this.options.temperature));
     var hit = this.rng() < p;
     return { hit: hit, pHit: p, vHit: vHit, vStand: vStand, odor: s * 2 + (hit ? 0 : 1) };
+  };
+
+  /* Any game: offered the choices `actions` (indices below code.nActions) in situation `state`,
+   * the fly smells each one and usually goes for the one that smells best. */
+  Brain.prototype.choose = function (state, actions) {
+    var p = this.preferences(state, actions), r = this.rng(), pick = actions[actions.length - 1];
+    for (var i = 0; i < actions.length; i++) { r -= p[actions[i]]; if (r < 0) { pick = actions[i]; break; } }
+    return { action: pick, values: p.values, p: p, odor: state * this.code.nActions + pick };
+  };
+  /* How likely each choice is right now; p.values holds how good each one smells. */
+  Brain.prototype.preferences = function (state, actions) {
+    var A = this.code.nActions, T = this.options.temperature, p = {}, v = {}, best = -Infinity, sum = 0, i;
+    for (i = 0; i < actions.length; i++) { v[actions[i]] = this.respond(state * A + actions[i]); best = Math.max(best, v[actions[i]]); }
+    for (i = 0; i < actions.length; i++) sum += (p[actions[i]] = Math.exp((v[actions[i]] - best) / T));
+    for (i = 0; i < actions.length; i++) p[actions[i]] /= sum;
+    Object.defineProperty(p, 'values', { value: v });
+    return p;
   };
 
   /* Dopamine-gated learning for one chosen smell. reward is in bets (-1, 0, 1). Returns the
@@ -333,6 +374,6 @@
     return true;
   };
 
-  var api = { Brain: Brain, DEFAULTS: DEFAULTS, N_STATES: N_STATES, N_ODORS: N_ODORS, stateIndex: stateIndex, mulberry32: mulberry32 };
+  var api = { Brain: Brain, DEFAULTS: DEFAULTS, BLACKJACK: BLACKJACK, N_STATES: N_STATES, N_ODORS: N_ODORS, stateIndex: stateIndex, mulberry32: mulberry32, bump: bump };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.FlyBrain = api;
 })(typeof self !== 'undefined' ? self : this);

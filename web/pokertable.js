@@ -1,79 +1,91 @@
-/* FlyJack - the poker table. Six seats around an oval table in the same casino room, the same
-   dealer, and a copy of the blackjack fly for every fly seat, each wearing the look of a classic
-   lab strain. The flies act out their choices: sniff, tap the felt to check, push chips in to
-   call or raise, droop and slide their cards away to fold, hop when they take the pot. */
+/* FlyJack - the poker table, in 3D. Six seats around an oval table in the same casino room, the
+   same dealer, and a fly for every fly seat, each wearing the look of a classic lab strain. The
+   flies act out their choices: sniff, tap the felt to check, push chips in to call or raise,
+   droop and slide their cards away to fold, hop when they take the pot. Places are in table
+   units (the old 1200 x 675 drawing), mapped onto the oval felt. */
 (function (root) {
   'use strict';
-  var K = root.SceneKit, make = K.make, text = K.text, r2 = K.r2, easeIn = K.easeIn, Sprite = K.Sprite;
-  var DECK = { x: 600, y: 286 }, MUCK = { x: 600, y: 300 }, POT = { x: 600, y: 338 }, FLY_SCALE = 0.62;
-  var DEALER = { shoulderL: { x: 532, y: 222 }, shoulderR: { x: 668, y: 222 }, restL: { x: 522, y: 280 }, restR: { x: 678, y: 280 } };
-  // every seat: where the fly stands, its hole cards, its bet, its name plate and its thought bubble
+  var K = root.SceneKit, S3 = root.Scene3D, T = root.THREE, easeIn = K.easeIn;
+  var DECK = { x: 600, y: 286 }, MUCK = { x: 600, y: 300 }, POT = { x: 600, y: 338 }, CENTER = { x: 600, y: 452 };
+  var RX = 470, RZ = 300, FLY_SCALE = 0.52, DEALER = { z: -372, restL: { x: 522, y: 280 }, restR: { x: 678, y: 280 } };
+  // every seat: where the fly stands, its hole cards and its bet
   var SEATS = [
-    { fly: { x: 968, y: 400 }, flip: false, cards: { x: 866, y: 420 }, bet: { x: 806, y: 392 }, plate: { x: 990, y: 432 }, bubble: { x: 905, y: 262 } },
-    { fly: { x: 968, y: 548 }, flip: false, cards: { x: 866, y: 528 }, bet: { x: 793, y: 498 }, plate: { x: 990, y: 580 }, bubble: { x: 820, y: 448 } },
-    { fly: { x: 738, y: 610 }, flip: false, cards: { x: 655, y: 592 }, bet: { x: 650, y: 528 }, plate: { x: 778, y: 642 }, bubble: { x: 676, y: 474 } },
-    { fly: { x: 462, y: 610 }, flip: true, cards: { x: 545, y: 592 }, bet: { x: 550, y: 528 }, plate: { x: 422, y: 642 }, bubble: { x: 524, y: 474 } },
-    { fly: { x: 232, y: 548 }, flip: true, cards: { x: 334, y: 528 }, bet: { x: 407, y: 498 }, plate: { x: 210, y: 580 }, bubble: { x: 380, y: 448 } },
-    { fly: { x: 232, y: 400 }, flip: true, cards: { x: 334, y: 420 }, bet: { x: 394, y: 392 }, plate: { x: 210, y: 432 }, bubble: { x: 295, y: 262 } }
+    { fly: { x: 968, y: 400 }, cards: { x: 866, y: 420 }, bet: { x: 806, y: 392 } },
+    { fly: { x: 968, y: 548 }, cards: { x: 866, y: 528 }, bet: { x: 793, y: 498 } },
+    { fly: { x: 738, y: 610 }, cards: { x: 655, y: 592 }, bet: { x: 650, y: 528 } },
+    { fly: { x: 462, y: 610 }, cards: { x: 545, y: 592 }, bet: { x: 550, y: 528 } },
+    { fly: { x: 232, y: 548 }, cards: { x: 334, y: 528 }, bet: { x: 407, y: 498 } },
+    { fly: { x: 232, y: 400 }, cards: { x: 334, y: 420 }, bet: { x: 394, y: 392 } }
   ];
-  var LOOKS = {
-    'Canton-S': {},
-    'white': { eye: 'url(#cj-eye-white)' },
-    'yellow': { thorax: 'url(#cj-thorax-yellow)', abdomen: 'url(#cj-abdomen-yellow)', headshell: '#e6c26a', scutellum: '#e9c873' },
-    'ebony': { thorax: 'url(#cj-thorax-ebony)', abdomen: 'url(#cj-abdomen-ebony)', headshell: '#5e4535', scutellum: '#4a3427' },
-    'Curly': { wingRest: -24 }
-  };
   var SMELL_GOOD = '#6aa8ff', SMELL_BAD = '#ff8a50', AVATAR = ['#e0864a', '#5b8def', '#c45bb0', '#3fa77a', '#d6b25e', '#e05a5a'];
+  function feltXY(x, y) { return [x - 600, (y - 452) * 1.62]; }
 
-  function head(seat) { return { x: seat.fly.x + (seat.flip ? 41 : -41), y: seat.fly.y - 64 }; }
-
-  function PokerScene(svg, options) {
+  function PokerScene(el, options) {
     var reduce = !!(options && options.reduceMotion);
-    var $ = function (id) { return document.getElementById(id); };
-    var layer = { places: $('pk-places'), flies: $('pk-flies'), cards: $('pk-cards'), chips: $('pk-chips'), labels: $('pk-labels'), fx: $('pk-fx') };
-    var bubble = $('pk-bubble'), scentG = $('pk-scent');
+    var stage = new S3.Stage(el, {
+      map: feltXY,
+      views: { wide: { pos: [0, 520, 900], target: [0, 60, -20], fov: 42 }, narrow: { pos: [0, 900, 760], target: [0, -20, 60], fov: 56 } }
+    });
+    stage.reduce = reduce;
+    stage.pieces = new T.Group(); stage.scene.add(stage.pieces);
     var snap = false, tl = new K.Timeline(function () { return snap || reduce; });
     var move = tl.move.bind(tl), later = tl.later.bind(tl);
-    var dealerBody = K.cloneDrawing($('cj-dealer')), dealerArms = K.cloneDrawing($('cj-arms'));
-    $('pk-dealer').appendChild(dealerBody); $('pk-arms').appendChild(dealerArms);
-    var dealer = new K.Dealer(dealerBody, dealerArms, tl, DEALER);
-    var seats = [], holes = [], bets = [], board = [], pot = null, potLabel = null, button = null, onSeatClick = null;
-    K.decorateRoom($('pk-bokeh'), 11);
+
+    S3.buildRoom(stage, {
+      wallZ: -580, seed: 11, lamp: { x: 0, y: 540, z: 0, aim: [0, 0, 10] },
+      neon: [{ text: 'FlyJack', fill: '#ffe1f1', glow: '#ff4fae', x: -560, y: 290, w: 440, size: 170 },
+             { text: 'HOLD\'EM', fill: '#d9f7ff', glow: '#39cfff', x: 560, y: 290, w: 440, size: 150, phase: 4 }]
+    });
+    S3.pokerTable(stage, RX, RZ, function (g) {
+      g.strokeStyle = 'rgba(232,194,122,0.4)'; g.lineWidth = 2.5;
+      g.beginPath(); g.ellipse(0, 0, RX - 62, RZ - 52, 0, 0, 6.2832); g.stroke();
+      for (var k = 0; k < 5; k++) { var b = feltXY(460 + k * 70, 428); g.strokeRect(b[0] - 30, b[1] - 43, 60, 86); }
+      g.fillStyle = 'rgba(232,194,122,0.55)'; g.font = '600 17px ' + S3.MONO; g.textAlign = 'center'; g.textBaseline = 'middle';
+      var c = feltXY(600, 497); g.fillText('LIMIT HOLD\'EM  ·  2 / 4', c[0], c[1] + 6);
+    });
+    var deck = new T.Group(), dk = feltXY(DECK.x, DECK.y); deck.position.set(dk[0] + 70, 0, dk[1]); stage.table.add(deck);
+    for (var d = 0; d < 6; d++) {
+      var cd = S3.card(stage, { face: 'A', suit: 's' }); S3.setFace(cd, false);
+      stage.pieces.remove(cd.obj); deck.add(cd.obj); cd.obj.position.set(0, d, 0); cd.obj.rotation.y = d * 0.03;
+    }
+    S3.wineGlass(stage, -520, -170); S3.gnat(stage, -500, 200, -160);
+
+    var dealer = new S3.Dealer(stage, tl, DEALER);
+    var seats = [], holes = [], bets = [], board = [], pot = null, potLabel = null, button = null, onSeatClick = null, fx = [];
+    var bubble = new S3.Bubble(stage), trail = new S3.Trail(stage);
+
+    function seatPoint(i, h) { var a = SEATS[i].fly; return stage.map(a.x, a.y, h || 0); }
+    function head(i) { var s = seats[i]; return s && s.fly ? s.fly.headAt() : seatPoint(i, 60); }
 
     /* ---------- who sits where ---------- */
     function setSeats(list) {
-      while (layer.places.firstChild) layer.places.removeChild(layer.places.firstChild);
-      while (layer.flies.firstChild) layer.flies.removeChild(layer.flies.firstChild);
+      seats.forEach(function (s) { s.parts.forEach(function (p) { if (p.isObject3D) { if (p.parent) p.parent.remove(p); } else p.remove(); }); });
       seats = list.map(function (s, i) {
-        var at = SEATS[i], out = { kind: s.kind, name: s.name, fly: null };
+        var at = SEATS[i], out = { kind: s.kind, name: s.name, fly: null, parts: [] }, base = seatPoint(i);
         if (s.kind === 'fly') {
-          var g = K.cloneDrawing($('cj-fly')), look = LOOKS[s.look] || {};
-          ['eye', 'thorax', 'abdomen', 'headshell', 'scutellum'].forEach(function (p) {
-            var el = g.querySelector('[data-part="' + p + '"]');
-            if (el && look[p]) el.setAttribute('fill', look[p]);
-          });
-          g.setAttribute('transform', 'translate(' + at.fly.x + ' ' + at.fly.y + ') scale(' + (at.flip ? -FLY_SCALE : FLY_SCALE) + ' ' + FLY_SCALE + ')');
-          layer.flies.appendChild(g);
-          out.g = g; out.fly = new K.Fly(g, { reduce: reduce, wingRest: look.wingRest || 0 });
+          var f = out.fly = new K.Fly({ reduce: reduce, look: s.look }), aim = stage.map(CENTER.x, CENTER.y);
+          f.group.position.copy(base); f.group.scale.setScalar(FLY_SCALE);
+          f.group.rotation.y = Math.atan2(-(aim.z - base.z), aim.x - base.x);
+          f.nearSide = Math.cos(f.group.rotation.y) > 0 ? 1 : -1;
+          stage.scene.add(f.group); out.parts.push(f.group);
         } else if (s.kind === 'human') {
-          var a = make('g', { 'class': 'avatar', transform: 'translate(' + at.fly.x + ' ' + (at.fly.y - 50) + ')' }, layer.places);
-          make('ellipse', { cy: 52, rx: 40, ry: 9, fill: '#000', opacity: 0.3 }, a);
-          make('circle', { r: 33, fill: AVATAR[i % AVATAR.length], stroke: '#fbfaf5', 'stroke-width': 3 }, a);
-          text(a, (s.name || '?').charAt(0).toUpperCase(), 0, 10, 'avatar-letter', '#fff', 'middle');
-          out.g = a;
+          var tok = new T.Group(), col = AVATAR[i % AVATAR.length]; tok.position.copy(base); stage.scene.add(tok);
+          var ball = S3.mesh(S3.SPHERE, S3.std(col, { rough: 0.35 }), tok); ball.scale.setScalar(30); ball.position.y = 46;
+          var ped = S3.mesh(new T.CylinderGeometry(22, 30, 14, 32), S3.std('#fbfaf5', { rough: 0.4 }), tok); ped.position.y = 7;
+          out.token = tok; out.parts.push(tok);
+          var letter = new S3.Label(stage, 'avatar-letter'); letter.text((s.name || '?').charAt(0).toUpperCase());
+          letter.follow = function () { return base.clone().add(new T.Vector3(0, 46, 0)); }; out.parts.push(letter);
         } else {
-          var e = make('g', { 'class': 'seat-open', transform: 'translate(' + at.fly.x + ' ' + (at.fly.y - 50) + ')', tabindex: 0, role: 'button', 'aria-label': 'Open seat ' + (i + 1) + ': join the game' }, layer.places);
-          make('circle', { r: 33, fill: '#fff', 'fill-opacity': 0.04, stroke: '#e8c27a', 'stroke-opacity': 0.7, 'stroke-width': 2, 'stroke-dasharray': '6 6' }, e);
-          text(e, '+', 0, 12, 'seat-plus', '#e8c27a', 'middle');
-          var go = function () { if (onSeatClick) onSeatClick(i); };
-          e.addEventListener('click', go);
-          e.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); } });
-          out.g = e;
+          var btn = document.createElement('button'), open = new S3.Label(stage, 'seat-open-wrap');
+          btn.type = 'button'; btn.className = 'seat-open'; btn.textContent = '+'; btn.setAttribute('aria-label', 'Open seat ' + (i + 1) + ': join the game');
+          btn.addEventListener('click', function () { if (onSeatClick) onSeatClick(i); });
+          open.el.appendChild(btn); open.follow = function () { return base.clone().add(new T.Vector3(0, 40, 0)); }; out.parts.push(open);
         }
-        out.plate = make('g', { 'class': 'plate', transform: 'translate(' + at.plate.x + ' ' + at.plate.y + ')' }, layer.places);
-        make('rect', { x: -66, y: -21, width: 132, height: 42, rx: 10 }, out.plate);
-        out.nameEl = text(out.plate, s.kind === 'empty' ? 'Open seat' : s.name, 0, -4, 'plate-name', null, 'middle');
-        out.stackEl = text(out.plate, s.kind === 'empty' ? 'click to join' : String(s.stack), 0, 13, 'plate-stack', null, 'middle');
+        var plateL = out.plate = new S3.Label(stage, 'plate');
+        plateL.el.innerHTML = '<b class="plate-name"></b><span class="plate-stack"></span>';
+        plateL.el.querySelector('.plate-name').textContent = s.kind === 'empty' ? 'Open seat' : s.name;
+        out.stackEl = plateL.el.querySelector('.plate-stack'); out.stackEl.textContent = s.kind === 'empty' ? 'click + to join' : String(s.stack);
+        plateL.follow = function () { return base; }; plateL.dy = 30; out.parts.push(plateL);
         return out;
       });
     }
@@ -81,22 +93,25 @@
       var s = seats[i];
       if (!s) return;
       if (o.stack !== undefined) s.stackEl.textContent = o.stack;
-      if (o.acting !== undefined) s.plate.classList.toggle('acting', o.acting);
-      if (o.folded !== undefined) { s.plate.classList.toggle('folded', o.folded); if (s.g) s.g.style.opacity = o.folded ? 0.5 : ''; }
+      if (o.acting !== undefined) s.plate.el.classList.toggle('acting', o.acting);
+      if (o.folded !== undefined) {
+        s.plate.el.classList.toggle('folded', o.folded);
+        if (s.fly) s.fly.fade(o.folded ? 0.45 : 1);
+      }
     }
 
     /* ---------- cards ---------- */
-    function holeSlot(i, k) { var c = SEATS[i].cards; return { x: c.x + (k ? 13 : -13), y: c.y + (k ? 2 : 0), r: k ? 7 : -7, s: FLY_SCALE }; }
+    function holeSlot(i, k) { var c = SEATS[i].cards; return { x: c.x + (k ? 15 : -15), y: c.y + (k ? 2 : 0), r: k ? 7 : -7, s: 0.8 }; }
     function boardSlot(k) { return { x: 460 + k * 70, y: 428, r: 0, s: 0.95 }; }
     function deal1(card, to, up, delay) {
-      var sp = K.cardSprite(layer.cards, card);
-      sp.x = DECK.x; sp.y = DECK.y; sp.r = -20; sp.s = 0.5; sp.o = 0; sp.draw();
+      var sp = S3.card(stage, card);
+      sp.x = DECK.x + 40; sp.y = DECK.y; sp.h = 8; sp.r = -20; sp.s = 0.8; sp.o = 0; sp.draw();
       later(delay, function () { sp.o = 1; sp.draw(); dealer.flick(DECK); dealer.look(to, 400); });
-      move(sp, { x: to.x, y: to.y, r: to.r, s: to.s }, 340, delay, { arc: 30 });
-      if (up) later(delay + 170, function () { K.flip(tl, sp, true); });
+      move(sp, { x: to.x, y: to.y, r: to.r, s: to.s, h: 0 }, 340, delay, { arc: 30 });
+      if (up) later(delay + 170, function () { S3.flip(tl, sp, true); });
       return sp;
     }
-    function reveal(i, up) { (holes[i] || []).forEach(function (sp) { if (sp.up !== up) K.flip(tl, sp, up); }); }
+    function reveal(i, up) { (holes[i] || []).forEach(function (sp) { if (sp.up !== up) S3.flip(tl, sp, up); }); }
 
     /* ---------- chips ---------- */
     function betLabel(i, amount) {
@@ -104,19 +119,17 @@
       if (b.label) b.label.remove();
       b.label = null;
       if (!amount) return;
-      var at = SEATS[i].bet, g = make('g', {}, layer.labels), sp = new Sprite(g);
-      text(g, String(amount), 0, 0, 'bet-label', null, 'middle');
-      sp.x = at.x; sp.y = at.y + 26; sp.draw(); b.label = sp;
+      var at = SEATS[i].bet, l = new S3.Label(stage, 'bet-label'); l.text(String(amount)); l.x = at.x; l.y = at.y; l.dy = 22; b.label = l;
     }
     function setBet(i, amount, delay) {
-      var b = bets[i] || (bets[i] = { sp: null, label: null, amount: 0 }), at = SEATS[i].bet, from = SEATS[i].plate;
-      var chip = K.chipSprite(layer.chips, 'red');
-      chip.x = from.x; chip.y = from.y - 20; chip.o = 0; chip.draw();
+      var b = bets[i] || (bets[i] = { sp: null, label: null, amount: 0 }), at = SEATS[i].bet, from = SEATS[i].fly;
+      var chip = S3.chip(stage, 'red');
+      chip.x = from.x; chip.y = from.y; chip.h = 20; chip.o = 0; chip.draw();
       later(delay, function () { chip.o = 1; chip.draw(); });
-      move(chip, { x: at.x, y: at.y }, 360, delay, { arc: 26, done: function () {
+      move(chip, { x: at.x, y: at.y, h: 0 }, 360, delay, { arc: 26, done: function () {
         chip.remove();
         if (b.sp) b.sp.remove();
-        b.sp = K.stackSprite(layer.chips, amount, 6); b.sp.x = at.x; b.sp.y = at.y; b.sp.draw();
+        b.sp = S3.stack(stage, amount, 6); b.sp.x = at.x; b.sp.y = at.y; b.sp.draw();
         b.amount = amount; betLabel(i, amount);
       } });
     }
@@ -125,85 +138,61 @@
       if (potLabel) potLabel.remove();
       pot = potLabel = null;
       if (!amount) return;
-      pot = K.stackSprite(layer.chips, amount, 12); pot.x = POT.x; pot.y = POT.y; pot.draw();
-      var g = make('g', {}, layer.labels); potLabel = new Sprite(g);
-      make('rect', { x: -44, y: -14, width: 88, height: 28, rx: 14, 'class': 'pot-pill' }, g);
-      text(g, 'Pot ' + amount, 0, 5, 'pot-label', null, 'middle');
-      potLabel.x = POT.x + 92; potLabel.y = POT.y - 4; potLabel.draw();
+      pot = S3.stack(stage, amount, 12); pot.x = POT.x; pot.y = POT.y; pot.draw();
+      potLabel = new S3.Label(stage, 'pot-pill'); potLabel.text('Pot ' + amount); potLabel.x = POT.x; potLabel.y = POT.y; potLabel.dx = 78;
     }
     function placeButton(i, delay) {
-      var at = SEATS[i].bet, to = { x: at.x + (SEATS[i].flip ? -34 : 34), y: at.y + 22 };
+      var at = SEATS[i].bet, side = at.x > 600 ? -1 : 1, to = { x: at.x + side * 36, y: at.y + 18 };
       if (!button) {
-        var g = make('g', {}, layer.chips);
-        make('ellipse', { cy: 3, rx: 14, ry: 6, fill: '#bdb6a6' }, g);
-        make('ellipse', { rx: 14, ry: 6, fill: '#fbfaf5' }, g);
-        text(g, 'D', 0, 4, 'dealer-btn', '#1c1c1c', 'middle');
-        button = new Sprite(g); button.x = to.x; button.y = to.y; button.draw();
+        var c = S3.canvas(128, 128), g = c.getContext('2d');
+        g.fillStyle = '#fbfaf5'; g.beginPath(); g.arc(64, 64, 64, 0, 6.2832); g.fill();
+        g.fillStyle = '#1c1c1c'; g.font = '700 70px ' + S3.FONT; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('D', 64, 68);
+        var top = S3.std('#ffffff', { rough: 0.4, map: S3.texture(c) }), grp = new T.Group();
+        S3.mesh(new T.CylinderGeometry(15, 15, 5, 32), [S3.std('#d8d2c2', { rough: 0.5 }), top, top], grp).position.y = 2.5;
+        button = new S3.Piece(stage, grp); button.x = to.x; button.y = to.y; button.draw();
+        stage.pieces.remove(grp); stage.table.add(grp);         // the button stays between hands
       }
       move(button, to, 400, delay, { arc: 14 });
     }
 
     /* ---------- effects ---------- */
     function floatText(str, color, x, y, delay, cls) {
-      var g = make('g', {}, layer.fx), sp = new Sprite(g);
-      text(g, str, 0, 0, cls || 'fx-say', color, 'middle');
-      sp.x = x; sp.y = y; sp.o = 0; sp.draw();
-      later(delay, function () { sp.o = 1; sp.draw(); });
-      move(sp, { y: y - 34 }, 1300, delay);
-      move(sp, { o: 0 }, 1300, delay, { ease: easeIn, done: function () { sp.remove(); } });
-    }
-    function sparkle(n, cx, cy, spread, delay) {
-      if (tl.instant()) return;
-      var colors = ['#ffd46b', '#fff3c4', '#ff9fd0'];
-      for (var i = 0; i < n; i++) {
-        var g = make('g', {}, layer.fx), sp = new Sprite(g), a = Math.PI * 2 * i / n + Math.random() * 0.5, d = spread * (0.6 + Math.random() * 0.6);
-        make('path', { d: 'M0 -8L2 -2L8 0L2 2L0 8L-2 2L-8 0L-2 -2Z', fill: colors[i % 3] }, g);
-        sp.x = cx; sp.y = cy; sp.s = 0.3; sp.o = 0; sp.draw();
-        (function (sp, dl) { later(dl, function () { sp.o = 1; sp.draw(); }); })(sp, delay + i * 18);
-        move(sp, { x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d * 0.7, s: 0.5 + Math.random() * 0.6, r: 140 }, 650, delay + i * 18);
-        move(sp, { o: 0 }, 900, delay + i * 18, { ease: easeIn, done: sp.remove.bind(sp) });
-      }
-    }
-    function ripple(i, delay) {
-      if (tl.instant()) return;
-      var at = SEATS[i], g = make('g', {}, layer.fx), sp = new Sprite(g);
-      make('ellipse', { rx: 8, ry: 3, fill: 'none', stroke: '#fff', 'stroke-width': 2 }, g);
-      sp.x = at.fly.x + (at.flip ? 50 : -50); sp.y = at.fly.y; sp.s = 0.4; sp.o = 0; sp.draw();
-      later(delay, function () { sp.o = 0.9; sp.draw(); });
-      move(sp, { s: 2.4, o: 0 }, 480, delay, { done: sp.remove.bind(sp) });
+      var l = new S3.Label(stage, cls || 'fx-say'); l.text(str); l.el.style.color = color;
+      l.x = x; l.y = y; l.h = 20; l.o = 0; l.draw(); fx.push(l);
+      later(delay, function () { l.o = 1; l.draw(); });
+      move(l, { h: 90 }, 1300, delay);
+      move(l, { o: 0 }, 1300, delay, { ease: easeIn, done: function () { l.remove(); } });
     }
     /* The thought bubble over seat i: a title, or up to three smell lines [{label, v}]. */
     function think(i, main, lines) {
-      bubble.classList.toggle('on', i !== null && i !== undefined);
+      bubble.show(i !== null && i !== undefined);
       if (i === null || i === undefined) return;
-      var at = SEATS[i].bubble, h = head(SEATS[i]);
-      bubble.setAttribute('transform', 'translate(' + at.x + ' ' + at.y + ')');
-      var dx = h.x - at.x, dy = h.y - at.y;
-      $('pk-bubble-dot1').setAttribute('cx', r2(dx * 0.55)); $('pk-bubble-dot1').setAttribute('cy', r2(dy * 0.55));
-      $('pk-bubble-dot2').setAttribute('cx', r2(dx * 0.8)); $('pk-bubble-dot2').setAttribute('cy', r2(dy * 0.8));
-      var rows = $('pk-bubble-rows');
-      while (rows.firstChild) rows.removeChild(rows.firstChild);
-      if (main) { text(rows, main, 0, 8, 'bubble-main', null, 'middle'); return; }
-      (lines || []).forEach(function (l, k) {
-        var y = (k - (lines.length - 1) / 2) * 19 + 5;
-        text(rows, l.label, -8, y, 'bubble-row', null, 'end');
-        text(rows, (l.v < 0 ? '−' : '+') + Math.abs(l.v).toFixed(2), 2, y, 'bubble-val', l.v >= 0 ? '#2c6fd0' : '#c4501c', 'start');
+      bubble.head = function () { return head(i); };
+      bubble.side = SEATS[i].fly.x > 600 ? -1 : 1;
+      var box = bubble.el; box.textContent = '';
+      if (main) { var m = document.createElement('b'); m.className = 'think-main'; m.textContent = main; box.appendChild(m); return; }
+      (lines || []).forEach(function (l) {
+        var row = document.createElement('span'), a = document.createElement('span'), v = document.createElement('span');
+        row.className = 'think-row'; a.textContent = l.label; v.className = 'think-val';
+        v.textContent = (l.v < 0 ? '−' : '+') + Math.abs(l.v).toFixed(2); v.style.color = l.v >= 0 ? '#2c6fd0' : '#c4501c';
+        row.appendChild(a); row.appendChild(v); box.appendChild(row);
       });
     }
     function scent(i, color) {
-      scentG.classList.toggle('on', !!color);
-      if (!color) return;
-      var c = SEATS[i].cards, h = head(SEATS[i]);
-      K.scentPaths(scentG, c.x, c.y - 10, h.x + (SEATS[i].flip ? 6 : -6), h.y - 6);
-      Array.prototype.forEach.call(scentG.children, function (p) { p.style.stroke = color; });
+      if (!color) { trail.show(null); return; }
+      var c = SEATS[i].cards;
+      trail.show(color, function () { return stage.map(c.x, c.y, 6); }, function () { return head(i); });
     }
     function puppet(i) { return seats[i] && seats[i].fly; }
 
     /* ---------- what the game asks for ---------- */
     function clearAll() {
       tl.clear();
-      [layer.cards, layer.chips, layer.labels, layer.fx].forEach(function (l) { while (l.firstChild) l.removeChild(l.firstChild); });
-      holes = []; bets = []; board = []; pot = potLabel = button = null;
+      while (stage.pieces.children.length) stage.pieces.remove(stage.pieces.children[0]);
+      bets.forEach(function (b) { if (b && b.label) b.label.remove(); });
+      if (potLabel) potLabel.remove();
+      fx.forEach(function (l) { l.remove(); }); fx = [];
+      holes = []; bets = []; board = []; pot = potLabel = null;
       dealer.reset();
       think(null); scent(null);
     }
@@ -219,7 +208,7 @@
       if (!old.length) return 0;
       if (tl.instant()) { old.forEach(function (sp) { sp.remove(); }); return 0; }
       dealer.reach(true, { x: 600, y: 400 }, 0);
-      old.forEach(function (sp, k) { move(sp, { x: MUCK.x, y: MUCK.y, r: 0, s: 0.4, o: 0 }, 380, 80 + k * 25, { arc: 16, done: sp.remove.bind(sp) }); });
+      old.forEach(function (sp, k) { move(sp, { x: MUCK.x, y: MUCK.y, h: 10, r: 0, s: 0.5, o: 0 }, 380, 80 + k * 25, { arc: 16, done: sp.remove.bind(sp) }); });
       return 480 + old.length * 25;
     }
 
@@ -249,9 +238,9 @@
       think(i, null, lines);
       scent(i, best >= 0 ? SMELL_GOOD : SMELL_BAD);
       plate(i, { acting: true });
-      dealer.look(head(SEATS[i]), 1500);
+      dealer.look(head(i), 1500);
     }
-    function waitFor(i) { plate(i, { acting: true }); dealer.look(head(SEATS[i]), 1e9); }
+    function waitFor(i) { plate(i, { acting: true }); dealer.look(head(i), 1e9); }
     var SAY = { fold: 'Fold', check: 'Check', call: 'Call', bet: 'Bet', raise: 'Raise' };
     /* Seat i did ev (from Poker.Hand.act). Returns how long the gesture takes. */
     function act(i, ev, stack) {
@@ -259,15 +248,19 @@
       scent(null); dealer.look(null, 0);
       if (f) f.glow('#7df0c4', 0, 0);
       think(f ? i : null, ev.type === 'fold' ? 'Fold.' : ev.type === 'check' ? 'Check.' : SAY[ev.type] + (ev.type === 'call' ? ' ' + ev.paid : ' to ' + ev.level) + '!');
-      floatText(ev.type === 'check' || ev.type === 'fold' ? SAY[ev.type] : SAY[ev.type] + ' ' + (ev.type === 'call' ? ev.paid : ev.level), ev.type === 'fold' ? '#ff9b7a' : '#f3ead2', at.bet.x, at.bet.y - 18, 150);
+      floatText(ev.type === 'check' || ev.type === 'fold' ? SAY[ev.type] : SAY[ev.type] + ' ' + (ev.type === 'call' ? ev.paid : ev.level), ev.type === 'fold' ? '#ff9b7a' : '#f3ead2', at.bet.x, at.bet.y, 150);
       if (ev.type === 'fold') {
         if (f) f.act('fold');
-        (holes[i] || []).forEach(function (sp, k) { move(sp, { x: MUCK.x, y: MUCK.y, s: 0.4, o: 0, r: 0 }, 420, 250 + k * 60, { arc: 20, done: sp.remove.bind(sp) }); });
+        (holes[i] || []).forEach(function (sp, k) { move(sp, { x: MUCK.x, y: MUCK.y, h: 10, s: 0.5, o: 0, r: 0 }, 420, 250 + k * 60, { arc: 20, done: sp.remove.bind(sp) }); });
         holes[i] = [];
         later(500, function () { plate(i, { folded: true, acting: false }); });
         ms = 900;
       } else if (ev.type === 'check') {
-        if (f) { f.act('tap'); ripple(i, 380); ripple(i, 760); }
+        if (f) {
+          f.act('tap');
+          var c = SEATS[i].cards, p = { x: (at.fly.x * 2 + c.x) / 3, y: (at.fly.y * 2 + c.y) / 3 };
+          S3.ripple(stage, tl, p.x, p.y, 380); S3.ripple(stage, tl, p.x, p.y, 760);
+        }
         later(700, function () { plate(i, { acting: false }); });
         ms = 900;
       } else {
@@ -292,7 +285,7 @@
       later(t + 380, function () { drawPot(potAmount); });
       return t + 450;
     }
-    function deal_board(cards, from) {
+    function dealBoard(cards, from) {
       var t = 0;
       for (var k = 0; k < cards.length; k++) { board.push(deal1(cards[k], boardSlot(from + k), true, t)); t += 230; }
       dealer.look(boardSlot(from), 900);
@@ -305,16 +298,14 @@
         if (q.folded) return;
         reveal(q.seat, true);
         var c = SEATS[q.seat].cards;
-        later(300, function () { floatName(q.handName, c.x, c.y - 52); });
+        later(300, function () { floatName(q.handName, c.x, c.y); });
         t = 900;
       });
       return t;
     }
     function floatName(str, x, y) {
-      var g = make('g', {}, layer.labels), sp = new Sprite(g);
-      text(g, str, 0, 0, 'hand-name', null, 'middle');
-      sp.x = x; sp.y = y; sp.draw();
-      return sp;
+      var l = new S3.Label(stage, 'hand-name'); l.text(str); l.x = x; l.y = y; l.h = 50; fx.push(l);
+      return l;
     }
     /* The pot goes to the winner(s); each fly reacts to how its hand went. */
     function payout(hand) {
@@ -323,15 +314,15 @@
       if (pot) { var p0 = pot; pot = null; p0.remove(); }
       drawPot(0);
       hand.winners.forEach(function (w, k) {
-        var q = hand.p[w.i], at = SEATS[q.seat], sp = K.stackSprite(layer.chips, w.amount, 12);
+        var q = hand.p[w.i], at = SEATS[q.seat], sp = S3.stack(stage, w.amount, 12);
         sp.x = POT.x; sp.y = POT.y; sp.draw();
         dealer.reach(k === 0, POT, 0);
         move(sp, { x: at.bet.x, y: at.bet.y }, 500, t + k * 150, { arc: 30, done: function () {
-          move(sp, { x: at.plate.x, y: at.plate.y - 16, o: 0 }, 420, 500, { done: sp.remove.bind(sp) });
+          move(sp, { x: at.fly.x, y: at.fly.y, o: 0 }, 420, 500, { done: sp.remove.bind(sp) });
         } });
-        floatText('+' + w.amount, '#ffd46b', at.bet.x, at.bet.y - 20, t + 400, 'fx-float');
+        floatText('+' + w.amount, '#ffd46b', at.bet.x, at.bet.y, t + 400, 'fx-float');
         later(t + 1100, function () { plate(q.seat, { stack: q.stack }); });
-        sparkle(w.amount >= 30 ? 22 : 10, head(at).x, head(at).y - 20, w.amount >= 30 ? 110 : 70, t + 350);
+        S3.sparkle(stage, tl, w.amount >= 30 ? 22 : 10, head(q.seat).add(new T.Vector3(0, 20, 0)), w.amount >= 30 ? 110 : 70, ['#ffd46b', '#fff3c4', '#ff9fd0'], t + 350);
       });
       hand.p.forEach(function (q, i) {
         var f = puppet(q.seat), won = hand.winners.some(function (w) { return w.i === i; });
@@ -357,7 +348,7 @@
         plate(q.seat, { stack: q.stack, folded: q.folded, acting: false });
         if (q.folded) return;
         holes[q.seat] = q.hole.map(function (c, k) { return deal1(c, holeSlot(q.seat, k), hand.showdown || faceUp(q.seat), 0); });
-        if (hand.showdown) { var c = SEATS[q.seat].cards; floatName(q.handName, c.x, c.y - 52); }
+        if (hand.showdown) { var c = SEATS[q.seat].cards; floatName(q.handName, c.x, c.y); }
       });
       hand.board.forEach(function (c, k) { board.push(deal1(c, boardSlot(k), true, 0)); });
       snap = false;
@@ -367,18 +358,14 @@
     function tick(t, busy) {
       tl.run(t);
       seats.forEach(function (s) { if (s.fly) s.fly.pose(t, busy); });
-      dealer.pose(t, { x: 600, y: 520 }, reduce);
+      dealer.pose(t, { x: 600, y: 560, h: 40 }, reduce);
+      stage.render(t);
     }
 
-    // phones: frame the table so the cards stay readable
-    function frame() { svg.setAttribute('viewBox', svg.clientWidth && svg.clientWidth < 560 ? '110 96 980 579' : '0 0 1200 675'); }
-    if (root.ResizeObserver) new ResizeObserver(frame).observe(svg); else root.addEventListener('resize', frame);
-    frame();
-
     return {
-      setSeats: setSeats, plate: plate, deal: deal, sniff: sniff, waitFor: waitFor, act: act, gather: gather, board: deal_board,
+      setSeats: setSeats, plate: plate, deal: deal, sniff: sniff, waitFor: waitFor, act: act, gather: gather, board: dealBoard,
       showdown: showdown, payout: payout, dopamine: dopamine, reveal: reveal, show: show, clear: clear, tick: tick,
-      onSeatClick: function (fn) { onSeatClick = fn; }, looks: Object.keys(LOOKS)
+      onSeatClick: function (fn) { onSeatClick = fn; }, looks: Object.keys(K.FLY_LOOKS)
     };
   }
 

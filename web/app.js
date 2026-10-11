@@ -177,66 +177,185 @@
     say(RESULT_TEXT[hand.result] + ', ' + signed(hand.reward, hand.reward % 1 ? 1 : 0), why);
   }
 
-  /* ---------- the brain view ---------- */
-  var canvas = $('brain'), ctx = canvas.getContext('2d'), base = document.createElement('canvas');
-  var COLORS = { act: '#199e70', actHi: '#7df0c4', pos: '#3987e5', posHi: '#a9d0ff', neg: '#d95926', negHi: '#ffb08a', dim: 'rgba(201,212,205,0.20)' };
+  /* ---------- the brain view: a 3D model you can turn ---------- */
+  var canvas = $('brain'), ctx = canvas.getContext('2d');
+  var COLORS = { act: '#199e70', actHi: '#7df0c4', pos: '#3987e5', posHi: '#a9d0ff', neg: '#d95926', negHi: '#ffb08a', cloud: '201,212,205' };
   var view = { odor: -1, glom: new Float32Array(circuit.glomeruli.length), kc: [], mbon: new Float32Array(circuit.mbon.type.length), dopamine: 0, dopamineAt: 0, label: '', changed: true, w: 0, h: 0 };
-  var cells = [];   // every neuron once: {x, y (0..1), group, i, type, id}
+  var cells = [];   // every neuron once: {x, y, z (centred, about -1..1; y up, z towards the back), group, i, type, id}
+  var floorY = 0, rightSign = 1;
   (function layout() {
-    var groups = ['kc', 'pn', 'mbon', 'pam', 'ppl1'], minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9, g, i;
+    var groups = ['kc', 'pn', 'mbon', 'pam', 'ppl1'], lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9], g, i, d, sideX = { L: 0, R: 0 }, sideN = { L: 0, R: 0 };
     for (g = 0; g < groups.length; g++) for (i = 0; i < circuit[groups[g]].soma.length; i++) {
       var p = circuit[groups[g]].soma[i];
-      minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]); minZ = Math.min(minZ, p[2]); maxZ = Math.max(maxZ, p[2]);
+      for (d = 0; d < 3; d++) { lo[d] = Math.min(lo[d], p[d]); hi[d] = Math.max(hi[d], p[d]); }
     }
-    for (g = 0; g < groups.length; g++) for (i = 0; i < circuit[groups[g]].soma.length; i++) {
-      var q = circuit[groups[g]].soma[i], c = circuit[groups[g]];
-      cells.push({ x: (q[0] - minX) / (maxX - minX), y: (q[2] - minZ) / (maxZ - minZ), group: groups[g], i: i, type: c.type[i], id: c.bodyId[i] });
+    var half = Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) / 2, mid = [0, 1, 2].map(function (d) { return (lo[d] + hi[d]) / 2; });
+    for (g = 0; g < groups.length; g++) {
+      var c = circuit[groups[g]], seen = {};
+      c.soma.forEach(function (q) { seen[q] = (seen[q] || 0) + 1; });   // cells with no soma in the connectome share their group's median
+      for (i = 0; i < c.soma.length; i++) {
+        var q = c.soma[i];
+        // connectome voxels: x across the head, y downwards, z towards the back
+        cells.push({ x: (q[0] - mid[0]) / half, y: -(q[1] - mid[1]) / half, z: (q[2] - mid[2]) / half, group: groups[g], i: i, type: c.type[i], id: c.bodyId[i], guess: seen[q] > 1 });
+        if (c.side[i] in sideX) { sideX[c.side[i]] += q[0]; sideN[c.side[i]]++; }
+      }
     }
-    view.aspect = (maxX - minX) / (maxZ - minZ);
+    floorY = -(hi[1] - mid[1]) / half - 0.12;
+    rightSign = sideX.R / (sideN.R || 1) >= sideX.L / (sideN.L || 1) ? 1 : -1;
   })();
   var byGroup = {};
   cells.forEach(function (c) { (byGroup[c.group] = byGroup[c.group] || []).push(c); });
+  // inputs of each Kenyon cell (PN index, synapses), to draw the path a smell takes
+  var kcInputs = byGroup.kc.map(function () { return []; }), kcOutputs = byGroup.kc.map(function () { return [-1, 0]; });
+  (function wiring() {
+    var e, t = circuit.pnKc, k = circuit.kcMbon;
+    for (e = 0; e < t.length; e += 3) kcInputs[t[e + 1]].push([t[e], t[e + 2]]);
+    for (e = 0; e < k.length; e += 3) if (k[e + 2] > kcOutputs[k[e]][1]) kcOutputs[k[e]] = [k[e + 1], k[e + 2]];   // strongest output of each KC
+  })();
+
+  /* the camera: turntable yaw, tilt (pitch), slow spin unless reduced motion; drag to turn */
+  var HOME = { yaw: Math.PI + 0.55, pitch: -0.62 };
+  var cam = { yaw: HOME.yaw, pitch: HOME.pitch, vYaw: 0, vPitch: 0, spin: reduceMotion ? 0 : 0.00012, heldUntil: 0, dist: 4.2, scale: 1, cx: 0, cy: 0 };
+  var drag = null, visible = true, lastDraw = 0;
+  function project(c) {
+    var cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    var x1 = c.x * cy + c.z * sy, z1 = -c.x * sy + c.z * cy;
+    var y2 = c.y * cp - z1 * sp, z2 = c.y * sp + z1 * cp, k = cam.dist / (cam.dist + z2);
+    c.px = cam.cx + x1 * k * cam.scale; c.py = cam.cy - y2 * k * cam.scale; c.k = k; c.depth = z2;
+  }
+  function point(x, y, z) { var p = { x: x, y: y, z: z }; project(p); return p; }
+
+  // one shaded sphere and one soft glow per colour, drawn once and stamped for every neuron
+  var sprites = {};
+  function sprite(color, kind) {
+    var key = color + kind;
+    if (sprites[key]) return sprites[key];
+    var s = document.createElement('canvas'), n = 64, g = s.getContext('2d'), grad;
+    s.width = s.height = n;
+    if (kind === 'glow') {
+      grad = g.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2);
+      grad.addColorStop(0, color + 'aa'); grad.addColorStop(0.3, color + '44'); grad.addColorStop(1, color + '00');
+    } else {
+      grad = g.createRadialGradient(n * 0.36, n * 0.33, n * 0.02, n / 2, n / 2, n / 2);
+      grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.18, color); grad.addColorStop(0.75, color); grad.addColorStop(1, '#05080a');
+    }
+    g.fillStyle = grad; g.beginPath(); g.arc(n / 2, n / 2, n / 2, 0, 6.2832); g.fill();
+    return (sprites[key] = s);
+  }
+  function fog(c) { return Math.max(0.35, Math.min(1, 0.7 - 0.45 * c.depth)); }   // far neurons fade into the dark
 
   function fit() {
     var r = canvas.getBoundingClientRect(), dpr = Math.min(2, self.devicePixelRatio || 1);
     if (!r.width) return;
     view.w = r.width; view.h = r.height;
-    canvas.width = base.width = Math.round(r.width * dpr); canvas.height = base.height = Math.round(r.height * dpr);
-    var pad = 14, w = r.width - 2 * pad, h = r.height - 2 * pad, sc = Math.min(w / view.aspect, h);
-    var ox = pad + (w - sc * view.aspect) / 2, oy = pad + (h - sc) / 2;
-    cells.forEach(function (c) { c.px = ox + c.x * sc * view.aspect; c.py = oy + c.y * sc; });
-    var b = base.getContext('2d'); b.setTransform(dpr, 0, 0, dpr, 0, 0); b.clearRect(0, 0, r.width, r.height);
-    b.fillStyle = COLORS.dim;
-    byGroup.kc.forEach(function (c) { b.fillRect(c.px - 0.6, c.py - 0.6, 1.2, 1.2); });
+    canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr);
+    cam.cx = r.width / 2; cam.cy = r.height * 0.56;
+    cam.scale = Math.min(r.width * 0.5 / 1.2, r.height * 0.5 / 1.12);
     view.dpr = dpr; view.changed = true;
   }
-  function dot(c, r, color, alpha) { ctx.globalAlpha = alpha; ctx.fillStyle = color; ctx.beginPath(); ctx.arc(c.px, c.py, r, 0, 6.2832); ctx.fill(); }
+  function drawFloor() {
+    var n = 5, s = 1.15, i, a, b;
+    ctx.lineWidth = 1;
+    for (i = -n; i <= n; i++) {
+      var t = i / n * s, edge = 1 - Math.abs(i) / (n + 1);
+      a = point(t, floorY, -s); b = point(t, floorY, s);
+      ctx.strokeStyle = 'rgba(120,170,150,' + (0.13 * edge).toFixed(3) + ')';
+      ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
+      a = point(-s, floorY, t); b = point(s, floorY, t);
+      ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
+    }
+  }
+  function drawGizmo() {         // which way is front, up and the fly's right
+    var o = { x: 0, y: 0, z: 0 }, ax = [[{ x: 0, y: 0, z: -1 }, 'front', COLORS.actHi], [{ x: 0, y: 1, z: 0 }, 'top', '#c9d4cd'], [{ x: rightSign, y: 0, z: 0 }, 'right', '#8a988f']];
+    var save = [cam.cx, cam.cy, cam.scale, cam.dist], ox = 50, oy = view.h - 38;
+    cam.cx = ox; cam.cy = oy; cam.scale = 22; cam.dist = 1e6;
+    project(o);
+    ctx.font = '10px "IBM Plex Mono", ui-monospace, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 1.5;
+    ax.forEach(function (a) {
+      project(a[0]);
+      ctx.globalAlpha = a[0].depth > 0.3 ? 0.45 : 0.9; ctx.strokeStyle = ctx.fillStyle = a[2];
+      ctx.beginPath(); ctx.moveTo(o.px, o.py); ctx.lineTo(a[0].px, a[0].py); ctx.stroke();
+      var dx = a[0].px - o.px, dy = a[0].py - o.py, len = Math.sqrt(dx * dx + dy * dy) || 1;
+      ctx.fillText(a[1], Math.max(16, a[0].px + dx / len * 16), Math.min(view.h - 6, a[0].py + dy / len * 9));
+    });
+    cam.cx = save[0]; cam.cy = save[1]; cam.scale = save[2]; cam.dist = save[3];
+    ctx.globalAlpha = 1;
+  }
   function drawBrain(now) {
+    var dt = Math.min(64, now - (lastDraw || now)); lastDraw = now;
     var fade = view.dopamine ? Math.max(0, 1 - (now - view.dopamineAt) / 1500) : 0;
-    if (!view.changed && !fade && !view.fading) return;
+    var moving = !!drag || Math.abs(cam.vYaw) > 1e-5 || Math.abs(cam.vPitch) > 1e-5 || (cam.spin && now > cam.heldUntil);
+    if (!drag) {                    // inertia after a drag, then back to the slow spin
+      cam.yaw += cam.vYaw * dt; cam.pitch = Math.max(-1.45, Math.min(1.2, cam.pitch + cam.vPitch * dt));
+      cam.vYaw *= 0.92; cam.vPitch *= 0.92;
+      if (cam.spin && now > cam.heldUntil) cam.yaw += cam.spin * dt;
+    }
+    if (!visible || (!view.changed && !fade && !view.fading && !moving)) return;
     view.fading = fade > 0; view.changed = false;
     if (!view.w) return;
-    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(base, 0, 0);
-    ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
-    var i, c, a, on = view.odor >= 0, vb = view.brain || S.brain;
-    // dopamine neurons: reward (PAM) glows when things went better than expected, punishment (PPL1) when worse
+    ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    var bg = ctx.createRadialGradient(cam.cx, cam.cy, 0, cam.cx, cam.cy, Math.max(view.w, view.h) * 0.7);
+    bg.addColorStop(0, '#0d1511'); bg.addColorStop(1, '#000000');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, view.w, view.h);
+    for (var j = 0; j < cells.length; j++) project(cells[j]);
+    drawFloor();
+
+    var i, c, a, f, on = view.odor >= 0, vb = view.brain || S.brain;
+    // Kenyon cells: a faint glowing cloud, brighter where it is dense and near
+    ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgb(' + COLORS.cloud + ')';
+    for (i = 0; i < byGroup.kc.length; i++) {
+      c = byGroup.kc[i]; if (c.guess) continue;
+      f = fog(c); a = 1.6 * c.k;
+      ctx.globalAlpha = 0.16 * f; ctx.fillRect(c.px - a / 2, c.py - a / 2, a, a);
+    }
+    // the path this smell takes: driven projection neurons -> responding Kenyon cells -> their main output neuron
+    if (on && view.kc.length) {
+      ctx.lineWidth = 0.6; ctx.strokeStyle = COLORS.act;
+      for (i = 0; i < view.kc.length; i++) {
+        var kc = byGroup.kc[view.kc[i][0]], ins = kcInputs[view.kc[i][0]], out = kcOutputs[view.kc[i][0]];
+        for (var e = 0; e < ins.length; e++) {
+          a = view.glom[circuit.pn.glom[ins[e][0]]];
+          if (a < 0.35) continue;
+          c = byGroup.pn[ins[e][0]]; ctx.globalAlpha = 0.07 * a * fog(kc);
+          ctx.beginPath(); ctx.moveTo(c.px, c.py); ctx.lineTo(kc.px, kc.py); ctx.stroke();
+        }
+        if (out[0] >= 0) {
+          c = byGroup.mbon[out[0]]; ctx.globalAlpha = 0.12 * fog(kc); ctx.strokeStyle = vb.valence[out[0]] > 0 ? COLORS.pos : COLORS.neg;
+          ctx.beginPath(); ctx.moveTo(kc.px, kc.py); ctx.lineTo(c.px, c.py); ctx.stroke(); ctx.strokeStyle = COLORS.act;
+        }
+      }
+    }
+
+    // every named neuron as a lit sphere, far ones first
     var reward = view.dopamine > 0 ? fade * Math.min(1, view.dopamine * 1.5 + 0.25) : 0;
     var punish = view.dopamine < 0 ? fade * Math.min(1, -view.dopamine * 1.5 + 0.25) : 0;
-    for (i = 0; i < byGroup.pam.length; i++) { c = byGroup.pam[i]; dot(c, 1.6 + 1.6 * reward, reward > 0.02 ? COLORS.posHi : COLORS.pos, 0.28 + 0.72 * reward); }
-    for (i = 0; i < byGroup.ppl1.length; i++) { c = byGroup.ppl1[i]; dot(c, 2.6 + 3 * punish, punish > 0.02 ? COLORS.negHi : COLORS.neg, 0.4 + 0.6 * punish); }
+    var balls = [];
+    function ball(c, r, color, alpha, glow) { balls.push({ c: c, r: 1.35 * r * c.k, color: color, alpha: alpha * fog(c), glow: glow }); }
+    // dopamine neurons: reward (PAM) glows when things went better than expected, punishment (PPL1) when worse
+    for (i = 0; i < byGroup.pam.length; i++) ball(byGroup.pam[i], 1.6 + 1.6 * reward, reward > 0.02 ? COLORS.posHi : COLORS.pos, 0.35 + 0.65 * reward, reward * 0.3);
+    for (i = 0; i < byGroup.ppl1.length; i++) ball(byGroup.ppl1[i], 2.6 + 3 * punish, punish > 0.02 ? COLORS.negHi : COLORS.neg, 0.5 + 0.5 * punish, punish * 0.8);
     // projection neurons: brightness = how strongly their smell channel is driven
-    for (i = 0; i < byGroup.pn.length; i++) { c = byGroup.pn[i]; a = on ? view.glom[circuit.pn.glom[c.i]] : 0; dot(c, 2 + 2 * a, a > 0.5 ? COLORS.actHi : COLORS.act, 0.22 + 0.78 * a); }
+    for (i = 0; i < byGroup.pn.length; i++) { c = byGroup.pn[i]; a = on ? view.glom[circuit.pn.glom[c.i]] : 0; ball(c, 2 + 2 * a, a > 0.5 ? COLORS.actHi : COLORS.act, 0.3 + 0.7 * a, a > 0.5 ? a * 0.6 : 0); }
     // Kenyon cells: only the few that respond to this smell
-    for (i = 0; i < view.kc.length; i++) { c = byGroup.kc[view.kc[i][0]]; a = Math.min(1, view.kc[i][1] * 9); dot(c, 1.3 + 1.5 * a, COLORS.actHi, 0.45 + 0.55 * a); }
+    for (i = 0; i < view.kc.length; i++) { c = byGroup.kc[view.kc[i][0]]; a = Math.min(1, view.kc[i][1] * 9); ball(c, 1.3 + 1.5 * a, COLORS.actHi, 0.55 + 0.45 * a, a * 0.5); }
     // output neurons: size and brightness relative to their response before any learning
     for (i = 0; i < byGroup.mbon.length; i++) {
       c = byGroup.mbon[i]; a = on ? Math.min(2, view.mbon[c.i] / (vb.mbonBaseline[c.i] || 1)) : 0;
-      dot(c, 2.6 + 2.2 * a, vb.valence[c.i] > 0 ? COLORS.pos : COLORS.neg, 0.3 + 0.35 * a);
-      ctx.globalAlpha = 0.9; ctx.lineWidth = 1; ctx.strokeStyle = '#0a0e0c'; ctx.stroke();
+      ball(c, 2.6 + 2.2 * a, vb.valence[c.i] > 0 ? COLORS.pos : COLORS.neg, 0.45 + 0.3 * a, a > 1 ? (a - 1) * 0.7 : 0);
     }
-    ctx.globalAlpha = 1;
-    $('scope-state').textContent = fade > 0 ? (view.dopamine > 0 ? 'reward dopamine' : 'punishment dopamine') : (view.label || ' ');
+    balls.sort(function (p, q) { return q.c.depth - p.c.depth; });
+    for (i = 0; i < balls.length; i++) {
+      var b = balls[i], r = b.r;
+      if (b.glow > 0.02) {
+        ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, b.glow) * 0.55;
+        ctx.drawImage(sprite(b.color, 'glow'), b.c.px - r * 2.8, b.c.py - r * 2.8, r * 5.6, r * 5.6);
+      }
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = b.alpha;
+      ctx.drawImage(sprite(b.color, 'ball'), b.c.px - r, b.c.py - r, 2 * r, 2 * r);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    drawGizmo();
+    $('scope-state').textContent = fade > 0 ? (view.dopamine > 0 ? 'reward dopamine' : 'punishment dopamine') : (view.label || ' ');
   }
   function showOdor(odor, label, brain) {      // brain: another fly's (the poker table), else this one's
     var b = view.brain = brain || S.brain;
@@ -265,11 +384,44 @@
     b.textContent = strong; d.appendChild(b); d.appendChild(document.createTextNode(rest)); parent.appendChild(d);
   }
   var GROUP_NAME = { kc: 'Kenyon cell', pn: 'Projection neuron', mbon: 'Output neuron', pam: 'Reward dopamine neuron (PAM)', ppl1: 'Punishment dopamine neuron (PPL1)' };
+  function hold(ms) { cam.heldUntil = Math.max(cam.heldUntil, performance.now() + ms); }
+  canvas.addEventListener('pointerdown', function (e) {
+    if (e.button) return;
+    drag = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId };
+    cam.vYaw = cam.vPitch = 0; hideTip();
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* already released */ }
+  });
+  function endDrag(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (performance.now() - drag.t > 80) cam.vYaw = cam.vPitch = 0;   // let go after resting: no fling
+    drag = null; hold(2500);
+  }
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+  canvas.addEventListener('dblclick', function () { cam.yaw = HOME.yaw; cam.pitch = HOME.pitch; cam.vYaw = cam.vPitch = 0; hold(2500); });
+  canvas.addEventListener('keydown', function (e) {
+    var k = { ArrowLeft: [-0.15, 0], ArrowRight: [0.15, 0], ArrowUp: [0, -0.12], ArrowDown: [0, 0.12] }[e.key];
+    if (e.key === 'Home') { cam.yaw = HOME.yaw; cam.pitch = HOME.pitch; }
+    else if (!k) return;
+    else { cam.yaw += k[0]; cam.pitch = Math.max(-1.45, Math.min(1.2, cam.pitch + k[1])); }
+    e.preventDefault(); hold(4000); view.changed = true;
+  });
+  if (self.IntersectionObserver) new IntersectionObserver(function (es) { visible = es[es.length - 1].isIntersecting; view.changed = true; }).observe(canvas);
   canvas.addEventListener('pointermove', function (e) {
+    if (drag) {
+      if (e.pointerId !== drag.id) return;
+      var now = performance.now(), dx = e.clientX - drag.x, dy = e.clientY - drag.y, dt = Math.max(1, now - drag.t);
+      cam.yaw += dx * 0.009; cam.pitch = Math.max(-1.45, Math.min(1.2, cam.pitch - dy * 0.009));
+      cam.vYaw = dx * 0.009 / dt; cam.vPitch = -dy * 0.009 / dt;
+      drag.x = e.clientX; drag.y = e.clientY; drag.t = now;
+      return;
+    }
+    if (e.pointerType === 'mouse') hold(1500);              // hold still while someone is reading a neuron
     var r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, best = null, bd = 144;
     for (var i = 0; i < cells.length; i++) {
       var c = cells[i], d = (c.px - x) * (c.px - x) + (c.py - y) * (c.py - y);
       if (c.group !== 'kc') d *= 0.35;                       // the sparse neurons are easier to hit than the cloud
+      d *= 1 + 0.25 * c.depth;                               // and nearer ones win over those behind them
       if (d < bd) { bd = d; best = c; }
     }
     if (!best) return hideTip();
@@ -278,6 +430,7 @@
         best.group === 'pn' ? ', smell channel ' + circuit.glomeruli[circuit.pn.glom[best.i]] : '';
       line(t, best.type, ' · ' + GROUP_NAME[best.group] + extra);
       line(t, '', 'Body ID ' + best.id + ' in MaleCNS v1.0');
+      if (best.guess) line(t, '', 'Its cell body is not in the connectome, so it is drawn at the middle of its group.');
     });
   });
   canvas.addEventListener('pointerleave', hideTip);

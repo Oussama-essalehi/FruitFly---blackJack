@@ -16,6 +16,26 @@ In Watch mode the fly acts it out at a casino table: it sniffs each choice (blue
 good, orange smells bad), taps the felt to hit, waves a leg to stand, and its head glows with
 reward or punishment dopamine when the hand is paid.
 
+The casino is a 3D scene drawn with three.js (bundled into the page, so it still works offline):
+the table, cards, chips, dealer and flies are 3D models under a lamp that casts shadows. Drag
+the scene to walk around the table; double-click to come back.
+
+## Poker
+
+The Poker tab seats five flies at a Limit Texas Hold'em table: Canton-S, white, yellow, ebony
+and Curly, dressed as classic lab strains but all running their own copy of the same circuit.
+The sixth seat is open: anyone at the screen can type a name and sit down, or ask a fly to
+leave and take its place. With two or more people, the table asks you to pass the screen before
+it shows anyone's cards. Fast and Turbo train the flies against each other when nobody is seated.
+
+A poker situation smells of three things: how often the fly's cards would win against the
+players still in (estimated by dealing the rest out a few hundred times, then scaled so a fair
+share sits in the middle), the street, and whether there is a bet or a raise to call. Each
+choice (fold, call, raise) is judged by the chips won or lost from that moment on, so folding
+is always worth zero. In a headless run of 30,000 hands, flop decisions facing a bet went from
+folding a monster 14% of the time and a weak hand about 30% of the time, to raising or calling
+monsters nearly always and folding weak hands 60 to 85% of the time.
+
 ## Results (three flies, 200,000 hands each)
 
 Average result per hand, as a share of the bet. Exact values from the game's maths.
@@ -47,8 +67,15 @@ with the full list.
 
     web/index.html         the finished page (built, self-contained)
     web/page.html          page layout and styles
-    web/casino.js          the animated casino scene: dealer, cards, chips, the fly's gestures
-    web/app.js             game loop, brain view, charts
+    web/scenekit.js        shared timing: tweens, timers, easing
+    web/scene3d.js         the 3D casino: room, lamp, tables, cards, chips, the dealer, labels, camera
+    web/fly3d.js           the fly, modelled and animated in 3D
+    web/vendor/three.min.js  three.js r149 (MIT, see web/vendor/three.LICENSE)
+    web/casino.js          the blackjack table: dealing, chips, the fly's gestures
+    web/app.js             blackjack game loop, brain view, charts
+    web/pokertable.js      the poker table: six seats, a fly per seat, pot, showdown
+    web/pokerapp.js        the poker game: seats and joining, turns, learning, leaderboard
+    src/poker.js           Limit Hold'em rules, hand ranking, strength estimate, poker smells
     src/flybrain.js        the brain: smell code, decision, dopamine learning
     src/blackjack.js       rules and exact maths
     data/circuit.json      the extracted circuit
@@ -68,10 +95,14 @@ with the full list.
     python3 tools/build_circuit.py raw data/circuit.json
     python3 tools/build_web.py
 
-## Rules of the game
+## Rules of the games
 
-Hit or stand only, blackjack pays 3 to 2, dealer stands on 17 and checks for blackjack first,
-continuously shuffled shoe.
+Blackjack: hit or stand only, blackjack pays 3 to 2, dealer stands on 17 and checks for
+blackjack first, continuously shuffled shoe.
+
+Poker: Limit Texas Hold'em, six seats, blinds 1 and 2, bets of 2 then 4 from the turn, one bet
+and three raises per round. Stacks top up to 100 below 50 and bank winnings above 250, so no
+one is ever all in.
 
 ## Credits
 

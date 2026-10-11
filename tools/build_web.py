@@ -1,4 +1,4 @@
-"""Assemble the web page: web/page.html + the four scripts + the circuit data.
+"""Assemble the web page: web/page.html + the scripts + the circuit data.
 
 Writes  web/index.html          a complete page you can open in any browser
         web/flyjack.fragment.html   the same page without the <html> wrapper (for hosts that add their own)
@@ -16,8 +16,15 @@ page = (root / "web/page.html").read_text(encoding="utf-8")
 parts = {"/*CIRCUIT*/": data,
          "/*BLACKJACK*/": (root / "src/blackjack.js").read_text(encoding="utf-8"),
          "/*FLYBRAIN*/": (root / "src/flybrain.js").read_text(encoding="utf-8"),
+         "/*POKER*/": (root / "src/poker.js").read_text(encoding="utf-8"),
+         "/*THREE*/": (root / "web/vendor/three.min.js").read_text(encoding="utf-8"),
+         "/*SCENEKIT*/": (root / "web/scenekit.js").read_text(encoding="utf-8"),
+         "/*SCENE3D*/": (root / "web/scene3d.js").read_text(encoding="utf-8"),
+         "/*FLY3D*/": (root / "web/fly3d.js").read_text(encoding="utf-8"),
          "/*CASINO*/": (root / "web/casino.js").read_text(encoding="utf-8"),
-         "/*APP*/": (root / "web/app.js").read_text(encoding="utf-8")}
+         "/*APP*/": (root / "web/app.js").read_text(encoding="utf-8"),
+         "/*POKERTABLE*/": (root / "web/pokertable.js").read_text(encoding="utf-8"),
+         "/*POKERAPP*/": (root / "web/pokerapp.js").read_text(encoding="utf-8")}
 for key, value in parts.items():
     assert page.count(key) == 1 and "</script" not in value, key
     page = page.replace(key, value)
