@@ -14,6 +14,7 @@
     rewired: { options: { wiring: 'shuffled-pn-kc' }, note: 'Smell channels are reconnected to Kenyon cells at random, keeping how many connections each cell has. This fly learns about as well as the intact one.' }
   };
   var STORE_KEY = 'flyjack.intact.v1';
+  var BORN = new Date(self.FlyTimeline.CONFIG.born).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   var REF = {
     best: BJ.expectedReturn(null),
     stand: BJ.expectedReturn(new Float64Array(BJ.N_STATES)),
@@ -70,47 +71,70 @@
     } catch (e) { /* ignore a damaged save */ }
   }
 
-  /* ---------- the one shared fly (server/server.js) ----------
-     When a FlyJack server answers, the intact fly is not this browser's own: the server plays one
-     fly forever and everyone watches the same hands. The page keeps a copy of that fly's synapses
-     and learns from each hand the server sends, so the brain view and the strategy grids stay
-     true, and deals the very same cards on the table. With no server (a static host, a file
-     opened from disk) the page grows its own fly as before. */
-  var live = { pending: false, lost: false, queue: [], viewers: 0, since: performance.now() };
-  function connect(retry) {
-    var base = (self.FLYJACK_SERVER || '').replace(/\/$/, '');
-    if (!self.EventSource || (!base && !/^https?:$/.test(location.protocol))) return;
-    if (!retry) live.pending = true;
-    var es = new EventSource(base + '/api/live');
-    es.addEventListener('fly', function (e) { joinLive(JSON.parse(e.data)); });
-    es.addEventListener('hand', function (e) {
-      if (!sessions.intact || !sessions.intact.live) return;
-      var rec = JSON.parse(e.data); live.viewers = rec.viewers; live.queue.push(rec);
-    });
-    es.onerror = function () {
-      if (live.pending) { es.close(); live.pending = false; return; }   // no server here: this browser keeps its own fly
-      live.lost = true;
-      // a dropped connection is retried by EventSource itself, and the server then sends a fresh
-      // "fly"; an error page (say, mid-redeploy) closes it for good, so try again ourselves
-      if (es.readyState === 2) setTimeout(function () { connect(true); }, 5000);
-    };
+  /* ---------- the one fly everyone shares (src/timeline.js) ----------
+     The intact fly is not this browser's own: it is the shared fly, whose every hand is fixed by
+     the clock and the dice. The page starts from the latest saved moment it can find (the hourly
+     checkpoint on GitHub, or one this browser saved itself), plays the hands since then unseen to
+     catch up with the present, then shows each new hand at the time it happens, the same hand
+     everyone else is watching. A second brain, the session's, learns from each hand as it is shown,
+     so the brain view and the strategy grids follow the table. If the shared fly cannot be set up,
+     the page grows a fly of its own as before. */
+  var TL = self.FlyTimeline, SHARED_KEY = 'flyjack.shared.v1';
+  var live = { pending: true, failed: false, queue: [], timeline: null, timer: 0, caught: 0 };
+  function loadSaved() { try { return JSON.parse(localStorage.getItem(SHARED_KEY)); } catch (e) { return null; } }
+  function keep(checkpoint) { try { localStorage.setItem(SHARED_KEY, JSON.stringify(checkpoint)); } catch (e) { /* no storage: catch up from GitHub next time */ } }
+  function fetchRemote() {
+    if (!self.fetch || !TL.CONFIG.remote) return Promise.resolve(null);
+    var timeout = new Promise(function (ok) { setTimeout(function () { ok(null); }, 8000); });
+    var got = fetch(TL.CONFIG.remote, { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    return Promise.race([got, timeout]);
   }
-  function joinLive(d) {
-    var s = newSession('intact');
-    if (d.edges !== s.brain.nEdges || !s.brain.importMemory({ hands: d.hands, strengths: unb64(d.strengths) })) { live.pending = false; return; }   // a server built from another circuit
-    s.live = true; s.bank = d.bank; s.curve = d.curve; s.recent = d.recent.slice();
-    sessions.intact = s;
-    live.pending = false; live.lost = false; live.viewers = d.viewers;
-    live.queue = [];
-    if (d.current) { d.current.learned = true; live.queue.push(d.current); }   // already part of the memory we just loaded: show it, do not learn it twice
-    watch.hand = null; watch.live = null;
+  function fail(why) {
+    live.pending = false; live.failed = true;
+    if (self.console) console.warn('FlyJack: the shared fly is unavailable (' + why + '); this browser grows its own fly.');
+    restore();
     if (mode === 'intact') useMode('intact');
   }
+  function connect() {
+    fetchRemote().then(function (remote) {
+      var tl, best = TL.latest([remote, loadSaved()], TL.timelineId(TL.CONFIG)), current = null, saved = null;
+      try { tl = live.timeline = new TL.Timeline(circuit, { FlyBrain: FB, Blackjack: BJ }, best); } catch (e) { return fail(e.message); }
+      live.caught = tl.brain.hands;
+      (function catchUp() {                   // play the hands since that moment, a slice at a time so the page stays responsive
+        try {
+          var done = tl.advanceTo(Date.now(), function (rec) { current = rec; if (rec.boundary) saved = tl.checkpoint(); }, 40);
+          live.caught = tl.brain.hands;
+          if (!done) return setTimeout(catchUp, 0);
+        } catch (e) { return fail(e.message); }
+        if (saved && (!best || saved.hands > best.hands)) keep(saved);
+        joinLive(current);
+      })();
+    });
+  }
+  function joinLive(current) {
+    var tl = live.timeline, s = newSession('intact');
+    s.brain.weight.set(tl.brain.weight); s.brain.hands = tl.brain.hands;
+    s.live = true; s.bank = tl.bank; s.curve = tl.curve.slice(); s.recent = tl.recent.slice();
+    sessions.intact = s;
+    live.pending = false; live.queue = [];
+    if (current) { current.learned = true; live.queue.push(current); }   // already part of the memory just copied: show it, do not learn it twice
+    watch.hand = null; watch.live = null;
+    if (mode === 'intact') useMode('intact');
+    tick();
+  }
+  function tick() {                       // hand every hand that has started over to the table, then sleep until the next one
+    clearTimeout(live.timer);
+    var tl = live.timeline;
+    tl.advanceTo(Date.now(), function (rec) { live.queue.push(rec); if (rec.boundary) keep(tl.checkpoint()); });
+    live.timer = setTimeout(tick, Math.max(50, Math.min(60000, tl.next - Date.now() + 20)));
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && live.timeline && !live.pending) tick(); });
   function replay(draws) { var i = 0; return function () { return draws[i++]; }; }
-  function absorb(rec) {                  // a hand from the server: learn from it and add it to the record
+  function absorb(rec) {                  // a shared hand: learn from it and add it to the record
     var s = sessions.intact;
     if (!rec.learned) {
       s.brain.learnHand(rec.trace, rec.reward);
+      if (rec.boundary) s.brain.importMemory(s.brain.exportMemory());   // the same rounding the shared fly does (src/timeline.js)
       s.recent.push(rec.reward); if (s.recent.length > 16) s.recent.shift();
     }
     s.brain.hands = rec.hands; s.bank = rec.bank;
@@ -136,10 +160,10 @@
   function stepDeal() {
     var rec = null;
     if (S.live) {
-      if (!live.queue.length) return [stepDeal, 250];                     // the server's next hand is not here yet
+      if (!live.queue.length) return [stepDeal, 250];                     // the next shared hand has not started yet
       while (live.queue.length > 1) absorb(live.queue.shift());           // behind (a hidden tab, a slow machine): catch up unseen
       rec = live.queue.shift();
-    } else if (live.pending && performance.now() - live.since < 5000) return [stepDeal, 250];   // a server may answer: wait before dealing our own fly
+    } else if (live.pending && S.mode === 'intact') return [stepDeal, 250];   // still catching up with the shared fly
     var hand = watch.hand = new BJ.Hand(rec ? replay(rec.draws) : S.brain.rng); watch.trace = []; watch.live = rec;
     view.odor = -1; view.dopamine = 0; view.label = 'waiting'; view.changed = true;
     reportRest();
@@ -560,9 +584,9 @@
     lastRefresh = now;
     var b = S.brain;
     S.habits = b.policy(false); S.skill = BJ.expectedReturn(S.habits);
-    $('t-hands').textContent = count(b.hands);
-    $('t-hands-sub').textContent = !S.live ? 'by this fly so far' : live.lost ? 'by the shared fly · reconnecting…' :
-      'by the one fly everyone shares · ' + count(Math.max(1, live.viewers)) + ' watching now';
+    $('t-hands').textContent = count(live.pending ? live.caught : b.hands);
+    $('t-hands-sub').textContent = live.pending ? 'catching up with the shared fly…' : !S.live ? 'by this fly so far' :
+      'by the one fly everyone shares, alive since ' + BORN;
     $('t-skill').textContent = pct(S.skill);
     $('t-agree').textContent = Math.round(100 * drawGrids()) + '%';
     $('t-bank').textContent = signed(S.bank, 0).replace(/\d+/, function (n) { return count(+n); });
@@ -596,7 +620,6 @@
   }
   measureHeader(); addEventListener('resize', measureHeader);
   buildGrid('grid-hard', false); buildGrid('grid-soft', true);
-  restore();
   connect();
   useMode('intact');
   fit();
@@ -604,7 +627,7 @@
   /* The poker tab borrows the brain view and pauses this table while it shows. */
   var scopeEl = document.querySelector('.scope');
   self.FlyJack = {
-    sessions: sessions, current: function () { return S; }, circuit: circuit,
+    sessions: sessions, current: function () { return S; }, circuit: circuit, shared: live,
     suspend: function (on) {
       if (on === suspended) return;
       suspended = on;
