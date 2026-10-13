@@ -1,0 +1,59 @@
+{
+ "hands": 200000,
+ "seeds": 3,
+ "reference": {
+  "best": -0.026876845589795736,
+  "random": -0.29927388356180484,
+  "alwaysStand": -0.16037656445774676
+ },
+ "results": [
+  {
+   "label": "real wiring",
+   "untrained": -0.25802330545150826,
+   "trained": -0.04259985863670212,
+   "trainedGreedy": -0.03735888177898298,
+   "agree": 0.9102564102564102,
+   "dopamineGain": 0.01816296232723696
+  },
+  {
+   "label": "dopamine blocked",
+   "untrained": -0.25802330545150826,
+   "trained": -0.25802330545150826,
+   "trainedGreedy": -0.2609740686563492,
+   "agree": 0.4153846153846154,
+   "dopamineGain": 0.01816296232723696
+  },
+  {
+   "label": "reward/punishment swapped",
+   "untrained": -0.25802330545150826,
+   "trained": -0.20576480296711472,
+   "trainedGreedy": -0.20178771312418486,
+   "agree": 0.3846153846153846,
+   "dopamineGain": -0.01816296232723696
+  },
+  {
+   "label": "dopamine targets shuffled",
+   "untrained": -0.25802330545150826,
+   "trained": -0.16614029649704484,
+   "trainedGreedy": -0.16331344964775613,
+   "agree": 0.5128205128205129,
+   "dopamineGain": 0.0021729366479710153
+  },
+  {
+   "label": "PN->KC wiring shuffled",
+   "untrained": -0.34310602047599237,
+   "trained": -0.04189207723311698,
+   "trainedGreedy": -0.0343729230327331,
+   "agree": 0.9,
+   "dopamineGain": 0.018348921994289478
+  },
+  {
+   "label": "KC->MBON wiring shuffled",
+   "untrained": -0.2828468322027679,
+   "trained": -0.05314591421971413,
+   "trainedGreedy": -0.04789618941500743,
+   "agree": 0.7833333333333333,
+   "dopamineGain": 0.013851322174262687
+  }
+ ]
+}

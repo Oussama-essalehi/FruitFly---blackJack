@@ -32,29 +32,39 @@ Open https://fruitfly-blackjack-web.vercel.app/ in your browser.
 
 ## One fly for everyone
 
-Everyone who opens the page watches **the same fly**: same cards, same choices, same dopamine,
-same learning curve. It was born on 13 October 2026 at 19:00 (Paris time) and has been playing
-ever since, one hand every ten seconds or so, even when nobody is watching.
+`server/server.js` keeps a single fly learning forever. It plays one hand every few seconds, at
+the pace the table can show it, and saves what the fly has learned every minute. Everyone who
+opens the page watches that same fly live: same cards, same choices, same dopamine, same
+learning curve. A page that finds no server (a static host, or the file opened from disk) grows
+its own fly in the browser instead, as before. The poker table always runs in each browser.
 
-There is no server. The trick is that nothing about the fly is left to chance:
+**Run it on your computer** (Node 18 or newer, no packages to install):
 
-- **The dice are fixed.** Hand number *n* always uses the same random numbers, so the cards and
-  the fly's choices are the same on every computer.
-- **The clock sets the pace.** Each hand starts when the one before has been shown, counted from
-  the fly's birth. Any browser knows from the time of day which hand is on the table right now.
-- **The maths is the same everywhere.** Browsers are allowed to round `Math.exp` slightly
-  differently (Chrome and Safari really do), so the brain uses its own version built from plain
-  arithmetic. The fly comes out identical bit for bit in Node, Chrome and Safari's engine.
+    python3 tools/build_web.py        # only after changing web/ or src/
+    node server/server.js             # then open http://localhost:8080
 
-Every browser runs its own copy of the brain, but all the copies are the same fly. To save each
-browser from replaying the fly's whole life, a GitHub Action (`.github/workflows/fly.yml`) plays it
-forward every hour and saves a checkpoint of its memory on the `fly-data` branch. The page starts
-from that checkpoint and only replays the last few hundred hands, which takes under a second.
-If the Action ever stops, nothing breaks: pages catch up from an older checkpoint, just more
-slowly. `src/timeline.js` explains the details.
+The fly is saved in `server/data/fly.json`. Stop the server with Ctrl+C and start it again: the
+fly carries on. Delete that file to start a new fly.
 
-To check on the hourly save, open the **Actions** tab of the repo. You can also start it by hand
-there with **Run workflow**.
+**Put it online (Render).** The repo has a `Dockerfile` and a `render.yaml`.
+
+1. Push the repo to GitHub.
+2. On https://dashboard.render.com choose **New → Blueprint** and pick the repo. Render reads
+   `render.yaml` and creates the `flyjack` web service with a 1 GB disk at `/var/data`.
+3. Approve the plan. The disk needs the paid **Starter** instance (about $7 a month plus
+   $0.25 for the disk). A free instance sleeps when nobody visits and loses its files, so the fly
+   would stop and forget.
+4. When the deploy is live, open the `https://flyjack-….onrender.com` address it shows. Every
+   push to GitHub redeploys, and the fly continues from its last save.
+
+Keep it to **one** instance: two copies would be two flies writing over each other's memory.
+The same `Dockerfile` runs on Railway, Fly.io or any server with Docker. Mount a persistent
+volume at `/var/data` and run a single copy.
+
+**Keep the Vercel address too.** Build the page with the server's address baked in, then
+commit and redeploy Vercel as usual:
+
+    FLYJACK_SERVER=https://flyjack-….onrender.com python3 tools/build_web.py
 
 ## What you'll see
 
@@ -99,9 +109,10 @@ learning rule. The top of `src/flybrain.js` lists every assumption.
 ## How the project is organised
 
     web/    the app you open in the browser (3D casino, fly, brain model, games)
-    src/    the brain, the blackjack rules, the poker rules and the shared fly's timeline
+    server/ the always-on server: one shared fly that everyone watches live
+    src/    the brain, the blackjack rules and the poker rules
     data/   the brain circuit taken from the real map
-    tools/  scripts to rebuild the data and the page, run the experiments, and save the shared fly
+    tools/  scripts to rebuild the data and the page, and to run the experiments
     results/  output of the "broken fly" tests
 
 ## Rebuilding from the raw brain map

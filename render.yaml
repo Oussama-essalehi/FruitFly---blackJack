@@ -1,0 +1,17 @@
+# Render blueprint for the shared fly (see "Running the shared fly" in README.md).
+# A persistent disk needs a paid instance; the free one sleeps and forgets, which would stop
+# and reset the fly. A service with a disk always runs as exactly one copy: one fly.
+services:
+  - type: web
+    name: flyjack
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: fly-memory
+      mountPath: /var/data
+      sizeGB: 1

@@ -1,0 +1,27 @@
+Money won or lost per hand, as a share of the bet. 200000 hands, 3 flies each.
+reference: best possible -2.7%   always stand -16.0%   coin flip -29.9%
+
+  real wiring fly 1: untrained -25.8% -> 1k -10.5%  5k -8.1%  20k -6.3%  50k -4.8%  100k -4.1%  200k -3.8%  | matches best play 94%  (19561 hands/s)
+  real wiring fly 2: untrained -25.8% -> 1k -14.3%  5k -6.4%  20k -5.1%  50k -4.9%  100k -4.7%  200k -3.7%  | matches best play 93%  (19602 hands/s)
+  real wiring fly 3: untrained -25.8% -> 1k -15.0%  5k -7.2%  20k -7.9%  50k -4.7%  100k -4.1%  200k -5.2%  | matches best play 86%  (19168 hands/s)
+real wiring                        untrained -25.8%  trained -4.3%  (no-noise -3.7%)  matches best play 91%
+  dopamine blocked fly 1: untrained -25.8% -> 1k -25.8%  5k -25.8%  20k -25.8%  50k -25.8%  100k -25.8%  200k -25.8%  | matches best play 42%  (29629 hands/s)
+  dopamine blocked fly 2: untrained -25.8% -> 1k -25.8%  5k -25.8%  20k -25.8%  50k -25.8%  100k -25.8%  200k -25.8%  | matches best play 42%  (30816 hands/s)
+  dopamine blocked fly 3: untrained -25.8% -> 1k -25.8%  5k -25.8%  20k -25.8%  50k -25.8%  100k -25.8%  200k -25.8%  | matches best play 42%  (28054 hands/s)
+dopamine blocked                   untrained -25.8%  trained -25.8%  (no-noise -26.1%)  matches best play 42%
+  reward/punishment swapped fly 1: untrained -25.8% -> 1k -16.0%  5k -16.0%  20k -17.5%  50k -21.9%  100k -20.9%  200k -20.7%  | matches best play 38%  (19340 hands/s)
+  reward/punishment swapped fly 2: untrained -25.8% -> 1k -63.8%  5k -63.8%  20k -17.8%  50k -19.9%  100k -20.4%  200k -20.5%  | matches best play 39%  (18404 hands/s)
+  reward/punishment swapped fly 3: untrained -25.8% -> 1k -63.8%  5k -63.8%  20k -17.7%  50k -19.9%  100k -20.4%  200k -20.5%  | matches best play 39%  (17305 hands/s)
+reward/punishment swapped          untrained -25.8%  trained -20.6%  (no-noise -20.2%)  matches best play 38%
+  dopamine targets shuffled fly 1: untrained -25.8% -> 1k -14.6%  5k -10.5%  20k -9.1%  50k -9.1%  100k -7.4%  200k -7.2%  | matches best play 71%  (19872 hands/s)
+  dopamine targets shuffled fly 2: untrained -25.8% -> 1k -16.6%  5k -16.4%  20k -17.6%  50k -31.7%  100k -28.4%  200k -26.6%  | matches best play 37%  (18809 hands/s)
+  dopamine targets shuffled fly 3: untrained -25.8% -> 1k -16.0%  5k -16.0%  20k -16.0%  50k -16.0%  100k -16.5%  200k -16.0%  | matches best play 46%  (20155 hands/s)
+dopamine targets shuffled          untrained -25.8%  trained -16.6%  (no-noise -16.3%)  matches best play 51%
+  PN->KC wiring shuffled fly 1: untrained -29.7% -> 1k -11.2%  5k -8.2%  20k -5.6%  50k -4.7%  100k -5.3%  200k -4.3%  | matches best play 90%  (17118 hands/s)
+  PN->KC wiring shuffled fly 2: untrained -25.4% -> 1k -11.1%  5k -8.6%  20k -5.5%  50k -5.0%  100k -4.5%  200k -4.2%  | matches best play 90%  (19347 hands/s)
+  PN->KC wiring shuffled fly 3: untrained -47.9% -> 1k -16.0%  5k -7.6%  20k -6.0%  50k -7.6%  100k -5.7%  200k -4.1%  | matches best play 91%  (20257 hands/s)
+PN->KC wiring shuffled             untrained -34.3%  trained -4.2%  (no-noise -3.4%)  matches best play 90%
+  KC->MBON wiring shuffled fly 1: untrained -55.3% -> 1k -14.4%  5k -9.6%  20k -6.3%  50k -5.5%  100k -4.7%  200k -4.5%  | matches best play 93%  (17703 hands/s)
+  KC->MBON wiring shuffled fly 2: untrained -13.4% -> 1k -12.8%  5k -8.9%  20k -6.9%  50k -6.2%  100k -7.6%  200k -6.2%  | matches best play 68%  (19368 hands/s)
+  KC->MBON wiring shuffled fly 3: untrained -16.2% -> 1k -14.4%  5k -8.4%  20k -7.1%  50k -7.2%  100k -4.8%  200k -5.2%  | matches best play 73%  (16268 hands/s)
+KC->MBON wiring shuffled           untrained -28.3%  trained -5.3%  (no-noise -4.8%)  matches best play 78%
