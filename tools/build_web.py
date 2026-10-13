@@ -4,8 +4,11 @@ Writes  web/index.html          a complete page you can open in any browser
         web/flyjack.fragment.html   the same page without the <html> wrapper (for hosts that add their own)
 
 Usage: python3 tools/build_web.py
+       FLYJACK_SERVER=https://your-server python3 tools/build_web.py
+           the page then watches the shared fly on that server (server/server.js) wherever it is
+           hosted; without it, the page looks for the server on its own address
 """
-import json, pathlib
+import json, os, pathlib
 root = pathlib.Path(__file__).resolve().parent.parent
 circuit = json.loads((root / "data/circuit.json").read_text(encoding="utf-8"))
 for group in ("pn", "kc", "mbon", "pam", "ppl1"):          # keep the page small: drop what it never reads
@@ -14,6 +17,9 @@ circuit.pop("glomerulusSynapses", None)
 data = json.dumps(circuit, separators=(",", ":")).replace("<", "\\u003c")
 cloud = (root / "data/cns_cloud.json").read_text(encoding="utf-8").replace("<", "\\u003c")
 page = (root / "web/page.html").read_text(encoding="utf-8")
+server = os.environ.get("FLYJACK_SERVER", "").strip()
+if server:
+    page = page.replace("<script>/*APP*/", "<script>self.FLYJACK_SERVER = " + json.dumps(server) + ";</script>\n<script>/*APP*/", 1)
 parts = {"/*CIRCUIT*/": data,
          "/*CLOUD*/": cloud,
          "/*BLACKJACK*/": (root / "src/blackjack.js").read_text(encoding="utf-8"),
