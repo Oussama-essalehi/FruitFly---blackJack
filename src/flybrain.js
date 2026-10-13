@@ -54,6 +54,28 @@
       return ((t ^ t >>> 14) >>> 0) / 4294967296;
     };
   }
+  /* e^x built only from + - * / and exact powers of two, which every JavaScript engine computes
+   * bit for bit the same way. Math.exp is allowed to differ in its last digit between browsers,
+   * and the one fly everyone shares (src/timeline.js) must come out identical on every machine. */
+  var LN2_HI = 6.93147180369123816490e-01, LN2_LO = 1.90821492927058770002e-10, LOG2E = 1.44269504088896338700e+00;
+  var pow2View = new DataView(new ArrayBuffer(8));
+  function pow2(k) {                                   // 2^k exactly, k an integer
+    if (k < -1022) return pow2(k + 60) * pow2(-60);
+    pow2View.setUint32(0, (k + 1023) << 20); pow2View.setUint32(4, 0);
+    return pow2View.getFloat64(0);
+  }
+  function exp(x) {
+    if (x !== x) return x;
+    if (x > 709.78) return Infinity;
+    if (x < -745.2) return 0;
+    var k = Math.round(x * LOG2E), r = (x - k * LN2_HI) - k * LN2_LO;   // x = k ln2 + r, |r| <= 0.35
+    var p = 1 / FACT[14];                                                 // Taylor series to r^14 / 14!
+    for (var n = 13; n >= 1; n--) p = p * r + 1 / FACT[n];
+    p = p * r + 1;
+    return k > 1023 ? p * pow2(1023) * pow2(k - 1023) : p * pow2(k);
+  }
+  var FACT = [1]; for (var f = 1; f <= 14; f++) FACT[f] = FACT[f - 1] * f;
+
   function shuffled(arr, rng) {
     var a = Array.prototype.slice.call(arr);
     for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rng() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; }
@@ -246,7 +268,7 @@
     var centre = position * (glomeruli.length - 1);
     for (var i = 0; i < glomeruli.length; i++) {
       var d = (i - centre) / width;
-      out[glomeruli[i]] = gain * Math.exp(-0.5 * d * d);
+      out[glomeruli[i]] = gain * exp(-0.5 * d * d);
     }
   }
 
@@ -272,13 +294,13 @@
   Brain.prototype.pHit = function (total, soft, dealer) {
     var s = stateIndex(total, soft, dealer);
     var d = this.respond(s * 2) - this.respond(s * 2 + 1);
-    return 1 / (1 + Math.exp(-d / this.options.temperature));
+    return 1 / (1 + exp(-d / this.options.temperature));
   };
   /* Choose hit (true) or stand (false). Returns details for display too. */
   Brain.prototype.decide = function (total, soft, dealer) {
     var s = stateIndex(total, soft, dealer);
     var vHit = this.respond(s * 2), vStand = this.respond(s * 2 + 1);
-    var p = 1 / (1 + Math.exp(-(vHit - vStand) / this.options.temperature));
+    var p = 1 / (1 + exp(-(vHit - vStand) / this.options.temperature));
     var hit = this.rng() < p;
     return { hit: hit, pHit: p, vHit: vHit, vStand: vStand, odor: s * 2 + (hit ? 0 : 1) };
   };
@@ -294,7 +316,7 @@
   Brain.prototype.preferences = function (state, actions) {
     var A = this.code.nActions, T = this.options.temperature, p = {}, v = {}, best = -Infinity, sum = 0, i;
     for (i = 0; i < actions.length; i++) { v[actions[i]] = this.respond(state * A + actions[i]); best = Math.max(best, v[actions[i]]); }
-    for (i = 0; i < actions.length; i++) sum += (p[actions[i]] = Math.exp((v[actions[i]] - best) / T));
+    for (i = 0; i < actions.length; i++) sum += (p[actions[i]] = exp((v[actions[i]] - best) / T));
     for (i = 0; i < actions.length; i++) p[actions[i]] /= sum;
     Object.defineProperty(p, 'values', { value: v });
     return p;
@@ -348,7 +370,7 @@
     var p = new Float64Array(N_STATES);
     for (var s = 0; s < N_STATES; s++) {
       var d = this.respond(s * 2) - this.respond(s * 2 + 1);
-      p[s] = greedy ? (d > 0 ? 1 : 0) : 1 / (1 + Math.exp(-d / this.options.temperature));
+      p[s] = greedy ? (d > 0 ? 1 : 0) : 1 / (1 + exp(-d / this.options.temperature));
     }
     return p;
   };
@@ -374,6 +396,6 @@
     return true;
   };
 
-  var api = { Brain: Brain, DEFAULTS: DEFAULTS, BLACKJACK: BLACKJACK, N_STATES: N_STATES, N_ODORS: N_ODORS, stateIndex: stateIndex, mulberry32: mulberry32, bump: bump };
+  var api = { Brain: Brain, DEFAULTS: DEFAULTS, BLACKJACK: BLACKJACK, N_STATES: N_STATES, N_ODORS: N_ODORS, stateIndex: stateIndex, mulberry32: mulberry32, bump: bump, exp: exp };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.FlyBrain = api;
 })(typeof self !== 'undefined' ? self : this);
